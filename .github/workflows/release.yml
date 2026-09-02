@@ -1,0 +1,69 @@
+name: Build APK & Create Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Expo CLI
+        run: npm install -g eas-cli
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build APK with EAS
+        id: eas-build
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          echo "Starting EAS build..."
+          BUILD_JSON=$(eas build \
+            --platform android \
+            --profile preview \
+            --non-interactive \
+            --json)
+
+          echo "$BUILD_JSON"
+
+          APK_URL=$(echo "$BUILD_JSON" | jq -r '.[0].artifacts.applicationArchiveUrl')
+
+          if [ -z "$APK_URL" ] || [ "$APK_URL" = "null" ]; then
+            echo "::error::Failed to get APK URL from EAS build"
+            exit 1
+          fi
+
+          echo "apk_url=$APK_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Download APK
+        run: |
+          curl -L -o coupleplay.apk "${{ steps.eas-build.outputs.apk_url }}"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coupleplay-apk
+          path: coupleplay.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: coupleplay.apk
+          generate_release_notes: true
+          draft: false
+          prerelease: false

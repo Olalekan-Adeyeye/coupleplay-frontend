@@ -1,0 +1,173 @@
+[
+  {
+    "id": "TIC_TAC_TOE",
+    "name": "Tic Tac Toe",
+    "tag": "Classic",
+    "tagColor": "#10B981",
+    "desc": "Three in a row. Loser owes a kiss.",
+    "players": "2 Players",
+    "duration": "1-3 min",
+    "rounds": 3,
+    "accent": "#E8F8EF",
+    "icon": "tic_tac_toe",
+    "iconName": "grid",
+    "emoji": "⭕",
+    "heroImage": "tic_tac_toe",
+    "objective": "Win 2 of 3 rounds to take the match!",
+    "popular": true,
+    "steps": [
+      {
+        "icon": "grid",
+        "iconColor": "#8A4BE0",
+        "title": "Take turns placing X's and O's on the grid."
+      },
+      {
+        "icon": "shield",
+        "iconColor": "#10B981",
+        "title": "Block your partner while planning your own line."
+      },
+      {
+        "icon": "trophy",
+        "iconColor": "#F59E0B",
+        "title": "Get three in a row to win the round!"
+      }
+    ],
+    "stats": { "gamesPlayed": 0, "perfectMatches": 0, "winRate": 0 }
+  },
+  {
+    "id": "DRAW_GUESS",
+    "name": "Draw & Guess",
+    "tag": "Creative",
+    "tagColor": "#FF69B4",
+    "desc": "Your art vs. their guessing. Good luck.",
+    "players": "2 Players",
+    "duration": "~5 min",
+    "rounds": 5,
+    "accent": "#FFE4F1",
+    "icon": "draw_guess",
+    "iconName": "brush",
+    "emoji": "🎨",
+    "heroImage": "draw_guess",
+    "objective": "Guess right to earn points!",
+    "steps": [
+      {
+        "icon": "brush",
+        "iconColor": "#FF69B4",
+        "title": "Draw the secret word."
+      },
+      {
+        "icon": "eye",
+        "iconColor": "#8A4BE0",
+        "title": "Your partner guesses in real time."
+      },
+      {
+        "icon": "trophy",
+        "iconColor": "#F59E0B",
+        "title": "Fastest correct guesses win!"
+      }
+    ],
+    "stats": { "gamesPlayed": 0, "perfectMatches": 0, "winRate": 0 }
+  },
+  {
+    "id": "SPEED_BATTLE",
+    "name": "Speed Battle",
+    "tag": "Fast",
+    "tagColor": "#F59E0B",
+    "desc": "First correct answer takes the point.",
+    "players": "2 Players",
+    "duration": "~5 min",
+    "rounds": 5,
+    "accent": "#FEF3C7",
+    "icon": "speed_battle",
+    "iconName": "lightning-bolt",
+    "emoji": "⚡",
+    "heroImage": "speed_battle",
+    "objective": "Fastest finger wins the round!",
+    "steps": [
+      {
+        "icon": "lightning-bolt",
+        "iconColor": "#F59E0B",
+        "title": "Same question appears on both phones."
+      },
+      {
+        "icon": "timer",
+        "iconColor": "#8A4BE0",
+        "title": "Smash the right answer first."
+      },
+      {
+        "icon": "trophy",
+        "iconColor": "#F59E0B",
+        "title": "Most points takes the match!"
+      }
+    ],
+    "stats": { "gamesPlayed": 0, "perfectMatches": 0, "winRate": 0 }
+  },
+  {
+    "id": "MEMORY_MATCH",
+    "name": "Memory Match",
+    "tag": "Co-op",
+    "tagColor": "#22C55E",
+    "desc": "Flip cards and find pairs together.",
+    "players": "2 Players",
+    "duration": "~5 min",
+    "rounds": 5,
+    "accent": "#E8F8EF",
+    "icon": "memory_match",
+    "iconName": "cards-outline",
+    "emoji": "🧩",
+    "heroImage": "memory_match",
+    "objective": "Match all the pairs together!",
+    "steps": [
+      {
+        "icon": "cards",
+        "iconColor": "#22C55E",
+        "title": "Take turns flipping two cards."
+      },
+      {
+        "icon": "brain",
+        "iconColor": "#8A4BE0",
+        "title": "Remember where the pairs hide."
+      },
+      {
+        "icon": "trophy",
+        "iconColor": "#F59E0B",
+        "title": "Clear the board together!"
+      }
+    ],
+    "stats": { "gamesPlayed": 0, "perfectMatches": 0, "winRate": 0 }
+  },
+  {
+    "id": "WOULD_YOU_RATHER",
+    "name": "Would You Rather",
+    "tag": "Spicy",
+    "tagColor": "#FF69B4",
+    "desc": "Tough choices. No wrong answers. Only consequences.",
+    "players": "2 Players",
+    "duration": "~5 min",
+    "rounds": 5,
+    "accent": "#FFF1E4",
+    "icon": "would_you_rather",
+    "iconName": "help-circle-outline",
+    "emoji": "💬",
+    "heroImage": "would_you_rather",
+    "objective": "Agree on the same answer to score!",
+    "steps": [
+      {
+        "icon": "help-circle",
+        "iconColor": "#F59E0B",
+        "title": "A brutal either-or drops in."
+      },
+      {
+        "icon": "heart",
+        "iconColor": "#FF69B4",
+        "title": "Pick the same one to match."
+      },
+      {
+        "icon": "trophy",
+        "iconColor": "#F59E0B",
+        "title": "Most matches wins the game!"
+      }
+    ],
+    "stats": { "gamesPlayed": 0, "perfectMatches": 0, "winRate": 0 }
+  }
+]
