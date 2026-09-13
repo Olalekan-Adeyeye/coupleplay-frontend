@@ -48,9 +48,9 @@ export function OtpInput({ value, onChange, onComplete }: OtpInputProps) {
               : 'flex-1 aspect-square max-w-[48px] rounded-[14px] border-[1.5px] text-center font-ui-bold text-[22px]'
           }
           style={{
-            backgroundColor: '#FFFFFF',
-            borderColor: focusedIndex === i ? '#5D3BE8' : '#EDEAF7',
-            color: '#201A33',
+            backgroundColor: '#1B1826',
+            borderColor: focusedIndex === i ? '#946BFF' : '#2B2539',
+            color: '#F4F1FA',
           }}
           value={char === ' ' ? '' : char}
           onChangeText={(t) => handleChange(t, i)}

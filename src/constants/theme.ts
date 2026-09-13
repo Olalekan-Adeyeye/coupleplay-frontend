@@ -1,27 +1,39 @@
 import { Platform } from 'react-native';
 import { FontFamily } from './fonts';
 
-// CouplePlay brand palette — light only.
+// CouplePlay brand palette — dark only.
 
 export const Colors = {
-  primary: "#8A4BE0",
+  primary: "#946BFF",
   primaryLight: "#8C78FF",
   primaryDark: "#482AC4",
   primarySoft: "#EFEAFF",
   accent: "#FF69B4",
   accentSoft: "#FFE4F1",
 
-  background: "#FFFFFF",
-  backgroundAlt: "#F7F6FF",
-  surface: "#FFFFFF",
-  surfaceBorder: "#EDEAF7",
+  // Partner side (P2 scores, partner avatar ring). Never use for generic UI.
+  rose: "#FF5C8A",
 
-  text: "#201A33",
-  textSecondary: "#7A748C",
-  textTertiary: "#B0A9C2",
+  // Deep plum for ink trays (game board) and display text on dark.
+  plumDeep: "#2A1B4E",
+
+  // Dark canvas + surfaces. Backgrounds are always square full-bleed.
+  paper: "#100E17",
+  hairline: "#2B2539",
+
+  background: "#100E17",
+  backgroundAlt: "#1B1826",
+  surface: "#1B1826",
+  surfaceSoft: "#252132",
+  surfaceBorder: "#2B2539",
+
+  text: "#F4F1FA",
+  textSecondary: "#B3A8C9",
+  textTertiary: "#7E7396",
 
   success: "#22C55E",
   error: "#DC2626",
+  errorBright: "#F87171",
   errorSoft: "#FDEAEE",
   shadow: "#4A3B6B",
 
@@ -33,6 +45,10 @@ export const Colors = {
   speckB: "#F5C79E",
   speckC: "#F0A7C9",
 } as const;
+
+// Flat solid tints behind Open Peeps busts. Solids only — never gradients.
+// Cycled deterministically so every surface feels calm, never rainbow.
+export const PeepTints = ["#FFE4F1", "#EFEAFF", "#FFF1E4", "#E4DEFF"] as const;
 
 export type ThemeColors = { readonly [K in keyof typeof Colors]: string };
 export type ThemeColor = keyof typeof Colors;
@@ -54,7 +70,7 @@ export const Fonts = Platform.select({
 });
 
 export const Space = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 48 };
-export const Radius = { sm: 8, md: 14, lg: 20, xl: 28, full: 9999 };
+export const Radius = { sm: 8, md: 12, card: 14, lg: 20, xl: 28, full: 9999 };
 
 export const ShadowColor = '#4A3B6B';
 
@@ -66,8 +82,8 @@ export const Shadows = {
   sm: { shadowColor: ShadowColor, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 },
   md: { shadowColor: ShadowColor, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 3 },
   lg: { shadowColor: ShadowColor, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 4 },
-  brand: { shadowColor: '#8A4BE0', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 6 },
-  btn: { shadowColor: '#8A4BE0', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 5 },
+  brand: { shadowColor: '#946BFF', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 6 },
+  btn: { shadowColor: '#946BFF', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 5 },
 } as const;
 
 export const MaxContentWidth = 500;

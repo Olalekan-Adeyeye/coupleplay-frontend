@@ -21,19 +21,10 @@ interface GameRoom {
 
 interface RoomState {
   room: GameRoom | null;
-  partnerReady: boolean;
-  partnerConnected: boolean;
   setRoom: (room: GameRoom | null) => void;
-  setPartnerReady: (ready: boolean) => void;
-  setPartnerConnected: (connected: boolean) => void;
 }
 
 export const useRoomStore = create<RoomState>((set) => ({
   room: null,
-  partnerReady: false,
-  partnerConnected: false,
-
   setRoom: (room) => set({ room }),
-  setPartnerReady: (ready) => set({ partnerReady: ready }),
-  setPartnerConnected: (connected) => set({ partnerConnected: connected }),
 }));

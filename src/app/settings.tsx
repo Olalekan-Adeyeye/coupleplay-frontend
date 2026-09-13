@@ -1,4 +1,6 @@
+import { PeepAvatar } from "@/components/peeps/PeepAvatar";
 import { CoupleAvatars } from "@/components/ui/couple-avatars";
+import { useInviteAction } from "@/hooks/useInviteAction";
 import { useSocketStore } from "@/hooks/useSocket";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
@@ -6,7 +8,7 @@ import { useCoupleStore } from "@/stores/coupleStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   Alert,
   Pressable,
@@ -17,56 +19,135 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const CARD_SHADOW = {
-  shadowColor: "#4A3B6B",
-  shadowOffset: { width: 0, height: 3 },
-  shadowOpacity: 0.08,
-  shadowRadius: 8,
-  elevation: 2,
-} as const;
+function SectionLabel({ children }: { children: string }) {
+  return (
+    <Text className="font-ui-bold text-[11px] tracking-[1.5px] text-ink-tertiary">
+      {children}
+    </Text>
+  );
+}
+
+function Row({
+  icon,
+  iconTint,
+  iconColor,
+  title,
+  subtitle,
+  onPress,
+  danger,
+  right,
+}: {
+  icon: string;
+  iconTint: string;
+  iconColor: string;
+  title: string;
+  subtitle?: string;
+  onPress?: () => void;
+  danger?: boolean;
+  right?: ReactNode;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      className="flex-row items-center gap-3 rounded-2xl border border-hairline bg-surface px-4 py-3.5 active:opacity-80"
+    >
+      <View
+        className="h-10 w-10 items-center justify-center rounded-xl"
+        style={{ backgroundColor: iconTint }}
+      >
+        <MaterialCommunityIcons
+          name={icon as any}
+          size={20}
+          color={iconColor}
+        />
+      </View>
+      <View className="flex-1">
+        <Text
+          className="font-ui-semibold text-[14.5px]"
+          style={{ color: danger ? "#F87171" : "#F4F1FA" }}
+        >
+          {title}
+        </Text>
+        {subtitle && (
+          <Text className="mt-0.5 font-ui-medium text-[12.5px] text-ink-secondary">
+            {subtitle}
+          </Text>
+        )}
+      </View>
+      {right ?? (onPress && (
+        <MaterialCommunityIcons
+          name="chevron-right"
+          size={19}
+          color="#A79DBE"
+        />
+      ))}
+    </Pressable>
+  );
+}
 
 export default function SettingsScreen() {
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
   const couple = useCoupleStore((s) => s.couple);
   const fetchCouple = useCoupleStore((s) => s.fetchCouple);
-  const generateInvite = useCoupleStore((s) => s.generateInvite);
-  const joinByCode = useCoupleStore((s) => s.joinByCode);
   const unlink = useCoupleStore((s) => s.unlink);
   const disconnect = useSocketStore((s) => s.disconnect);
+  const socket = useSocketStore((s) => s.socket);
+  const invite = useInviteAction();
   const [tab, setTab] = useState<"invite" | "enter">("invite");
   const [joinInput, setJoinInput] = useState("");
+  const [joinError, setJoinError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const inviteCode = couple?.inviteCode ?? "";
 
   useEffect(() => {
     if (token) fetchCouple(token).catch(() => {});
   }, [token, fetchCouple]);
 
+  // Realtime unlink: partner removed us — clear couple immediately
+  useEffect(() => {
+    if (!socket) return;
+    const onUnlinked = () => {
+      fetchCouple(token!).catch(() => {});
+    };
+    socket.on("couple:unlinked", onUnlinked);
+    return () => {
+      socket.off("couple:unlinked", onUnlinked);
+    };
+  }, [socket, token, fetchCouple]);
+
+  // Realtime link: partner just linked — update couple immediately
+  useEffect(() => {
+    if (!socket) return;
+    const onLinked = (couple: any) => {
+      if (couple?.userAId === user?.id || couple?.userBId === user?.id) {
+        fetchCouple(token!).catch(() => {});
+      }
+    };
+    socket.on("couple:linked", onLinked);
+    return () => {
+      socket.off("couple:linked", onLinked);
+    };
+  }, [socket, token, user?.id, fetchCouple]);
+
   const hasPartner = couple?.userBId != null;
   const isUserA = couple?.userAId === user?.id;
-  const partnerGender = hasPartner ? (isUserA ? couple?.userB?.gender : couple?.userA?.gender) : null;
-
-  const genInvite = async () => {
-    setBusy(true);
-    try {
-      const cpl = await generateInvite(token!);
-      Alert.alert("Your Invite Code", cpl.inviteCode ?? "");
-    } catch (e: any) {
-      Alert.alert("Error", e.message);
-    } finally {
-      setBusy(false);
-    }
-  };
+  const partner = hasPartner
+    ? isUserA
+      ? couple?.userB
+      : couple?.userA
+    : null;
 
   const handleJoin = async () => {
+    setJoinError(null);
     setBusy(true);
     try {
-      await joinByCode(joinInput.trim().toUpperCase(), token!);
+      await invite.join(joinInput);
       await fetchCouple(token!);
-      Alert.alert("You're a team! ❤️", "You two are officially linked.");
+      setJoinInput("");
+      router.replace("/(tabs)/us" as any);
     } catch (e: any) {
-      Alert.alert("Error", e.message);
+      setJoinError(e.message ?? "Could not join. Check the code.");
     } finally {
       setBusy(false);
     }
@@ -74,10 +155,10 @@ export default function SettingsScreen() {
 
   const handleUnlink = () => {
     Alert.alert(
-      "Unlink Partner",
-      "Are you sure you want to unlink from your partner? This cannot be undone.",
+      "Unlink partner?",
+      "You'll keep your account and stats, but your shared story ends here.",
       [
-        { text: "Cancel", style: "cancel" },
+        { text: "Keep story", style: "cancel" },
         {
           text: "Unlink",
           style: "destructive",
@@ -85,10 +166,8 @@ export default function SettingsScreen() {
             setBusy(true);
             try {
               await unlink(token!);
-              Alert.alert(
-                "Unlinked",
-                "You have been unlinked from your partner.",
-              );
+              // Notify partner in realtime
+              socket?.emit("couples:unlink");
             } catch (e: any) {
               Alert.alert("Error", e.message);
             } finally {
@@ -108,8 +187,8 @@ export default function SettingsScreen() {
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      "Delete Account",
-      "Are you sure you want to delete your account? This will permanently remove all your data and cannot be undone.",
+      "Delete account?",
+      "This permanently removes your account and stats. There’s no undo.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -133,264 +212,225 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-lavender">
-      <StatusBar style="dark" />
+    <View className="flex-1 bg-paper">
+      <StatusBar style="light" />
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ flexGrow: 1 }}
         >
           <View className="w-full max-w-[460px] self-center gap-6 px-[22px] pt-[14px] pb-[40px]">
-            {/* Header */}
             <View className="flex-row items-center justify-between">
               <Pressable
                 onPress={() => router.back()}
                 hitSlop={10}
                 accessibilityRole="button"
                 accessibilityLabel="Back"
-                className="h-11 w-11 items-center justify-center rounded-full bg-white active:opacity-80"
-                style={CARD_SHADOW}
+                className="h-11 w-11 items-center justify-center rounded-full border border-hairline bg-surface active:opacity-70"
               >
                 <MaterialCommunityIcons
                   name="chevron-left"
                   size={26}
-                  color="#201A33"
+                  color="#F4F1FA"
                 />
               </Pressable>
-              <Text className="font-display-bold text-[24px] leading-[30px] text-ink">
+              <Text className="font-display-bold text-[22px] text-ink">
                 Settings
               </Text>
               <View className="h-11 w-11" />
             </View>
 
-            {/* Partner connect */}
-            {hasPartner ? (
-              <View className="gap-3">
-                <Text className="font-display-bold text-[16px] text-ink">
-                  Your partner
-                </Text>
-                <View
-                  className="relative items-center overflow-hidden rounded-3xl px-6 py-8"
-                  style={{
-                    backgroundColor: "#8A4BE0",
-                    shadowColor: "#8A4BE0",
-                    shadowOffset: { width: 0, height: 8 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 18,
-                    elevation: 8,
-                  }}
-                >
-                  <View className="absolute -left-8 -top-8 h-[140px] w-[140px] rounded-full bg-white/[0.12]" />
-                  <View className="absolute -bottom-10 -right-6 h-[120px] w-[120px] rounded-full bg-accent/25" />
-                  <View className="absolute right-10 top-5 h-2 w-2 rounded-full bg-white/25" />
-                  <View className="absolute bottom-8 left-12 h-1.5 w-1.5 rounded-full bg-white/20" />
-
-                  <CoupleAvatars
-                    hasPartner={hasPartner}
-                    userGender={user?.gender}
-                    partnerGender={partnerGender}
-                  />
-
-                  <Text className="mt-4 font-display-bold text-[15px] text-white">
-                    Together since{" "}
-                    {new Date(couple!.createdAt).toLocaleDateString()}
+            <View className="gap-2.5">
+              <SectionLabel>YOU</SectionLabel>
+              <View className="flex-row items-center gap-3 rounded-2xl border border-hairline bg-surface px-4 py-3.5">
+                <PeepAvatar
+                  peep={user?.avatar}
+                  seed={user?.id}
+                  name={user?.name ?? undefined}
+                  size={52}
+                />
+                <View className="flex-1">
+                  <Text className="font-display-bold text-[16px] text-ink">
+                    {user?.name ?? "Player"}
+                  </Text>
+                  <Text className="font-ui-medium text-[12.5px] text-ink-secondary">
+                    @{user?.username ?? "—"}
                   </Text>
                 </View>
-
-                {/* Unlink button */}
-                <Pressable
-                  onPress={handleUnlink}
-                  disabled={busy}
-                  className="flex-row items-center justify-center gap-2 rounded-full border border-red-300 bg-white py-3.5 active:opacity-80"
-                  style={{
-                    opacity: busy ? 0.6 : 1,
-                  }}
-                >
-                  <MaterialCommunityIcons
-                    name="link-variant-off"
-                    size={18}
-                    color="#DC2626"
-                  />
-                  <Text className="font-ui-bold text-[14px] text-red-500">
-                    Unlink Partner
-                  </Text>
-                </Pressable>
               </View>
-            ) : (
-              <View className="gap-3">
-                {/* Empty state hero */}
-                <View
-                  className="relative items-center overflow-hidden rounded-3xl px-6 py-7"
-                  style={{
-                    backgroundColor: "#8A4BE0",
-                    shadowColor: "#8A4BE0",
-                    shadowOffset: { width: 0, height: 8 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 18,
-                    elevation: 8,
-                  }}
-                >
-                  <View className="absolute -left-8 -top-8 h-[140px] w-[140px] rounded-full bg-white/[0.12]" />
-                  <View className="absolute -bottom-10 -right-6 h-[120px] w-[120px] rounded-full bg-accent/25" />
-                  <View className="absolute right-10 top-5 h-2 w-2 rounded-full bg-white/25" />
-
-                  <View className="h-16 w-16 items-center justify-center rounded-full bg-white/15">
-                    <MaterialCommunityIcons
-                      name="heart-outline"
-                      size={32}
-                      color="#FFFFFF"
-                    />
-                  </View>
-                  <Text className="mt-3 font-display-bold text-[19px] text-white">
-                    Link with your partner
-                  </Text>
-                  <Text className="mt-1 text-center font-ui-medium text-[13.5px] leading-[19px] text-white/75">
-                    Invite your player 2 or enter their code to start your story
-                    together
-                  </Text>
-                </View>
-
-                {/* Segmented control */}
-                <View className="flex-row rounded-full bg-primary-soft p-1.5">
-                  <Pressable
-                    onPress={() => setTab("invite")}
-                    className="flex-1 rounded-full py-2.5"
-                    style={{
-                      backgroundColor:
-                        tab === "invite" ? "#8A4BE0" : "transparent",
-                    }}
-                  >
-                    <Text
-                      className="text-center font-ui-semibold text-[14px]"
-                      style={{
-                        color: tab === "invite" ? "white" : "#7A748C",
-                      }}
-                    >
-                      Invite
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => setTab("enter")}
-                    className="flex-1 rounded-full py-2.5"
-                    style={{
-                      backgroundColor:
-                        tab === "enter" ? "#8A4BE0" : "transparent",
-                    }}
-                  >
-                    <Text
-                      className="text-center font-ui-semibold text-[14px]"
-                      style={{
-                        color: tab === "enter" ? "white" : "#7A748C",
-                      }}
-                    >
-                      Enter code
-                    </Text>
-                  </Pressable>
-                </View>
-
-                {tab === "invite" ? (
-                  <View
-                    className="items-center gap-4 rounded-3xl bg-white p-6"
-                    style={CARD_SHADOW}
-                  >
-                    <View className="w-full items-center rounded-2xl border-2 border-dashed border-primary py-5">
-                      <Text className="font-ui-bold text-[32px] tracking-widest text-primary">
-                        {inviteCode || "-----"}
-                      </Text>
-                    </View>
-                    <Text className="text-center font-ui-medium text-[13px] leading-[18px] text-ink-secondary">
-                      Ask your partner to enter this code on their app.
-                    </Text>
-                    <Pressable
-                      onPress={genInvite}
-                      disabled={busy}
-                      className="w-full items-center rounded-full bg-primary py-4 active:opacity-85"
-                      style={{
-                        opacity: busy ? 0.7 : 1,
-                        shadowColor: "#8A4BE0",
-                        shadowOffset: { width: 0, height: 5 },
-                        shadowOpacity: 0.25,
-                        shadowRadius: 10,
-                        elevation: 4,
-                      }}
-                    >
-                      <Text className="font-ui-bold text-[15px] text-white">
-                        {inviteCode
-                          ? "Regenerate Code"
-                          : "Generate Invite Code"}
-                      </Text>
-                    </Pressable>
-                  </View>
-                ) : (
-                  <View
-                    className="items-center gap-4 rounded-3xl bg-white p-6"
-                    style={CARD_SHADOW}
-                  >
-                    <TextInput
-                      value={joinInput}
-                      onChangeText={setJoinInput}
-                      placeholder="ENTER CODE"
-                      placeholderTextColor="#B0A9C2"
-                      autoCapitalize="characters"
-                      maxLength={8}
-                      className="w-full rounded-2xl border border-surface-border bg-lavender px-4 py-4 text-center font-ui-bold text-[16px] tracking-widest text-ink"
-                    />
-                    <Text className="text-center font-ui-medium text-[13px] leading-[18px] text-ink-secondary">
-                      Enter the code your partner shared with you.
-                    </Text>
-                    <Pressable
-                      onPress={handleJoin}
-                      disabled={busy || joinInput.trim().length < 4}
-                      className="w-full items-center rounded-full bg-primary py-4 active:opacity-85"
-                      style={{
-                        opacity: busy || joinInput.trim().length < 4 ? 0.6 : 1,
-                        shadowColor: "#8A4BE0",
-                        shadowOffset: { width: 0, height: 5 },
-                        shadowOpacity: 0.25,
-                        shadowRadius: 10,
-                        elevation: 4,
-                      }}
-                    >
-                      <Text className="font-ui-bold text-[15px] text-white">
-                        {busy ? "Joining..." : "Join"}
-                      </Text>
-                    </Pressable>
-                  </View>
-                )}
-              </View>
-            )}
-          </View>
-
-          {/* Logout */}
-          <View className="px-[22px]">
-            <Pressable
-              onPress={handleLogout}
-              className="mt-1 flex-row items-center justify-center gap-2 rounded-full bg-error-soft py-4 active:opacity-80"
-            >
-              <MaterialCommunityIcons name="logout" size={18} color="#DC2626" />
-              <Text className="font-ui-bold text-[15px] text-red-500">
-                Log Out
-              </Text>
-            </Pressable>
-          </View>
-
-          {/* Delete Account */}
-          <View className="px-[22px]">
-            <Pressable
-              onPress={handleDeleteAccount}
-              disabled={busy}
-              className="mt-3 flex-row items-center justify-center gap-2 rounded-full border border-red-300 py-4 active:opacity-80"
-              style={{ opacity: busy ? 0.6 : 1 }}
-            >
-              <MaterialCommunityIcons
-                name="delete-outline"
-                size={18}
-                color="#DC2626"
+              <Row
+                icon="account-edit-outline"
+                iconTint="#EFEAFF"
+                iconColor="#946BFF"
+                title="Change your Peep"
+                subtitle="Your avatar everywhere"
+                onPress={() => router.push("/change-peep" as any)}
               />
-              <Text className="font-ui-bold text-[15px] text-red-500">
-                Delete Account
-              </Text>
-            </Pressable>
+            </View>
+
+            <View className="gap-2.5">
+              <SectionLabel>
+                {hasPartner ? "YOUR PARTNER" : "LINK YOUR PARTNER"}
+              </SectionLabel>
+              {hasPartner ? (
+                <>
+                  <View className="items-center rounded-2xl border border-hairline bg-surface px-6 py-6">
+                    <CoupleAvatars
+                      hasPartner
+                      myPeep={user?.avatar}
+                      theirPeep={partner?.avatar}
+                      myName={user?.name ?? undefined}
+                      theirName={partner?.name ?? undefined}
+                    />
+                    <Text className="mt-3 font-ui-semibold text-[14px] text-ink">
+                      {user?.name?.split(" ")[0]} &{" "}
+                      {partner?.name?.split(" ")[0]}
+                    </Text>
+                    <Text className="mt-0.5 font-ui-medium text-[12.5px] text-ink-secondary">
+                      Together since{" "}
+                      {couple?.createdAt
+                        ? new Date(couple.createdAt).toLocaleDateString()
+                        : "—"}
+                    </Text>
+                  </View>
+                  <Row
+                    icon="link-variant-off"
+                    iconTint="#FDEAEE"
+                    iconColor="#DC2626"
+                    title="Unlink partner"
+                    subtitle="Keep your account and stats"
+                    onPress={handleUnlink}
+                  />
+                </>
+              ) : (
+                <>
+                  <View className="flex-row rounded-xl border border-hairline bg-surface p-1">
+                    {(["invite", "enter"] as const).map((t) => (
+                      <Pressable
+                        key={t}
+                        onPress={() => setTab(t)}
+                        className="flex-1 rounded-lg py-2.5 active:opacity-80"
+                        style={{
+                          backgroundColor:
+                            tab === t ? "#946BFF" : "transparent",
+                        }}
+                      >
+                        <Text
+                          className="text-center font-ui-semibold text-[13.5px]"
+                          style={{
+                            color: tab === t ? "#FFFFFF" : "#B3A8C9",
+                          }}
+                        >
+                          {t === "invite" ? "Share code" : "Enter code"}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+
+                  {tab === "invite" ? (
+                    <View className="items-center gap-3 rounded-2xl border border-hairline bg-surface p-5">
+                      <Text className="font-ui-bold text-[11px] tracking-[1.5px] text-ink-tertiary">
+                        YOUR INVITE CODE
+                      </Text>
+                      <Text className="font-display-bold text-[34px] tracking-[4px] text-primary">
+                        {invite.code ?? "···"}
+                      </Text>
+                      <View className="w-full flex-row gap-2.5">
+                        <Pressable
+                          onPress={invite.share}
+                          disabled={invite.busy}
+                          className="flex-1 flex-row items-center justify-center gap-2 rounded-xl bg-primary py-3.5 active:opacity-85"
+                          style={{ opacity: invite.busy ? 0.7 : 1 }}
+                        >
+                          <MaterialCommunityIcons
+                            name="share-variant"
+                            size={17}
+                            color="#FFFFFF"
+                          />
+                          <Text className="font-ui-bold text-[14px] text-white">
+                            Share
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={invite.copy}
+                          disabled={invite.busy}
+                          className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border-[1.5px] border-primary py-3.5 active:opacity-85"
+                          style={{ opacity: invite.busy ? 0.7 : 1 }}
+                        >
+                          <MaterialCommunityIcons
+                            name="content-copy"
+                            size={17}
+                            color="#946BFF"
+                          />
+                          <Text className="font-ui-bold text-[14px] text-primary">
+                            {invite.copied ? "Copied!" : "Copy"}
+                          </Text>
+                        </Pressable>
+                      </View>
+                      {invite.error && (
+                        <Text className="font-ui-medium text-[12.5px] text-error-bright">
+                          {invite.error}
+                        </Text>
+                      )}
+                    </View>
+                  ) : (
+                    <View className="gap-3 rounded-2xl border border-hairline bg-surface p-5">
+                      <TextInput
+                        value={joinInput}
+                        onChangeText={(t) => {
+                          setJoinInput(t);
+                          setJoinError(null);
+                        }}
+                        placeholder="ENTER CODE"
+                        placeholderTextColor="#A79DBE"
+                        autoCapitalize="characters"
+                        autoCorrect={false}
+                        maxLength={8}
+                        className="w-full rounded-xl border border-hairline bg-paper px-4 py-3.5 text-center font-ui-bold text-[17px] tracking-[3px] text-ink"
+                      />
+                      {joinError && (
+                        <Text className="text-center font-ui-medium text-[12.5px] text-error-bright">
+                          {joinError}
+                        </Text>
+                      )}
+                      <Pressable
+                        onPress={handleJoin}
+                        disabled={busy || joinInput.trim().length < 4}
+                        className="items-center rounded-xl bg-primary py-3.5 active:opacity-85"
+                        style={{
+                          opacity:
+                            busy || joinInput.trim().length < 4 ? 0.5 : 1,
+                        }}
+                      >
+                        <Text className="font-ui-bold text-[14.5px] text-white">
+                          {busy ? "Linking…" : "Link up"}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  )}
+                </>
+              )}
+            </View>
+
+            <View className="gap-2.5">
+              <SectionLabel>ACCOUNT</SectionLabel>
+              <Row
+                icon="logout"
+                iconTint="#F4F1EC"
+                iconColor="#F4F1FA"
+                title="Log out"
+                onPress={handleLogout}
+              />
+              <Row
+                icon="delete-outline"
+                iconTint="transparent"
+                iconColor="#F87171"
+                title="Delete account"
+                subtitle="Permanent — no undo"
+                onPress={handleDeleteAccount}
+                danger
+              />
+            </View>
           </View>
         </ScrollView>
       </SafeAreaView>

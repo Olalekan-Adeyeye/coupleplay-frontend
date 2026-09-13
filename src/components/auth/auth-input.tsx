@@ -31,11 +31,11 @@ export function AuthInput({
   const focusProgress = useSharedValue(0);
 
   const containerStyle = useAnimatedStyle(() => ({
-    borderColor: focusProgress.value > 0 ? "#8A4BE0" : "#E0D8F5",
-    backgroundColor: "#FFFFFF",
+    borderColor: focusProgress.value > 0 ? "#946BFF" : "#2B2539",
+    backgroundColor: "#1B1826",
   }));
 
-  const iconTint = focused ? "#8A4BE0" : "#B0A9C2";
+  const iconTint = focused ? "#946BFF" : "#7E7396";
 
   return (
     <View className="w-full gap-1.5">
@@ -45,7 +45,7 @@ export function AuthInput({
         </Text>
       ) : null}
       <Animated.View
-        className="relative flex-row items-center rounded-full border-[1.5px] overflow-hidden"
+        className="relative flex-row items-center rounded-xl border-[1.5px] overflow-hidden"
         style={containerStyle}
       >
         {icon && (
@@ -59,13 +59,13 @@ export function AuthInput({
         <TextInput
           className="flex-1 py-[14px] font-ui text-[15px]"
           style={[
-            { color: "#201A33" },
+            { color: "#F4F1FA" },
             icon ? { paddingLeft: 12 } : { paddingLeft: 16 },
             secureToggle ? { paddingRight: 12 } : { paddingRight: 16 },
             style,
           ]}
-          placeholderTextColor="#B0A9C2"
-          selectionColor="#8A4BE0"
+          placeholderTextColor="#7E7396"
+          selectionColor="#946BFF"
           secureTextEntry={secureToggle ? hidden : secureTextEntry}
           onFocus={(e) => {
             setFocused(true);
@@ -94,7 +94,7 @@ export function AuthInput({
                   style={{
                     width: 20,
                     height: 20,
-                    tintColor: focused ? "#8A4BE0" : "#B0A9C2",
+                    tintColor: focused ? "#946BFF" : "#7E7396",
                     opacity: pressed ? 0.5 : 1,
                   }}
                 />

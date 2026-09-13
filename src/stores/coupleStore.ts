@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { avatarGender } from '../components/peeps/peeps';
 import { api } from '../lib/api';
 
 interface Couple {
@@ -9,6 +10,19 @@ interface Couple {
   createdAt: string;
   userA: any;
   userB: any;
+}
+
+/** Fill in missing gender from each user's peep so avatar display works. */
+function withGenders(couple: any) {
+  if (!couple) return couple;
+  for (const key of ['userA', 'userB'] as const) {
+    const u = couple[key];
+    if (u && !u.gender) {
+      const g = avatarGender(u.avatar ?? null);
+      if (g) couple = { ...couple, [key]: { ...u, gender: g } };
+    }
+  }
+  return couple;
 }
 
 interface CoupleState {
@@ -29,7 +43,7 @@ export const useCoupleStore = create<CoupleState>((set) => ({
     set({ isLoading: true });
     try {
       const couple = await api.couples.getMyCouple(token);
-      set({ couple, isLoading: false });
+      set({ couple: withGenders(couple), isLoading: false });
     } catch {
       set({ couple: null, isLoading: false });
     }
@@ -37,13 +51,13 @@ export const useCoupleStore = create<CoupleState>((set) => ({
 
   generateInvite: async (token) => {
     const couple = await api.couples.generateInvite(token);
-    set({ couple });
+    set({ couple: withGenders(couple) });
     return couple;
   },
 
   joinByCode: async (code, token) => {
     const couple = await api.couples.joinByCode(code, token);
-    set({ couple });
+    set({ couple: withGenders(couple) });
     return couple;
   },
 

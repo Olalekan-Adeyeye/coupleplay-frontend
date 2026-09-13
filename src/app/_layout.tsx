@@ -23,7 +23,6 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const user = useAuthStore((s) => s.user);
   const connect = useSocketStore((s) => s.connect);
   const [splashDone, setSplashDone] = useState(false);
   const [fontsLoaded, fontError] = useFonts({
@@ -46,11 +45,13 @@ export default function RootLayout() {
     return () => clearTimeout(timer);
   }, [fontsReady]);
 
+  const token = useAuthStore((s) => s.token);
+
   useEffect(() => {
-    if (isAuthenticated && user?.id) {
-      connect(user.id);
+    if (isAuthenticated && token) {
+      connect(token);
     }
-  }, [isAuthenticated, user?.id, connect]);
+  }, [isAuthenticated, token, connect]);
 
   const handleSplashFinish = useCallback(() => {
     SplashScreen.hideAsync();
@@ -60,8 +61,8 @@ export default function RootLayout() {
   if (!fontsReady) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
-      <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#100E17" }}>
+      <View style={{ flex: 1, backgroundColor: "#100E17" }}>
         <Stack screenOptions={{ headerShown: false }}>
           {isAuthenticated ? (
             <Stack.Screen name="(tabs)" />

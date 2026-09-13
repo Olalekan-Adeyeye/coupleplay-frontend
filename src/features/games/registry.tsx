@@ -13,3 +13,8 @@ export const RESULTS_SCREENS: Record<string, ComponentType<any>> = {
   TIC_TAC_TOE: TicTacToeResultsScreen,
   SPEED_BATTLE: SpeedBattleResultsScreen,
 };
+
+/** Games with real play + results screens. Everything else is "Soon". */
+export function isGameImplemented(gameId: string): boolean {
+  return gameId in PLAY_SCREENS && gameId in RESULTS_SCREENS;
+}

@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View, ScrollView, Pressable, Text, Alert } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Avatar } from "@/components/ui/avatar";
 import { usePartnerName } from "@/hooks/usePartnerName";
 import { useAuthStore } from "@/stores/authStore";
@@ -17,7 +18,7 @@ const CARD_SHADOW = {
 } as const;
 
 const BUTTON_SHADOW = {
-  shadowColor: "#8A4BE0",
+  shadowColor: "#946BFF",
   shadowOffset: { width: 0, height: 5 },
   shadowOpacity: 0.25,
   shadowRadius: 10,
@@ -66,6 +67,8 @@ export default function SpeedBattlePlayScreen() {
   const [secondsLeft, setSecondsLeft] = useState(15);
   const [incomingReaction, setIncomingReaction] = useState<string | null>(null);
   const [interstitial, setInterstitial] = useState<string | null>(null);
+  const [rejectMsg, setRejectMsg] = useState<string | null>(null);
+  const lastRound = useRef<number | null>(null);
 
   const question = state?.questions[state?.currentQuestionIndex ?? 0] ?? null;
   const myAnswer = state?.answers[user?.id ?? ""] ?? null;
@@ -79,6 +82,12 @@ export default function SpeedBattlePlayScreen() {
     const onState = (s: SpeedBattleState) => {
       if (s.roomId !== roomId) return;
       setState(s);
+      // New question arrived — clear the local pick inside the event
+      // handler (not an effect) to avoid render cascades.
+      if (lastRound.current !== s.roundNumber) {
+        lastRound.current = s.roundNumber;
+        setSelected(null);
+      }
     };
     const onRoundEnd = (d: any) => {
       if (d.roomId !== roomId) return;
@@ -88,7 +97,7 @@ export default function SpeedBattlePlayScreen() {
         draw
           ? "No one scored!"
           : won
-            ? "You scored! ⚡"
+            ? "You scored!"
             : `${partnerName} scored!`,
       );
       setTimeout(() => setInterstitial(null), 1800);
@@ -97,7 +106,7 @@ export default function SpeedBattlePlayScreen() {
       if (d.roomId !== roomId) return;
       const results = d.results;
       router.replace(
-        `/games/SPEED_BATTLE/results?winnerId=${results.winnerId ?? ""}&scores=${JSON.stringify(results.scores)}&totalRounds=${results.totalRounds}&roomId=${roomId}` as any,
+        `/games/SPEED_BATTLE/results?winnerId=${results.winnerId ?? ""}&scores=${JSON.stringify(results.scores)}&totalRounds=${results.totalRounds}&roundsWon=${encodeURIComponent(JSON.stringify(results.roundsWon ?? {}))}&roomId=${roomId}` as any,
       );
     };
     const onReaction = (d: any) => {
@@ -106,20 +115,32 @@ export default function SpeedBattlePlayScreen() {
         setTimeout(() => setIncomingReaction(null), 1800);
       }
     };
+    const onReject = (d: any) => {
+      setRejectMsg(d.reason ?? "Move rejected");
+      setTimeout(() => setRejectMsg(null), 2000);
+    };
     socket.on("game:state", onState);
     socket.on("game:round_end", onRoundEnd);
     socket.on("game:finished", onFinished);
     socket.on("player:reaction", onReaction);
+    socket.on("game:reject", onReject);
     socket.emit("game:sync", { roomId });
     return () => {
       socket.off("game:state", onState);
       socket.off("game:round_end", onRoundEnd);
       socket.off("game:finished", onFinished);
       socket.off("player:reaction", onReaction);
+      socket.off("game:reject", onReject);
     };
   }, [socket, roomId, user?.id, partnerName]);
 
-  // Timer countdown
+  // Timer countdown. Timeout emits ONCE per question (guarded ref) —
+  // never a stream of emits while the clock sits at zero.
+  const timeoutSent = useRef(false);
+  useEffect(() => {
+    timeoutSent.current = false;
+  }, [state?.roundNumber, state?.currentQuestionIndex]);
+
   useEffect(() => {
     if (!state || state.status !== "active" || !state.questionDeadline) return;
     if (myAnswer) return;
@@ -130,20 +151,16 @@ export default function SpeedBattlePlayScreen() {
         Math.ceil((state.questionDeadline! - Date.now()) / 1000),
       );
       setSecondsLeft(remaining);
-      if (remaining <= 0) {
+      if (remaining <= 0 && !timeoutSent.current) {
+        timeoutSent.current = true;
         socket?.emit("game:timeout", { roomId });
       }
     };
 
     tick();
-    const t = setInterval(tick, 200);
+    const t = setInterval(tick, 500);
     return () => clearInterval(t);
   }, [state?.questionDeadline, state?.status, myAnswer, socket, roomId]);
-
-  // Reset selected on new round
-  useEffect(() => {
-    setSelected(null);
-  }, [state?.roundNumber]);
 
   const handleAnswer = (index: number) => {
     if (myAnswer) return;
@@ -199,15 +216,15 @@ export default function SpeedBattlePlayScreen() {
   const showReveal = myAnswer != null && (partnerAnswer != null || secondsLeft <= 0);
 
   return (
-    <View className="flex-1 bg-lavender">
-      <StatusBar style="dark" />
+    <View className="flex-1 bg-paper">
+      <StatusBar style="light" />
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <View className="w-full max-w-[460px] flex-1 self-center px-[22px] pt-[14px] pb-[24px]">
           {/* Header */}
           <View className="flex-row items-center justify-between">
             <View className="h-11 w-11" />
             <View
-              className="flex-row items-center gap-2 rounded-full bg-white px-4 py-2"
+              className="flex-row items-center gap-2 rounded-full bg-surface px-4 py-2"
               style={CARD_SHADOW}
             >
               <Text className="font-ui-bold text-[13px] text-ink">
@@ -232,10 +249,10 @@ export default function SpeedBattlePlayScreen() {
           {/* Players + score */}
           <View className="mt-4 flex-row items-center justify-center gap-3">
             <View
-              className="flex-1 flex-row items-center gap-2.5 rounded-2xl bg-white px-4 py-3"
+              className="flex-1 flex-row items-center gap-2.5 rounded-2xl bg-surface px-4 py-3"
               style={CARD_SHADOW}
             >
-              <Avatar name={user?.name} size={40} />
+              <Avatar avatar={user?.avatar} name={user?.name} size={40} />
               <View className="flex-1">
                 <Text
                   className="font-display-bold text-[13px] text-ink"
@@ -269,7 +286,7 @@ export default function SpeedBattlePlayScreen() {
             </Text>
 
             <View
-              className="flex-1 flex-row items-center gap-2.5 rounded-2xl bg-white px-4 py-3"
+              className="flex-1 flex-row items-center gap-2.5 rounded-2xl bg-surface px-4 py-3"
               style={CARD_SHADOW}
             >
               <Avatar name={partnerName} size={40} />
@@ -313,10 +330,16 @@ export default function SpeedBattlePlayScreen() {
           >
             {/* Question card */}
             <View
-              className="items-center gap-3 rounded-3xl bg-white px-6 py-6"
+              className="items-center gap-3 rounded-3xl bg-surface px-6 py-6"
               style={CARD_SHADOW}
             >
-              <Text className="text-[18px]">⚡</Text>
+              <View className="h-11 w-11 items-center justify-center rounded-xl bg-[#F59E0B1F]">
+                <MaterialCommunityIcons
+                  name="lightning-bolt"
+                  size={22}
+                  color="#F59E0B"
+                />
+              </View>
               <Text className="text-center font-display-bold text-[19px] leading-[27px] text-ink">
                 {question?.question ?? "Loading..."}
               </Text>
@@ -328,7 +351,7 @@ export default function SpeedBattlePlayScreen() {
               const isCorrectAnswer = showReveal && i === question.correctIndex;
               const isMyWrong = showReveal && isSelected && !myAnswer?.correct;
 
-              let bg = "bg-white";
+              let bg = "bg-surface";
               let border = "border-surface-border";
               let textColor = "text-ink";
 
@@ -371,10 +394,22 @@ export default function SpeedBattlePlayScreen() {
                     {opt.text}
                   </Text>
                   {showReveal && isCorrectAnswer && (
-                    <Text className="text-[14px]">✅</Text>
+                    <View className="h-7 w-7 items-center justify-center rounded-full bg-[#16A34A1F]">
+                      <MaterialCommunityIcons
+                        name="check"
+                        size={16}
+                        color="#16A34A"
+                      />
+                    </View>
                   )}
                   {showReveal && isMyWrong && (
-                    <Text className="text-[14px]">❌</Text>
+                    <View className="h-7 w-7 items-center justify-center rounded-full bg-[#DC26261F]">
+                      <MaterialCommunityIcons
+                        name="close"
+                        size={16}
+                        color="#F87171"
+                      />
+                    </View>
                   )}
                 </Pressable>
               );
@@ -383,10 +418,16 @@ export default function SpeedBattlePlayScreen() {
             {/* Waiting / result card */}
             {myAnswer && !showReveal && (
               <View
-                className="items-center gap-3 rounded-3xl bg-white px-6 py-6"
+                className="items-center gap-3 rounded-3xl bg-surface px-6 py-6"
                 style={CARD_SHADOW}
               >
-                <Text className="text-[36px]">⚡</Text>
+                <View className="h-14 w-14 items-center justify-center rounded-full bg-[#F59E0B1F]">
+                  <MaterialCommunityIcons
+                    name="timer-sand"
+                    size={28}
+                    color="#F59E0B"
+                  />
+                </View>
                 <Text className="font-display-bold text-[18px] text-ink">
                   Answer locked in!
                 </Text>
@@ -398,12 +439,23 @@ export default function SpeedBattlePlayScreen() {
 
             {showReveal && (
               <View
-                className="items-center gap-3 rounded-3xl bg-white px-6 py-6"
+                className="items-center gap-3 rounded-3xl bg-surface px-6 py-6"
                 style={CARD_SHADOW}
               >
-                <Text className="text-[36px]">
-                  {myAnswer?.correct ? "🎯" : "😅"}
-                </Text>
+                <View
+                  className="h-14 w-14 items-center justify-center rounded-full"
+                  style={{
+                    backgroundColor: myAnswer?.correct
+                      ? "#16A34A1F"
+                      : "#DC26261F",
+                  }}
+                >
+                  <MaterialCommunityIcons
+                    name={myAnswer?.correct ? "target" : "emoticon-sad-outline"}
+                    size={28}
+                    color={myAnswer?.correct ? "#16A34A" : "#F87171"}
+                  />
+                </View>
                 <Text className="font-display-bold text-[18px] text-ink">
                   {myAnswer?.correct
                     ? state?.firstCorrectId === user?.id
@@ -420,6 +472,11 @@ export default function SpeedBattlePlayScreen() {
             {incomingReaction && (
               <View className="absolute -top-12 rounded-full bg-accent-soft px-4 py-2">
                 <Text className="text-[20px]">{incomingReaction}</Text>
+              </View>
+            )}
+            {rejectMsg && (
+              <View className="absolute -top-12 rounded-full bg-red-500/20 px-4 py-2">
+                <Text className="font-ui-semibold text-[13px] text-red-400">{rejectMsg}</Text>
               </View>
             )}
             {REACTIONS.map((r) => (
@@ -449,14 +506,31 @@ export default function SpeedBattlePlayScreen() {
 
       {/* Interstitial overlay */}
       {interstitial && (
-        <View className="absolute inset-0 z-10 items-center justify-center bg-lavender/90">
+        <View className="absolute inset-0 z-10 items-center justify-center bg-paper/90">
           <View
-            className="items-center gap-3 rounded-3xl bg-white px-10 py-8"
+            className="items-center gap-3 rounded-3xl bg-surface px-10 py-8"
             style={CARD_SHADOW}
           >
-            <Text className="text-[40px]">
-              {interstitial.includes("scored") ? "⚡" : "🤝"}
-            </Text>
+            <View
+              className="h-16 w-16 items-center justify-center rounded-full"
+              style={{
+                backgroundColor: interstitial.includes("scored")
+                  ? "#F59E0B1F"
+                  : "#946BFF1F",
+              }}
+            >
+              <MaterialCommunityIcons
+                name={
+                  interstitial.includes("scored")
+                    ? "lightning-bolt"
+                    : "handshake"
+                }
+                size={30}
+                color={
+                  interstitial.includes("scored") ? "#F59E0B" : "#946BFF"
+                }
+              />
+            </View>
             <Text className="font-display-bold text-[20px] text-ink">
               {interstitial}
             </Text>

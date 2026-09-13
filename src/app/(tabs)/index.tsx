@@ -1,23 +1,18 @@
+import { PeepScene } from "@/components/peeps/PeepScene";
+import { SectionTitle, TabScreen } from "@/components/tab-screen";
 import { CoupleAvatars } from "@/components/ui/couple-avatars";
 import { HeaderButton } from "@/components/ui/header-button";
 import { GAMES, GAME_IMAGES } from "@/data/games";
+import { isGameImplemented } from "@/features/games/registry";
+import { useInviteAction } from "@/hooks/useInviteAction";
 import { useAuthStore } from "@/stores/authStore";
 import { useCoupleStore } from "@/stores/coupleStore";
+import { useStatsStore } from "@/stores/statsStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
-const CARD_SHADOW = {
-  shadowColor: "#4A3B6B",
-  shadowOffset: { width: 0, height: 3 },
-  shadowOpacity: 0.08,
-  shadowRadius: 8,
-  elevation: 2,
-} as const;
+import { useEffect, useMemo } from "react";
+import { Pressable, Text, View } from "react-native";
 
 function greeting() {
   const h = new Date().getHours();
@@ -32,194 +27,232 @@ export default function HomeScreen() {
   const token = useAuthStore((s) => s.token);
   const couple = useCoupleStore((s) => s.couple);
   const fetchCouple = useCoupleStore((s) => s.fetchCouple);
+  const overview = useStatsStore((s) => s.overview);
+  const fetchOverview = useStatsStore((s) => s.fetchOverview);
+  const invite = useInviteAction();
 
   useEffect(() => {
-    if (token) fetchCouple(token).catch(() => {});
-  }, [token, fetchCouple]);
+    if (token) {
+      fetchCouple(token).catch(() => {});
+      fetchOverview(token).catch(() => {});
+    }
+  }, [token, fetchCouple, fetchOverview]);
 
   const hasPartner = couple?.userBId != null;
   const isUserA = couple?.userAId === user?.id;
-  const partnerGender = hasPartner
+  const partner = hasPartner
     ? isUserA
-      ? couple?.userB?.gender
-      : couple?.userA?.gender
+      ? couple?.userB
+      : couple?.userA
     : null;
   const myName = user?.name?.split(" ")[0] ?? "You";
-  const partnerName = hasPartner
-    ? isUserA
-      ? (couple?.userB?.name?.split(" ")[0] ?? "Partner")
-      : (couple?.userA?.name?.split(" ")[0] ?? "Partner")
-    : "";
+  const partnerName = partner?.name?.split(" ")[0] ?? "Partner";
 
-  const daysTogether = couple?.createdAt
-    ? Math.max(
-        1,
-        Math.floor(
-          (Date.now() - new Date(couple.createdAt).getTime()) / 86400000,
-        ),
-      )
-    : 0;
+  const daysTogether = useMemo(() => {
+    if (!couple?.createdAt) return 0;
+    return Math.max(
+      1,
+      Math.floor((Date.now() - new Date(couple.createdAt).getTime()) / 86400000),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [couple]);
 
   const handleGamePress = (gameId: string) => {
     if (!hasPartner) {
       router.push("/settings");
       return;
     }
+    if (!isGameImplemented(gameId)) {
+      router.push(`/games/soon?gameType=${gameId}` as any);
+      return;
+    }
     router.push(`/games/${gameId}`);
   };
 
   return (
-    <View className="flex-1 bg-lavender">
-      <StatusBar style="dark" />
-      <SafeAreaView edges={["top"]} className="flex-1">
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ flexGrow: 1 }}
-        >
-          <View className="w-full max-w-[460px] self-center gap-6 px-[22px] pt-[18px] pb-[116px]">
-            {/* Header */}
-            <View className="flex-row items-center justify-between">
-              <View>
-                <Text className="font-ui-semibold text-[14px] text-ink-secondary">
-                  {greeting()}
-                </Text>
-                <Text className="mt-0.5 font-display-bold text-[34px] leading-[40px] text-ink">
-                  {user?.name?.split(" ")[0] ?? "Player"}
-                </Text>
-              </View>
-              <HeaderButton
-                icon="cog-outline"
-                onPress={() => router.push("/settings")}
-                accessibilityLabel="Settings"
-              />
-            </View>
-
-            {/* Couple marquee */}
-            <View
-              className="relative items-center overflow-hidden rounded-3xl px-6 pt-6 pb-5"
-              style={{
-                backgroundColor: "#8A4BE0",
-                shadowColor: "#8A4BE0",
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.3,
-                shadowRadius: 20,
-                elevation: 8,
-              }}
+    <TabScreen>
+      <View className="flex-row items-center justify-between">
+        <View>
+          <Text className="font-ui-semibold text-[14px] text-ink-secondary">
+            {greeting()}, {myName}
+          </Text>
+          <Text className="mt-0.5 font-display-bold text-[28px] leading-[34px] text-ink">
+            Game night?
+          </Text>
+        </View>
+        <View className="flex-row items-center gap-2">
+          {overview.streak > 0 && (
+            <Pressable
+              onPress={() => router.push("/(tabs)/activity")}
+              accessibilityLabel={`${overview.streak} day streak. View activity.`}
+              className="flex-row items-center gap-1 rounded-full border border-hairline bg-surface px-3 py-2 active:opacity-70"
             >
-              <View className="absolute -right-10 -top-10 h-[160px] w-[160px] rounded-full bg-white/[0.12]" />
-              <View className="absolute -bottom-12 -left-8 h-[140px] w-[140px] rounded-full bg-accent/20" />
+              <MaterialCommunityIcons name="fire" size={16} color="#F59E0B" />
+              <Text className="font-ui-bold text-[13px] text-ink">
+                {overview.streak}
+              </Text>
+            </Pressable>
+          )}
+          <HeaderButton
+            icon="cog-outline"
+            onPress={() => router.push("/settings")}
+            accessibilityLabel="Settings"
+          />
+        </View>
+      </View>
 
-              <CoupleAvatars
-                hasPartner={hasPartner}
-                userGender={user?.gender}
-                partnerGender={partnerGender}
+      <View className="items-center rounded-2xl border border-hairline bg-surface px-6 pt-6 pb-5">
+        <CoupleAvatars
+          hasPartner={hasPartner}
+          myPeep={user?.avatar}
+          theirPeep={partner?.avatar}
+          myName={user?.name ?? undefined}
+          theirName={partner?.name ?? undefined}
+        />
+        <Text className="mt-3 font-display-bold text-[17px] text-ink">
+          {hasPartner ? `${myName} & ${partnerName}` : "You + Player 2"}
+        </Text>
+        <Text className="mt-1 font-ui-medium text-[13px] text-ink-secondary">
+          {hasPartner
+            ? `${daysTogether} ${daysTogether === 1 ? "day" : "days"} together`
+            : "Your story starts with an invite"}
+        </Text>
+        {hasPartner && overview.streak > 0 && (
+          <View className="mt-3 flex-row items-center gap-1.5 rounded-full bg-paper px-4 py-1.5">
+            <MaterialCommunityIcons name="fire" size={14} color="#F59E0B" />
+            <Text className="font-ui-semibold text-[12px] text-ink">
+              {overview.streak}-day streak
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {!hasPartner && (
+        <View className="items-center rounded-2xl border border-hairline bg-surface px-6 py-5">
+          <PeepScene layout="duo" size={64} />
+          <Text className="mt-3 font-display-bold text-[16px] text-ink">
+            Invite your player 2
+          </Text>
+          <Text className="mt-1 text-center font-ui-medium text-[13px] leading-[18px] text-ink-secondary">
+            Share a code and link your story before game night.
+          </Text>
+          <View className="mt-4 w-full flex-row gap-2.5">
+            <Pressable
+              onPress={invite.share}
+              disabled={invite.busy}
+              className="flex-1 flex-row items-center justify-center gap-2 rounded-xl bg-primary py-3.5 active:opacity-85"
+              style={{ opacity: invite.busy ? 0.7 : 1 }}
+            >
+              <MaterialCommunityIcons
+                name="share-variant"
+                size={17}
+                color="#FFFFFF"
               />
-
-              <Text className="mt-3 font-display-bold text-[17px] text-white">
-                {hasPartner
-                  ? `${myName} & ${partnerName}`
-                  : "Waiting for your player 2"}
+              <Text className="font-ui-bold text-[14px] text-white">
+                Share invite
               </Text>
-              <Text className="mt-1 font-ui-medium text-[13px] text-white/75">
-                {hasPartner
-                  ? `${daysTogether} ${daysTogether === 1 ? "day" : "days"} together`
-                  : "Connect in settings to start your story"}
+            </Pressable>
+            <Pressable
+              onPress={invite.copy}
+              disabled={invite.busy}
+              className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border-[1.5px] border-primary py-3.5 active:opacity-85"
+              style={{ opacity: invite.busy ? 0.7 : 1 }}
+            >
+              <MaterialCommunityIcons
+                name="content-copy"
+                size={17}
+                color="#946BFF"
+              />
+              <Text className="font-ui-bold text-[14px] text-primary">
+                {invite.copied ? "Copied!" : invite.code ?? "Get code"}
               </Text>
+            </Pressable>
+          </View>
+          {invite.error && (
+            <Text className="mt-2 font-ui-medium text-[12.5px] text-error-bright">
+              {invite.error}
+            </Text>
+          )}
+        </View>
+      )}
 
-              {hasPartner && (
-                <View className="mt-3 flex-row items-center gap-1.5 rounded-full bg-white/15 px-4 py-1.5">
-                  <MaterialCommunityIcons
-                    name="fire"
-                    size={14}
-                    color="#FFD166"
-                  />
-                  <Text className="font-ui-semibold text-[12px] text-white">
-                    Day streak · 1
+      <View className="gap-3">
+        <SectionTitle
+          title="Pick a game"
+          action={
+            <Pressable
+              onPress={() => router.push("/(tabs)/games")}
+              className="flex-row items-center gap-0.5 active:opacity-70"
+            >
+              <Text className="font-ui-semibold text-[14px] text-primary">
+                See all
+              </Text>
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={16}
+                color="#946BFF"
+              />
+            </Pressable>
+          }
+        />
+        <View className="flex-row flex-wrap justify-between">
+          {GAMES.slice(0, 4).map((g) => {
+            const implemented = isGameImplemented(g.id);
+            const hero = g.heroImage ? GAME_IMAGES[g.heroImage] : undefined;
+            return (
+              <Pressable
+                key={g.id}
+                onPress={() => handleGamePress(g.id)}
+                className="mb-3 w-[48.5%] items-center gap-2 rounded-2xl border border-hairline bg-surface px-3 pt-4 pb-4 active:opacity-85"
+                style={({ pressed }) => ({
+                  transform: [{ scale: pressed ? 0.98 : 1 }],
+                })}
+              >
+                <View
+                  className="h-[76px] w-[76px] items-center justify-center overflow-hidden rounded-xl"
+                  style={{ backgroundColor: g.accent }}
+                >
+                  {hero ? (
+                    <Image
+                      source={hero}
+                      style={{ width: 56, height: 56 }}
+                      contentFit="contain"
+                    />
+                  ) : (
+                    <MaterialCommunityIcons
+                      name={(g.iconName ?? "gamepad-variant") as any}
+                      size={32}
+                      color={g.tagColor}
+                    />
+                  )}
+                  {!implemented && (
+                    <View className="absolute bottom-1 rounded-full bg-black/70 px-2 py-0.5">
+                      <Text className="font-ui-bold text-[9px] tracking-[0.8px] text-white">
+                        SOON
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <Text className="text-center font-display-bold text-[15px] text-ink">
+                  {g.name}
+                </Text>
+                <View
+                  className="rounded-full px-2.5 py-0.5"
+                  style={{ backgroundColor: g.tagColor + "18" }}
+                >
+                  <Text
+                    className="font-ui-bold text-[10px]"
+                    style={{ color: g.tagColor }}
+                  >
+                    {g.tag}
                   </Text>
                 </View>
-              )}
-            </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
 
-            {/* Games */}
-            <View className="gap-3">
-              <View className="flex-row items-center justify-between">
-                <Text className="font-display-bold text-[16px] text-ink">
-                  Pick a game
-                </Text>
-                {hasPartner && (
-                  <Pressable
-                    onPress={() => router.push("/(tabs)/games")}
-                    className="flex-row items-center gap-1 active:opacity-70"
-                  >
-                    <Text className="font-ui-semibold text-[14px] text-primary">
-                      See all
-                    </Text>
-                    <MaterialCommunityIcons
-                      name="chevron-right"
-                      size={16}
-                      color="#8A4BE0"
-                    />
-                  </Pressable>
-                )}
-              </View>
-
-              <View className="flex-row flex-wrap justify-between">
-                {GAMES.map((g) => {
-                  const hero = g.heroImage
-                    ? GAME_IMAGES[g.heroImage]
-                    : undefined;
-                  return (
-                    <Pressable
-                      key={g.id}
-                      onPress={() => handleGamePress(g.id)}
-                      className="mb-3 w-[48.5%] items-center gap-2.5 rounded-3xl bg-white px-3 pt-4 pb-5 active:opacity-85"
-                      style={({ pressed }) => [
-                        CARD_SHADOW,
-                        { opacity: pressed ? 0.85 : 1 },
-                      ]}
-                    >
-                      <View
-                        className="h-[76px] w-[76px] items-center justify-center rounded-2xl"
-                        // style={{ backgroundColor: g.accent }}
-                      >
-                        {hero ? (
-                          <Image
-                            source={hero}
-                            style={{ width: 52, height: 52 }}
-                            contentFit="contain"
-                          />
-                        ) : g.iconName ? (
-                          <MaterialCommunityIcons
-                            name={g.iconName as any}
-                            size={36}
-                            color={g.tagColor}
-                          />
-                        ) : (
-                          <Text className="text-[36px]">{g.emoji}</Text>
-                        )}
-                      </View>
-                      <Text className="text-center font-display-bold text-[15px] text-ink">
-                        {g.name}
-                      </Text>
-                      <View
-                        className="rounded-full px-2.5 py-0.5"
-                        style={{ backgroundColor: g.tagColor + "18" }}
-                      >
-                        <Text
-                          className="font-ui-bold text-[10px]"
-                          style={{ color: g.tagColor }}
-                        >
-                          {g.tag}
-                        </Text>
-                      </View>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </View>
+    </TabScreen>
   );
 }

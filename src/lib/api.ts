@@ -36,7 +36,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
 
 export const api = {
   auth: {
-    register: (data: { email: string; username: string; name: string; password: string; gender?: string }) =>
+    register: (data: { email: string; username: string; name: string; password: string; avatar?: string }) =>
       request<{ user: any; token: string }>('/auth/register', { method: 'POST', body: data }),
 
     login: (data: { email: string; password: string }) =>
@@ -47,6 +47,9 @@ export const api = {
 
     verify: (email: string, code: string) =>
       request<{ verified: boolean }>('/auth/verify', { method: 'POST', body: { email, code } }),
+
+    requestPasswordReset: (email: string) =>
+      request<{ ok: boolean }>('/auth/password-reset', { method: 'POST', body: { email } }),
   },
 
   couples: {
@@ -133,5 +136,8 @@ export const api = {
   users: {
     deleteAccount: (token: string) =>
       request<any>('/users/me', { method: 'DELETE', token }),
+
+    updateMe: (data: { avatar: string }, token: string) =>
+      request<any>('/users/me', { method: 'PATCH', body: data, token }),
   },
 };

@@ -35,6 +35,8 @@ export type Game = {
   heroImage?: GameIconName;
   objective?: string;
   popular?: boolean;
+  /** Filter modes: quick | competitive | coop | brain */
+  modes: string[];
   steps: GameStep[];
   stats: GameStats;
 };
