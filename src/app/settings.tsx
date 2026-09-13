@@ -197,6 +197,9 @@ export default function SettingsScreen() {
           onPress: async () => {
             setBusy(true);
             try {
+              // Notify partner in realtime BEFORE disconnecting
+              socket?.emit("couples:unlink");
+              await new Promise((r) => setTimeout(r, 300));
               await api.users.deleteAccount(token!);
               disconnect();
               useAuthStore.getState().logout();
