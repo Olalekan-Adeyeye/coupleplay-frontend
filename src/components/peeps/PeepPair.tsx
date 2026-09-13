@@ -55,6 +55,7 @@ export function PeepPair({
           name={theirName}
           size={size}
           ring="#FFFFFF"
+          mirror
         />
       ) : (
         <View

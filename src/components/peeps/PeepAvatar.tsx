@@ -15,6 +15,8 @@ type PeepAvatarProps = {
   tint?: string;
   /** 2px ring color. Defaults to white (for use on tinted/colored surfaces). */
   ring?: string;
+  /** Mirror horizontally so the peep faces the opposite direction. */
+  mirror?: boolean;
 };
 
 /**
@@ -28,6 +30,7 @@ export function PeepAvatar({
   size = 48,
   tint,
   ring = "#FFFFFF",
+  mirror,
 }: PeepAvatarProps) {
   const peepId = isPeepId(peep) ? peep : resolvePeepId(peep, seed ?? name);
   const preset = peepPresetOf(peepId);
@@ -35,7 +38,8 @@ export function PeepAvatar({
   const disc = useMemo(() => {
     if (tint) return tint;
     let hash = 0;
-    for (let i = 0; i < peepId.length; i++) hash = (hash * 31 + peepId.charCodeAt(i)) >>> 0;
+    for (let i = 0; i < peepId.length; i++)
+      hash = (hash * 31 + peepId.charCodeAt(i)) >>> 0;
     return PeepTints[hash % PeepTints.length];
   }, [tint, peepId]);
 
@@ -57,7 +61,11 @@ export function PeepAvatar({
     >
       <Image
         source={preset.source}
-        style={{ width: size * 1.04, height: size * 1.04 }}
+        style={{
+          width: size * 1.04,
+          height: size * 1.04,
+          transform: mirror ? [{ scaleX: -1 }] : undefined,
+        }}
         contentFit="cover"
       />
     </View>
@@ -72,7 +80,12 @@ export function PeepInitialsFallback({
   size?: number;
 }) {
   const initials = name
-    ? name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    ? name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
     : "?";
   return (
     <View
@@ -85,7 +98,9 @@ export function PeepInitialsFallback({
         justifyContent: "center",
       }}
     >
-      <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: size * 0.36 }}>
+      <Text
+        style={{ color: "#FFFFFF", fontWeight: "700", fontSize: size * 0.36 }}
+      >
         {initials}
       </Text>
     </View>
