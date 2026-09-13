@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "#8A4BE0",
+    backgroundColor: "#946BFF",
   },
   glowOrb: {
     position: "absolute",

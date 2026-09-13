@@ -1,169 +1,147 @@
 import { AuthButton } from "@/components/auth/auth-button";
-import { LoginBottomSheet } from "@/components/auth/login-bottom-sheet";
-import { SignupBottomSheet } from "@/components/auth/signup-bottom-sheet";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Image } from "expo-image";
+import { PeepScene } from "@/components/peeps/PeepScene";
+import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function LoginScreen() {
-  const [loginVisible, setLoginVisible] = useState(false);
-  const [signupVisible, setSignupVisible] = useState(false);
+const LOGO = require("@/assets/images/splash/splash-logo.png");
 
-  const openLogin = useCallback(() => {
-    setLoginVisible(true);
-  }, []);
-
-  const openSignup = useCallback(() => {
-    setSignupVisible(true);
-  }, []);
-
+export default function WelcomeScreen() {
   return (
-    <View className="flex-1 overflow-hidden bg-[#C9B4F4]">
-      <StatusBar style="dark" />
+    <View className="flex-1 bg-paper">
+      <StatusBar style="light" />
 
-      <View className="absolute inset-0 bg-[#C9B4F4]" />
-
+      {/* Depth — primary-tinted orbs. Flat, no mesh. */}
       <View
-        className="absolute -right-[130px] -top-[170px] h-[430px] w-[430px] rounded-full"
-        style={{ backgroundColor: "rgba(255,255,255,0.28)" }}
-      />
-      <View
-        className="absolute -left-[180px] top-[180px] h-[380px] w-[380px] rounded-full"
-        style={{ backgroundColor: "rgba(255,255,255,0.12)" }}
-      />
-      <View
-        className="absolute -bottom-[200px] -right-[100px] h-[450px] w-[450px] rounded-full"
-        style={{ backgroundColor: "rgba(91,55,151,0.16)" }}
-      />
-
-      <Text
-        className="absolute left-[28px] top-[125px] text-[20px]"
-        style={{ color: "rgba(255,255,255,0.7)" }}
-      >
-        ✦
-      </Text>
-      <Text
-        className="absolute right-[32px] top-[105px] text-[13px]"
-        style={{ color: "rgba(255,255,255,0.7)" }}
-      >
-        ✦
-      </Text>
-      <Text
-        className="absolute left-[45px] top-[430px] text-[11px]"
-        style={{ color: "rgba(255,255,255,0.55)" }}
-      >
-        ✦
-      </Text>
-      <Text
-        className="absolute right-[27px] top-[320px] text-[20px]"
+        pointerEvents="none"
         style={{
-          color: "rgba(255,255,255,0.5)",
-          transform: [{ rotate: "12deg" }],
+          position: "absolute",
+          top: -140,
+          left: "50%",
+          marginLeft: -260,
+          width: 520,
+          height: 520,
+          borderRadius: 260,
+          backgroundColor: "#946BFF",
+          opacity: 0.09,
         }}
-      >
-        ♡
-      </Text>
-      <View
-        className="absolute left-[34px] top-[245px] h-2 w-2 rounded-full"
-        style={{ backgroundColor: "rgba(255,255,255,0.5)" }}
       />
       <View
-        className="absolute right-[52px] top-[400px] h-2.5 w-2.5 rounded-full"
-        style={{ backgroundColor: "rgba(255,255,255,0.45)" }}
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          bottom: -120,
+          right: -80,
+          width: 380,
+          height: 380,
+          borderRadius: 190,
+          backgroundColor: "#946BFF",
+          opacity: 0.06,
+        }}
+      />
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: 320,
+          left: -90,
+          width: 260,
+          height: 260,
+          borderRadius: 130,
+          backgroundColor: "#946BFF",
+          opacity: 0.03,
+        }}
       />
 
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
-        <View className="flex-1 px-6 justify-between">
-          <View className="mt-32 items-center justify-center">
+        <View className="flex-1 px-6">
+          {/* Brand mark — your real logo, centered. No fabricated heart. */}
+          <View className="items-center pt-3">
             <Image
-              source={require("@/assets/images/splash/splash-logo.png")}
-              style={{ width: 280, height: 180 }}
+              source={LOGO}
+              style={{ width: 172, height: 68 }}
               contentFit="contain"
+              contentPosition="center"
+              priority="high"
+              cachePolicy="memory-disk"
+              accessibilityLabel="CouplePlay"
             />
-            <View className="mt-3 flex-row items-center gap-1">
-              <Text className="font-ui-semibold text-black/60">
-                Play together.
-              </Text>
-              <Image
-                source={require("@/assets/images/icons/red_heart_no_bg.png")}
-                style={{ width: 25, height: 25 }}
-                contentFit="contain"
-                tintColor={"purple"}
-              />
-              <Text className="font-ui-semibold text-black/60">
-                Grow closer.
-              </Text>
-            </View>
           </View>
 
-          <View className="mb-8 gap-3">
+          {/* Hero — centered, generous air. */}
+          <View className="flex-1 items-center justify-center px-1">
+            <View
+              style={{
+                shadowColor: "#000000",
+                shadowOffset: { width: 0, height: 12 },
+                shadowOpacity: 0.18,
+                shadowRadius: 24,
+                elevation: 8,
+              }}
+            >
+              <PeepScene layout="duo" size={112} />
+            </View>
+
+            <Text
+              style={{
+                marginTop: 16,
+                fontFamily: "NunitoSans_800ExtraBold",
+                fontSize: 38,
+                lineHeight: 40,
+                letterSpacing: -1.1,
+                color: "#F4F1FA",
+                textAlign: "center",
+              }}
+            >
+              Play together.{"\n"}Grow closer.
+            </Text>
+
+            <Text
+              style={{
+                marginTop: 12,
+                maxWidth: 314,
+                fontFamily: "NunitoSans_400Regular",
+                fontSize: 15.5,
+                lineHeight: 23,
+                color: "#B3A8C9",
+                textAlign: "center",
+              }}
+            >
+              Quick versus games with the person who matters. Win the round,
+              keep the streak, settle the rivalry.
+            </Text>
+          </View>
+
+          {/* CTAs — primary solid + primary glass, Apple pill language. */}
+          <View style={{ gap: 12, paddingBottom: 4 }}>
             <AuthButton
               title="LOG IN"
-              onPress={openLogin}
-              icon="account"
+              onPress={() => router.push("/(auth)/login" as any)}
               showArrow
             />
             <AuthButton
               title="CREATE NEW ACCOUNT"
-              variant="white"
-              onPress={openSignup}
-              textColor="#8A4BE0"
-              icon="account-plus"
+              variant="outline"
+              onPress={() => router.push("/(auth)/signup" as any)}
               showArrow
             />
-
-            <View className="flex-row items-center gap-3 mt-4 justify-center">
-              <View className="h-px bg-gray-300 w-[120px]" />
-              <Text className="font-ui-medium text-[13px] text-white">or</Text>
-              <View className="h-px bg-gray-300 w-[120px]" />
-            </View>
-
-            <Pressable
-              onPress={() => {}}
-              className="flex-row items-center justify-center gap-2 py-3"
+            <Text
+              style={{
+                marginTop: 2,
+                fontFamily: "NunitoSans_500Medium",
+                fontSize: 12,
+                lineHeight: 16,
+                color: "#7E7396",
+                textAlign: "center",
+              }}
             >
-              <MaterialCommunityIcons
-                name="gamepad"
-                size={20}
-                color="#8A4BE0"
-              />
-              <Text className="font-ui-semibold text-[14px] text-[#8A4BE0]">
-                Continue as guest
-              </Text>
-            </Pressable>
-
-            <View className="mt-16 flex-row items-center justify-center">
-              <Text className="text-[10px] text-gray-600 font-ui-medium">
-                TWO PLAYERS
-              </Text>
-              <Text
-                className="mx-2 text-[10px]"
-                style={{ color: "rgba(70,50,90,0.3)" }}
-              >
-                •
-              </Text>
-              <Text className="text-[10px] text-gray-600 font-ui-medium">
-                ONE CONNECTION
-              </Text>
-            </View>
+              By continuing you agree to our Terms · Privacy Policy
+            </Text>
           </View>
         </View>
       </SafeAreaView>
-
-      <LoginBottomSheet
-        visible={loginVisible}
-        onClose={() => setLoginVisible(false)}
-        onSwitchToSignup={openSignup}
-      />
-
-      <SignupBottomSheet
-        visible={signupVisible}
-        onClose={() => setSignupVisible(false)}
-        onSwitchToLogin={openLogin}
-      />
     </View>
   );
 }

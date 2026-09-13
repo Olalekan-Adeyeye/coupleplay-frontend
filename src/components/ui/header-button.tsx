@@ -21,13 +21,13 @@ export function HeaderButton({ icon, onPress, accessibilityLabel }: HeaderButton
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      className="h-12 w-12 items-center justify-center rounded-2xl bg-white active:opacity-80"
+      className="h-12 w-12 items-center justify-center rounded-2xl bg-surface active:opacity-80"
       style={HEADER_BUTTON_SHADOW}
     >
       <MaterialCommunityIcons
         name={icon as any}
         size={22}
-        color="#201A33"
+        color="#F4F1FA"
       />
     </Pressable>
   );

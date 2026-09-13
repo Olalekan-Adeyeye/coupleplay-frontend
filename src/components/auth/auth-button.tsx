@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
+  withSpring,
 } from "react-native-reanimated";
 
 type AuthButtonProps = {
@@ -18,6 +19,13 @@ type AuthButtonProps = {
   showArrow?: boolean;
 };
 
+/**
+ * Apple-premium CTA — primary tinted.
+ * - 56h pill, tactile spring, generous air.
+ * - Primary: solid #946BFF, white text, purple soft shadow — brand CTA.
+ * - Outline: hairline primary glass (primary 9% + 1px primary/28), ink text.
+ * - Keeps iOS pill language but in brand purple, not system white.
+ */
 export function AuthButton({
   title,
   onPress,
@@ -32,83 +40,126 @@ export function AuthButton({
   const pressed = useSharedValue(0);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 - pressed.value * 0.03 }],
+    transform: [{ scale: 1 - pressed.value * 0.02 }],
+    opacity: 1 - pressed.value * 0.06,
   }));
 
   const isPrimary = variant === "primary";
   const isOutline = variant === "outline";
   const isWhite = variant === "white";
 
+  // Brand mapping — primary everywhere the eye should land
+  const bg = (() => {
+    if (backgroundColor) return backgroundColor;
+    if (isPrimary) return "#946BFF";
+    if (isWhite) return "#FFFFFF";
+    if (isOutline) return "rgba(148,107,255,0.09)";
+    return "transparent";
+  })();
+
+  const fg = (() => {
+    if (textColor) return textColor;
+    if (isPrimary) return "#FFFFFF";
+    if (isWhite) return "#100E17";
+    if (isOutline) return "#F4F1FA";
+    return "#F4F1FA";
+  })();
+
+  const borderColor = (() => {
+    if (isOutline) return "rgba(148,107,255,0.32)";
+    if (isWhite) return "transparent";
+    return "transparent";
+  })();
+
+  const shadow = (() => {
+    if (backgroundColor) return undefined;
+    if (isPrimary) {
+      return {
+        shadowColor: "#946BFF",
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.32,
+        shadowRadius: 20,
+        elevation: 8,
+      } as const;
+    }
+    if (isWhite) {
+      return {
+        shadowColor: "#000000",
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.16,
+        shadowRadius: 20,
+        elevation: 8,
+      } as const;
+    }
+    return undefined;
+  })();
+
   return (
     <Animated.View style={animatedStyle}>
       <Pressable
         onPress={onPress}
         onPressIn={() => {
-          pressed.value = 1;
+          pressed.value = withSpring(1, { damping: 18, stiffness: 420 });
         }}
         onPressOut={() => {
-          pressed.value = 0;
+          pressed.value = withSpring(0, { damping: 18, stiffness: 420 });
         }}
         disabled={disabled || loading}
         accessibilityRole="button"
         accessibilityLabel={title}
-        style={{
-          backgroundColor:
-            backgroundColor ??
-            (isPrimary ? "#8A4BE0" : isWhite ? "#FFFFFF" : "transparent"),
-          borderColor: isOutline
-            ? (textColor ?? "#8A4BE0")
-            : isWhite
-              ? "transparent"
-              : "transparent",
-          borderWidth: isOutline || isWhite ? 1.5 : 0,
-          opacity: disabled || loading ? 0.5 : 1,
-          shadowColor: isPrimary ? "#5C2D91" : "#8A4BE0",
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.12,
-          shadowRadius: 8,
-          elevation: 3,
-        }}
-        className="h-14 items-center justify-center rounded-full"
+        style={[
+          {
+            backgroundColor: bg,
+            borderColor,
+            borderWidth: isOutline ? 1 : 0,
+            opacity: disabled || loading ? 0.55 : 1,
+            height: 56,
+            borderRadius: 9999,
+            alignItems: "center",
+            justifyContent: "center",
+            paddingHorizontal: 24,
+          },
+          shadow,
+        ]}
       >
         {loading ? (
-          <ActivityIndicator
-            color={textColor ?? (isPrimary || isWhite ? "#FFFFFF" : "#8A4BE0")}
-            size="small"
-          />
+          <ActivityIndicator color={fg} size="small" />
         ) : (
-          <View className="flex-row items-center justify-center gap-4">
+          <View className="flex-row items-center justify-center" style={{ gap: 10 }}>
             {icon && (
-              <MaterialCommunityIcons
-                name={icon}
-                size={20}
-                color={
-                  textColor ?? (isPrimary || isWhite ? "#FFFFFF" : "#8A4BE0")
-                }
-              />
+              <MaterialCommunityIcons name={icon} size={18} color={fg} />
             )}
             <Text
-              className="font-ui-semibold text-[14px] tracking-[0.2px]"
               style={{
-                color:
-                  textColor ??
-                  (isPrimary || isWhite
-                    ? "#FFFFFF"
-                    : isOutline
-                      ? "#8A4BE0"
-                      : "#7A748C"),
+                color: fg,
+                fontFamily: "NunitoSans_700Bold",
+                fontSize: 14.5,
+                letterSpacing: isPrimary || isWhite ? 0.7 : 0.6,
+                fontWeight: "700",
+                textAlign: "center",
+                includeFontPadding: false as any,
               }}
             >
               {title}
             </Text>
             {showArrow && (
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={20}
-                color={
-                  textColor ?? (isPrimary || isWhite ? "#FFFFFF" : "#8A4BE0")
-                }
-              />
+              <View
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 11,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: isPrimary
+                    ? "rgba(255,255,255,0.18)"
+                    : isWhite
+                      ? "rgba(16,14,23,0.08)"
+                      : "rgba(148,107,255,0.16)",
+                  marginLeft: 2,
+                }}
+              >
+                <MaterialCommunityIcons name="chevron-right" size={14} color={fg} />
+              </View>
             )}
           </View>
         )}

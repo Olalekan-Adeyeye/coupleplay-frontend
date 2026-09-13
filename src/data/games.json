@@ -18,7 +18,7 @@
     "steps": [
       {
         "icon": "grid",
-        "iconColor": "#8A4BE0",
+        "iconColor": "#946BFF",
         "title": "Take turns placing X's and O's on the grid."
       },
       {
@@ -32,7 +32,16 @@
         "title": "Get three in a row to win the round!"
       }
     ],
-    "stats": { "gamesPlayed": 0, "perfectMatches": 0, "winRate": 0 }
+    "stats": {
+      "gamesPlayed": 0,
+      "perfectMatches": 0,
+      "winRate": 0
+    },
+    "modes": [
+      "quick",
+      "competitive",
+      "brain"
+    ]
   },
   {
     "id": "DRAW_GUESS",
@@ -57,7 +66,7 @@
       },
       {
         "icon": "eye",
-        "iconColor": "#8A4BE0",
+        "iconColor": "#946BFF",
         "title": "Your partner guesses in real time."
       },
       {
@@ -66,7 +75,14 @@
         "title": "Fastest correct guesses win!"
       }
     ],
-    "stats": { "gamesPlayed": 0, "perfectMatches": 0, "winRate": 0 }
+    "stats": {
+      "gamesPlayed": 0,
+      "perfectMatches": 0,
+      "winRate": 0
+    },
+    "modes": [
+      "competitive"
+    ]
   },
   {
     "id": "SPEED_BATTLE",
@@ -91,7 +107,7 @@
       },
       {
         "icon": "timer",
-        "iconColor": "#8A4BE0",
+        "iconColor": "#946BFF",
         "title": "Smash the right answer first."
       },
       {
@@ -100,7 +116,16 @@
         "title": "Most points takes the match!"
       }
     ],
-    "stats": { "gamesPlayed": 0, "perfectMatches": 0, "winRate": 0 }
+    "stats": {
+      "gamesPlayed": 0,
+      "perfectMatches": 0,
+      "winRate": 0
+    },
+    "modes": [
+      "quick",
+      "competitive",
+      "brain"
+    ]
   },
   {
     "id": "MEMORY_MATCH",
@@ -125,7 +150,7 @@
       },
       {
         "icon": "brain",
-        "iconColor": "#8A4BE0",
+        "iconColor": "#946BFF",
         "title": "Remember where the pairs hide."
       },
       {
@@ -134,7 +159,15 @@
         "title": "Clear the board together!"
       }
     ],
-    "stats": { "gamesPlayed": 0, "perfectMatches": 0, "winRate": 0 }
+    "stats": {
+      "gamesPlayed": 0,
+      "perfectMatches": 0,
+      "winRate": 0
+    },
+    "modes": [
+      "coop",
+      "brain"
+    ]
   },
   {
     "id": "WOULD_YOU_RATHER",
@@ -168,6 +201,14 @@
         "title": "Most matches wins the game!"
       }
     ],
-    "stats": { "gamesPlayed": 0, "perfectMatches": 0, "winRate": 0 }
+    "stats": {
+      "gamesPlayed": 0,
+      "perfectMatches": 0,
+      "winRate": 0
+    },
+    "modes": [
+      "coop",
+      "competitive"
+    ]
   }
 ]

@@ -2,11 +2,15 @@ import { View, Text, Pressable, Alert } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Avatar } from "@/components/ui/avatar";
 import { usePartnerName } from "@/hooks/usePartnerName";
+import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
+import { useCoupleStore } from "@/stores/coupleStore";
+import { useRoomStore } from "@/stores/roomStore";
 import { useSocketStore } from "@/hooks/useSocket";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const CARD_SHADOW = {
   shadowColor: "#4A3B6B",
@@ -17,7 +21,7 @@ const CARD_SHADOW = {
 } as const;
 
 const BUTTON_SHADOW = {
-  shadowColor: "#8A4BE0",
+  shadowColor: "#946BFF",
   shadowOffset: { width: 0, height: 5 },
   shadowOpacity: 0.25,
   shadowRadius: 10,
@@ -25,15 +29,22 @@ const BUTTON_SHADOW = {
 } as const;
 
 export default function SpeedBattleResultsScreen() {
-  const { winnerId, scores, totalRounds, roomId } = useLocalSearchParams<{
-    winnerId?: string;
-    scores?: string;
-    totalRounds?: string;
-    roomId?: string;
-  }>();
+  const { winnerId, scores, totalRounds, roundsWon, roomId } =
+    useLocalSearchParams<{
+      winnerId?: string;
+      scores?: string;
+      totalRounds?: string;
+      roundsWon?: string;
+      roomId?: string;
+    }>();
   const user = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
+  const couple = useCoupleStore((s) => s.couple);
+  const setRoom = useRoomStore((s) => s.setRoom);
   const socket = useSocketStore((s) => s.socket);
   const partnerName = usePartnerName();
+  const [rematching, setRematching] = useState(false);
+  const [rematchError, setRematchError] = useState<string | null>(null);
 
   const parsed: Record<string, number> = scores ? JSON.parse(scores) : {};
   const myScore = parsed[user?.id ?? ""] ?? 0;
@@ -41,12 +52,41 @@ export default function SpeedBattleResultsScreen() {
     Object.entries(parsed).find(([id]) => id !== user?.id)?.[1] ?? 0;
   const rounds = Number(totalRounds ?? 5);
 
+  // Real per-player rounds won when the server reported them.
+  let won: Record<string, number> | null = null;
+  try {
+    won = roundsWon ? JSON.parse(roundsWon) : null;
+  } catch {
+    won = null;
+  }
+  const myRoundsWon = won ? (won[user?.id ?? ""] ?? 0) : null;
+  const partnerRoundsWon = won
+    ? (Object.entries(won).find(([id]) => id !== user?.id)?.[1] ?? 0)
+    : null;
+
   const iWon = winnerId === user?.id;
   const isDraw = !winnerId;
 
   const handleLeave = () => {
     if (roomId) socket?.emit("room:leave", { roomId });
     router.replace("/(tabs)/games");
+  };
+
+  const handleRematch = async () => {
+    if (!token || !couple?.id || rematching) return;
+    setRematchError(null);
+    setRematching(true);
+    try {
+      const room = await api.rooms.create(
+        { coupleId: couple.id, gameType: "SPEED_BATTLE", totalRounds: rounds },
+        token,
+      );
+      setRoom(room);
+      router.replace(`/games/SPEED_BATTLE/waiting?roomId=${room.id}` as any);
+    } catch (e: any) {
+      setRematchError(e.message ?? "Could not start a rematch.");
+      setRematching(false);
+    }
   };
 
   // Partner left
@@ -67,22 +107,24 @@ export default function SpeedBattleResultsScreen() {
   }, [socket, roomId, partnerName]);
 
   return (
-    <View className="flex-1 bg-lavender">
-      <StatusBar style="dark" />
+    <View className="flex-1 bg-paper">
+      <StatusBar style="light" />
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <View className="w-full max-w-[460px] flex-1 self-center px-[22px] pt-[14px] pb-[24px]">
           {/* Trophy */}
           <View className="mt-6 items-center gap-3">
-            <View className="relative h-24 w-24 items-center justify-center rounded-full bg-amber-100">
-              <Text className="text-[52px]">
-                {isDraw ? "🤝" : iWon ? "🏆" : "⚡"}
-              </Text>
+            <View className="h-24 w-24 items-center justify-center rounded-full bg-amber-100">
+              <MaterialCommunityIcons
+                name={isDraw ? "handshake" : iWon ? "trophy" : "lightning-bolt"}
+                size={46}
+                color={isDraw ? "#946BFF" : iWon ? "#B45309" : "#F59E0B"}
+              />
             </View>
             <Text className="font-display-bold text-[28px] text-ink">
               {isDraw
                 ? "It's a draw!"
                 : iWon
-                  ? "You won! ⚡"
+                  ? "You won!"
                   : `${partnerName} won!`}
             </Text>
             <Text className="font-ui-medium text-[14px] text-ink-secondary">
@@ -97,10 +139,10 @@ export default function SpeedBattleResultsScreen() {
           {/* Score card */}
           <View className="mt-6 flex-row items-center justify-center gap-3">
             <View
-              className="flex-1 items-center gap-2 rounded-3xl bg-white px-3 py-6"
+              className="flex-1 items-center gap-2 rounded-3xl bg-surface px-3 py-6"
               style={CARD_SHADOW}
             >
-              <Avatar name={user?.name} size={56} />
+              <Avatar avatar={user?.avatar} name={user?.name} size={56} />
               <Text
                 className="font-display-bold text-[14px] text-ink"
                 numberOfLines={1}
@@ -117,7 +159,7 @@ export default function SpeedBattleResultsScreen() {
             </Text>
 
             <View
-              className="flex-1 items-center gap-2 rounded-3xl bg-white px-3 py-6"
+              className="flex-1 items-center gap-2 rounded-3xl bg-surface px-3 py-6"
               style={CARD_SHADOW}
             >
               <Avatar name={partnerName} size={56} />
@@ -133,16 +175,26 @@ export default function SpeedBattleResultsScreen() {
             </View>
           </View>
 
-          {/* Stats */}
+          {/* Stats — real values only */}
           <View
-            className="mt-4 gap-0 rounded-3xl bg-white px-5 py-4"
+            className="mt-4 gap-0 rounded-3xl bg-surface px-5 py-4"
             style={CARD_SHADOW}
           >
             <StatRow
-              label="Rounds won"
-              mine={String(iWon ? Math.ceil(rounds / 2) : Math.floor(rounds / 2))}
-              theirs={String(iWon ? Math.floor(rounds / 2) : Math.ceil(rounds / 2))}
+              label="Points"
+              mine={String(myScore)}
+              theirs={String(partnerScore)}
             />
+            {myRoundsWon != null && partnerRoundsWon != null && (
+              <>
+                <View className="my-2 h-px bg-surface-border" />
+                <StatRow
+                  label="Rounds won"
+                  mine={String(myRoundsWon)}
+                  theirs={String(partnerRoundsWon)}
+                />
+              </>
+            )}
             <View className="my-2 h-px bg-surface-border" />
             <StatRow
               label="Total rounds"
@@ -152,13 +204,28 @@ export default function SpeedBattleResultsScreen() {
           </View>
 
           {/* Action */}
-          <View className="mt-auto gap-4 pb-4">
+          <View className="mt-auto gap-2.5 pb-4">
+            <Pressable
+              onPress={handleRematch}
+              disabled={rematching}
+              className="flex-row items-center justify-center gap-2 rounded-full bg-primary py-4 active:opacity-85"
+              style={[BUTTON_SHADOW, { opacity: rematching ? 0.6 : 1 }]}
+            >
+              <MaterialCommunityIcons name="restart" size={20} color="#FFFFFF" />
+              <Text className="font-ui-bold text-[15px] text-white">
+                {rematching ? "Setting up…" : "Rematch"}
+              </Text>
+            </Pressable>
+            {rematchError && (
+              <Text className="text-center font-ui-medium text-[13px] text-error-bright">
+                {rematchError}
+              </Text>
+            )}
             <Pressable
               onPress={handleLeave}
-              className="flex-row items-center justify-center gap-2 rounded-full bg-primary py-4 active:opacity-85"
-              style={BUTTON_SHADOW}
+              className="flex-row items-center justify-center gap-2 rounded-full border border-hairline bg-surface py-4 active:opacity-85"
             >
-              <Text className="font-ui-bold text-[15px] text-white">
+              <Text className="font-ui-bold text-[15px] text-ink-secondary">
                 Back to Games
               </Text>
             </Pressable>

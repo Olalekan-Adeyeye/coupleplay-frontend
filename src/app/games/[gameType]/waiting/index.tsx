@@ -1,8 +1,9 @@
-import { getGame } from "@/data/games";
+import { getGame, GAME_IMAGES } from "@/data/games";
 import { usePartnerName } from "@/hooks/usePartnerName";
 import { useSocketStore } from "@/hooks/useSocket";
 import { useAuthStore } from "@/stores/authStore";
 import { api } from "@/lib/api";
+import { PeepAvatar } from "@/components/peeps/PeepAvatar";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
@@ -18,14 +19,6 @@ import Animated, {
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const EMOJI: Record<string, string> = {
-  TIC_TAC_TOE: "⭕",
-  SPEED_BATTLE: "⚡",
-  DRAW_GUESS: "✏️",
-  MEMORY_MATCH: "🧩",
-  WOULD_YOU_RATHER: "💬",
-};
-
 const CARD_SHADOW = {
   shadowColor: "#4A3B6B",
   shadowOffset: { width: 0, height: 3 },
@@ -35,7 +28,7 @@ const CARD_SHADOW = {
 } as const;
 
 const BUTTON_SHADOW = {
-  shadowColor: "#8A4BE0",
+  shadowColor: "#946BFF",
   shadowOffset: { width: 0, height: 5 },
   shadowOpacity: 0.25,
   shadowRadius: 10,
@@ -43,9 +36,6 @@ const BUTTON_SHADOW = {
 } as const;
 
 type Phase = "creating" | "waiting" | "joined" | "ready";
-const HOME_BOY = require("@/assets/images/home_guy.png");
-const HOME_GIRL = require("@/assets/images/home_girl.png");
-const RED_HEART = require("@/assets/images/home_love.png");
 
 function PulsingHeart() {
   const scale = useSharedValue(1);
@@ -69,36 +59,38 @@ function PulsingHeart() {
     <Animated.View
       style={[
         {
-          marginHorizontal: -14,
-          marginTop: 20,
+          marginHorizontal: -10,
+          marginTop: 22,
           zIndex: 10,
+          width: 30,
+          height: 30,
+          borderRadius: 15,
+          backgroundColor: "#FF5C8A",
+          borderWidth: 2,
+          borderColor: "#FFFFFF",
+          alignItems: "center",
+          justifyContent: "center",
         },
         heartStyle,
       ]}
     >
-      <Image
-        source={RED_HEART}
-        style={{ width: 42, height: 42 }}
-        contentFit="contain"
-      />
+      <MaterialCommunityIcons name="heart" size={14} color="#FFFFFF" />
     </Animated.View>
   );
 }
 
-function CartoonAvatar({
-  source,
-  scale = 1,
+function LobbyAvatar({
+  peep,
+  seed,
+  name,
 }: {
-  source: number;
-  scale?: number;
+  peep?: string | null;
+  seed?: string | null;
+  name?: string;
 }) {
   return (
-    <View className="h-[88px] w-[88px] overflow-hidden rounded-full border border-gray-200 bg-white">
-      <Image
-        source={source}
-        style={{ height: 88, width: 88, transform: [{ scale }] }}
-        contentFit="cover"
-      />
+    <View className="h-[88px] w-[88px] items-center justify-center">
+      <PeepAvatar peep={peep} seed={seed} name={name} size={88} ring="#FFFFFF" />
     </View>
   );
 }
@@ -144,11 +136,8 @@ export default function WaitingRoomScreen() {
           (p: any) => p.userId !== user?.id,
         );
         if (partnerInRoom) {
-          setPartnerReady(
-            room.players?.some(
-              (p: any) => p.userId !== user?.id && p.ready,
-            ) ?? false,
-          );
+          // Don't read ready from DB — only detect presence.
+          // Readiness is tracked via socket player:status events.
           setPhase("joined");
         }
       } catch {}
@@ -200,18 +189,7 @@ export default function WaitingRoomScreen() {
     return () => {
       socket.off("game:abandoned", onAbandoned);
     };
-  }, [socket, roomId, partnerName]);
-
-  // Both ready -> start the game.
-  const bothReady = iAmReady && partnerReady;
-  useEffect(() => {
-    if (!bothReady || startedRef.current) return;
-    startedRef.current = true;
-    const t = setTimeout(() => {
-      router.push(`/games/${gameType}/play?roomId=${roomId}` as any);
-    }, 1400);
-    return () => clearTimeout(t);
-  }, [bothReady, gameType, roomId]);
+  }, [socket, roomId, partnerName, user?.id]);
 
   // Server started the game -> auto-navigate both players into play.
   useEffect(() => {
@@ -234,17 +212,29 @@ export default function WaitingRoomScreen() {
   };
 
   const handleLeave = () => {
-    socket?.emit("room:leave", { roomId });
-    router.replace("/(tabs)/games");
+    Alert.alert(
+      "Leave game?",
+      "The game room will be closed for both of you.",
+      [
+        { text: "Stay", style: "cancel" },
+        {
+          text: "Leave",
+          style: "destructive",
+          onPress: () => {
+            socket?.emit("room:leave", { roomId });
+            router.replace("/(tabs)/games");
+          },
+        },
+      ],
+    );
   };
 
   const rounds = game?.rounds ?? 5;
   const duration = game?.duration ?? "~5 min";
-  const emoji = game?.emoji ?? EMOJI[gameType] ?? "🎮";
 
   return (
-    <View className="flex-1 bg-lavender">
-      <StatusBar style="dark" />
+    <View className="flex-1 bg-paper">
+      <StatusBar style="light" />
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <View className="w-full max-w-[460px] flex-1 self-center px-[22px] pt-[14px] pb-[24px]">
 
@@ -258,9 +248,9 @@ export default function WaitingRoomScreen() {
                   color="#B8A8F5"
                   style={{ position: "absolute", top: -18, left: -6 }}
                 />
-                <CartoonAvatar source={HOME_BOY} />
+                <LobbyAvatar peep={user?.avatar} seed={user?.id} name={myFirstName} />
                 <PulsingHeart />
-                <CartoonAvatar source={HOME_GIRL} scale={1.15} />
+                <LobbyAvatar seed={partnerName} name={partnerName} />
                 <MaterialCommunityIcons
                   name="star-four-points"
                   size={14}
@@ -295,10 +285,10 @@ export default function WaitingRoomScreen() {
             <View className="flex-1 items-center justify-center gap-5 pb-10">
               {/* Avatars row */}
               <View className="relative flex-row items-center">
-                <CartoonAvatar source={HOME_BOY} />
+                <LobbyAvatar peep={user?.avatar} seed={user?.id} name={myFirstName} />
                 <PulsingHeart />
                 <View>
-                  <CartoonAvatar source={HOME_GIRL} scale={1.15} />
+                  <LobbyAvatar seed={partnerName} name={partnerName} />
                   <View className="absolute right-1 top-1 h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-ink-tertiary/40">
                     <Text className="text-[11px] text-white">?</Text>
                   </View>
@@ -323,15 +313,15 @@ export default function WaitingRoomScreen() {
                   <Text className="text-primary">{partnerName}...</Text>
                 </Text>
                 <Text className="text-center font-ui-medium leading-[20px] text-ink-secondary">
-                  We'll start the game as soon as they join.
+                  We&apos;ll start the game as soon as they join.
                 </Text>
               </View>
-              <View className="w-full flex-row items-center gap-3 rounded-2xl bg-white px-4 py-3.5 border border-gray-200">
+              <View className="w-full flex-row items-center gap-3 rounded-2xl bg-surface px-4 py-3.5 border border-hairline">
                 <View className="h-9 w-9 items-center justify-center rounded-xl bg-primary-soft">
                   <MaterialCommunityIcons
                     name="wifi"
                     size={18}
-                    color="#8A4BE0"
+                    color="#946BFF"
                   />
                 </View>
                 <Text className="flex-1 font-ui-medium text-[13px] leading-[18px] text-ink-secondary">
@@ -359,10 +349,10 @@ export default function WaitingRoomScreen() {
                   color="#B8A8F5"
                   style={{ position: "absolute", top: -20, left: -8 }}
                 />
-                <CartoonAvatar source={HOME_BOY} />
+                <LobbyAvatar peep={user?.avatar} seed={user?.id} name={myFirstName} />
                 <PulsingHeart />
                 <View>
-                  <CartoonAvatar source={HOME_GIRL} scale={1.15} />
+                  <LobbyAvatar seed={partnerName} name={partnerName} />
                   <View className="absolute -right-0.5 -bottom-0.5 h-5 w-5 rounded-full border-2 border-white bg-success" />
                 </View>
                 <MaterialCommunityIcons
@@ -374,18 +364,11 @@ export default function WaitingRoomScreen() {
               </View>
               <View className="items-center gap-1.5">
                 <Text className="font-display-bold text-[24px] text-ink">
-                  <Text className="text-primary">{partnerName}</Text> is here!💜
+                  <Text className="text-primary">{partnerName}</Text> is here!
                 </Text>
                 <Text className="font-ui-medium text-[14px] text-ink-secondary">
-                  Looks like someone's ready to play.
+                  Looks like someone&apos;s ready to play.
                 </Text>
-              </View>
-              <View className="flex-row gap-1.5">
-                <Text className="text-[20px]">🎉</Text>
-                <Text className="text-[20px]">✨</Text>
-                <Text className="text-[20px]">💜</Text>
-                <Text className="text-[20px]">✨</Text>
-                <Text className="text-[20px]">🎉</Text>
               </View>
               <Pressable
                 onPress={() => setPhase("ready")}
@@ -417,20 +400,31 @@ export default function WaitingRoomScreen() {
             <View className="flex-1 gap-5 pt-2">
               {/* Game header */}
               <View className="items-center gap-2">
-                <Image source={game?.heroImage} />
-                {/* <View className="h-16 w-16 items-center justify-center rounded-2xl bg-primary-soft">
-                  <Text className="text-[34px]">{emoji}</Text>
-                </View> */}
+                {game?.heroImage && GAME_IMAGES[game.heroImage] ? (
+                  <Image
+                    source={GAME_IMAGES[game.heroImage]}
+                    style={{ width: 72, height: 72 }}
+                    contentFit="contain"
+                  />
+                ) : (
+                  <View className="h-[72px] w-[72px] items-center justify-center rounded-2xl bg-surface">
+                    <MaterialCommunityIcons
+                      name="gamepad-variant"
+                      size={34}
+                      color="#946BFF"
+                    />
+                  </View>
+                )}
                 <Text className="font-display-bold text-[24px] text-ink">
                   {game?.name ?? "Game"}
                 </Text>
                 <View className="flex-row gap-2.5">
-                  <View className="rounded-full bg-white px-3.5 py-1.5 border border-gray-200">
+                  <View className="rounded-full bg-surface px-3.5 py-1.5 border border-hairline">
                     <Text className="font-ui-semibold text-[12px] text-ink">
                       {rounds} Rounds
                     </Text>
                   </View>
-                  <View className="rounded-full bg-white px-3.5 py-1.5 border border-gray-200">
+                  <View className="rounded-full bg-surface px-3.5 py-1.5 border border-hairline">
                     <Text className="font-ui-semibold text-[12px] text-ink">
                       {duration}
                     </Text>
@@ -440,18 +434,18 @@ export default function WaitingRoomScreen() {
 
               {/* Player cards */}
               <View className="flex-row items-center justify-center gap-3">
-                <View className="flex-1 items-center gap-2 rounded-3xl bg-white px-3 py-5 border border-gray-200">
+                <View className="flex-1 items-center gap-2 rounded-3xl bg-surface px-3 py-5 border border-hairline">
                   <Text
                     className="font-display-bold text-[14px] text-ink"
                     numberOfLines={1}
                   >
                     {myFirstName}
                   </Text>
-                  <CartoonAvatar source={HOME_BOY} />
+                  <LobbyAvatar peep={user?.avatar} seed={user?.id} name={myFirstName} />
                   <View
                     className="flex-row items-center gap-1.5 rounded-full px-3 py-1"
                     style={{
-                      backgroundColor: iAmReady ? "#22C55E26" : "#F7F6FF",
+                      backgroundColor: iAmReady ? "#22C55E26" : "#252132",
                     }}
                   >
                     {iAmReady && (
@@ -463,7 +457,7 @@ export default function WaitingRoomScreen() {
                     )}
                     <Text
                       className="font-ui-bold text-[12px]"
-                      style={{ color: iAmReady ? "#22C55E" : "#7A748C" }}
+                      style={{ color: iAmReady ? "#22C55E" : "#B3A8C9" }}
                     >
                       {iAmReady ? "Ready" : "Not ready"}
                     </Text>
@@ -472,7 +466,7 @@ export default function WaitingRoomScreen() {
 
                 <PulsingHeart />
 
-                <View className="flex-1 items-center gap-2 rounded-3xl bg-white px-3 py-5 border border-gray-200">
+                <View className="flex-1 items-center gap-2 rounded-3xl bg-surface px-3 py-5 border border-hairline">
                   <Text
                     className="font-display-bold text-[14px] text-ink"
                     numberOfLines={1}
@@ -480,14 +474,14 @@ export default function WaitingRoomScreen() {
                     {partnerName}
                   </Text>
                   <View>
-                    <CartoonAvatar source={HOME_GIRL} scale={1.15} />
+                    <LobbyAvatar seed={partnerName} name={partnerName} />
                     <View className="absolute -right-0.5 -bottom-0.5 h-5 w-5 rounded-full border-2 border-white bg-success" />
                   </View>
 
                   <View
                     className="flex-row items-center gap-1.5 rounded-full px-3 py-1"
                     style={{
-                      backgroundColor: partnerReady ? "#22C55E26" : "#F7F6FF",
+                      backgroundColor: partnerReady ? "#22C55E26" : "#252132",
                     }}
                   >
                     {partnerReady && (
@@ -499,7 +493,7 @@ export default function WaitingRoomScreen() {
                     )}
                     <Text
                       className="font-ui-bold text-[12px]"
-                      style={{ color: partnerReady ? "#22C55E" : "#7A748C" }}
+                      style={{ color: partnerReady ? "#22C55E" : "#B3A8C9" }}
                     >
                       {partnerReady ? "Ready" : "Not ready"}
                     </Text>
@@ -538,9 +532,7 @@ export default function WaitingRoomScreen() {
                   />
                   <Text className="font-ui-bold text-[15px] text-white">
                     {iAmReady
-                      ? bothReady
-                        ? "Starting game..."
-                        : `Waiting for ${partnerName}...`
+                      ? `Waiting for ${partnerName}...`
                       : "I'm Ready!"}
                   </Text>
                 </Pressable>

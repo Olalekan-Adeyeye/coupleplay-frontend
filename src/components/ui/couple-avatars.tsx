@@ -1,103 +1,59 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Image } from "expo-image";
-import { useEffect } from "react";
-import { View } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from "react-native-reanimated";
-
-const HOME_BOY = require("@/assets/images/home_guy.png");
-const HOME_GIRL = require("@/assets/images/home_girl.png");
-const RED_HEART = require("@/assets/images/home_love.png");
-
-function PulsingHeart() {
-  const scale = useSharedValue(1);
-
-  useEffect(() => {
-    scale.value = withRepeat(
-      withSequence(
-        withTiming(1.18, { duration: 650 }),
-        withTiming(1, { duration: 650 }),
-      ),
-      -1,
-      false,
-    );
-  }, [scale]);
-
-  const heartStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  return (
-    <Animated.View
-      style={[{ marginHorizontal: -12, marginTop: 16, zIndex: 10 }, heartStyle]}
-    >
-      <Image
-        source={RED_HEART}
-        style={{ width: 36, height: 36 }}
-        contentFit="contain"
-      />
-    </Animated.View>
-  );
-}
+import { PeepPair } from "@/components/peeps/PeepPair";
+import { peepsOfGender, resolvePeepId, type PeepId } from "@/components/peeps/peeps";
 
 type CoupleAvatarsProps = {
   hasPartner: boolean;
+  /** Legacy gender strings — mapped deterministically to a Peep. Prefer peep props. */
   userGender?: string | null;
   partnerGender?: string | null;
+  myPeep?: string | PeepId | null;
+  theirPeep?: string | PeepId | null;
+  mySeed?: string | null;
+  theirSeed?: string | null;
+  myName?: string;
+  theirName?: string;
   size?: number;
 };
 
-export function CoupleAvatars({ hasPartner, userGender, partnerGender, size = 72 }: CoupleAvatarsProps) {
-  const selfAvatar = userGender === "female" ? HOME_GIRL : HOME_BOY;
-  const partnerAvatar = partnerGender === "female" ? HOME_GIRL : HOME_BOY;
+function peepForGender(gender: string | null | undefined, seed: string): PeepId {
+  const g = gender === "female" ? "female" : "male";
+  const list = peepsOfGender(g);
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  return list[hash % list.length].id;
+}
+
+/**
+ * Couple mark — STRICTLY Open Peeps via PeepPair.
+ * Backwards-compatible props: legacy gender strings resolve to a
+ * deterministic Peep of that gender. New code should pass peep ids.
+ */
+export function CoupleAvatars({
+  hasPartner,
+  userGender,
+  partnerGender,
+  myPeep,
+  theirPeep,
+  mySeed,
+  theirSeed,
+  myName,
+  theirName,
+  size = 72,
+}: CoupleAvatarsProps) {
+  const mine = myPeep ?? (userGender ? peepForGender(userGender, mySeed ?? myName ?? "me") : resolvePeepId(null, mySeed ?? myName));
+  const theirs = hasPartner
+    ? (theirPeep ?? (partnerGender ? peepForGender(partnerGender, theirSeed ?? theirName ?? "partner") : resolvePeepId(null, theirSeed ?? theirName)))
+    : null;
 
   return (
-    <View className="flex-row items-center">
-      <View
-        className="overflow-hidden rounded-full border-2 border-white bg-white"
-        style={{ height: size, width: size }}
-      >
-        <Image
-          source={selfAvatar}
-          style={{ height: size, width: size }}
-          contentFit="cover"
-        />
-      </View>
-
-      <PulsingHeart />
-
-      {hasPartner ? (
-        <View
-          className="overflow-hidden rounded-full border-2 border-white bg-white"
-          style={{ height: size, width: size }}
-        >
-          <Image
-            source={partnerAvatar}
-            style={{
-              height: size,
-              width: size,
-              transform: [{ scale: 1.15 }],
-            }}
-            contentFit="cover"
-          />
-        </View>
-      ) : (
-        <View
-          className="items-center justify-center rounded-full border-2 border-dashed border-white/60"
-          style={{ height: size, width: size }}
-        >
-          <MaterialCommunityIcons
-            name="account-plus"
-            size={size * 0.39}
-            color="#FFFFFF"
-          />
-        </View>
-      )}
-    </View>
+    <PeepPair
+      mine={mine}
+      theirs={theirs}
+      mySeed={mySeed}
+      theirSeed={theirSeed}
+      myName={myName}
+      theirName={theirName}
+      size={size}
+    />
   );
 }

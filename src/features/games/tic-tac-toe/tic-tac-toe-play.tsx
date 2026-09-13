@@ -53,6 +53,7 @@ export default function TicTacToePlayScreen() {
   const [state, setState] = useState<TicTacToeState | null>(null);
   const [interstitial, setInterstitial] = useState<string | null>(null);
   const [incomingReaction, setIncomingReaction] = useState<string | null>(null);
+  const [rejectMsg, setRejectMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!socket) return;
@@ -67,7 +68,7 @@ export default function TicTacToePlayScreen() {
         d.winnerId == null
           ? "Round draw!"
           : won
-            ? "You won the round! 🎉"
+            ? "You won the round!"
             : `${partnerName} won the round`,
       );
       setTimeout(() => setInterstitial(null), 1800);
@@ -76,7 +77,7 @@ export default function TicTacToePlayScreen() {
       if (d.roomId !== roomId) return;
       const results = d.results;
       router.replace(
-        `/games/TIC_TAC_TOE/results?winnerId=${results.winnerId ?? ""}&scores=${JSON.stringify(results.scores)}&totalRounds=${results.totalRounds}&roomId=${roomId}` as any,
+        `/games/TIC_TAC_TOE/results?winnerId=${results.winnerId ?? ""}&scores=${JSON.stringify(results.scores)}&totalRounds=${results.totalRounds}&roundsWon=${encodeURIComponent(JSON.stringify(results.roundsWon ?? {}))}&roomId=${roomId}` as any,
       );
     };
     const onReaction = (d: any) => {
@@ -85,17 +86,22 @@ export default function TicTacToePlayScreen() {
         setTimeout(() => setIncomingReaction(null), 1800);
       }
     };
+    const onReject = (d: any) => {
+      setRejectMsg(d.reason ?? "Move rejected");
+      setTimeout(() => setRejectMsg(null), 2000);
+    };
     socket.on("game:state", onState);
     socket.on("game:round_end", onRoundEnd);
     socket.on("game:finished", onFinished);
     socket.on("player:reaction", onReaction);
-    // Ask the server for current state in case we missed the initial broadcast.
+    socket.on("game:reject", onReject);
     socket.emit("game:sync", { roomId });
     return () => {
       socket.off("game:state", onState);
       socket.off("game:round_end", onRoundEnd);
       socket.off("game:finished", onFinished);
       socket.off("player:reaction", onReaction);
+      socket.off("game:reject", onReject);
     };
   }, [socket, roomId, user?.id, partnerName]);
 
@@ -162,18 +168,18 @@ export default function TicTacToePlayScreen() {
     : 0;
 
   return (
-    <View className="flex-1 bg-lavender">
-      <StatusBar style="dark" />
+    <View className="flex-1 bg-paper">
+      <StatusBar style="light" />
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <View className="w-full max-w-[460px] flex-1 self-center px-[22px] pt-[14px] pb-[24px]">
           {/* Top bar */}
           <View className="flex-row items-center justify-between">
             <View className="h-11 w-11" />
             <View
-              className="flex-row items-center gap-2 rounded-full bg-white px-4 py-2"
+              className="flex-row items-center gap-2 rounded-full bg-surface px-4 py-2"
               style={CARD_SHADOW}
             >
-              <MaterialCommunityIcons name="grid" size={16} color="#8A4BE0" />
+              <MaterialCommunityIcons name="grid" size={16} color="#946BFF" />
               <Text className="font-ui-bold text-[13px] text-ink">
                 Round {state?.roundNumber ?? 1} of {state?.totalRounds ?? 3}
               </Text>
@@ -184,10 +190,10 @@ export default function TicTacToePlayScreen() {
           {/* Players + score */}
           <View className="mt-4 flex-row items-center justify-center gap-3">
             <View
-              className="flex-1 flex-row items-center gap-2.5 rounded-2xl bg-white px-4 py-3"
+              className="flex-1 flex-row items-center gap-2.5 rounded-2xl bg-surface px-4 py-3"
               style={CARD_SHADOW}
             >
-              <Avatar name={user?.name} size={40} />
+              <Avatar avatar={user?.avatar} name={user?.name} size={40} />
               <View className="flex-1">
                 <Text
                   className="font-display-bold text-[13px] text-ink"
@@ -209,7 +215,7 @@ export default function TicTacToePlayScreen() {
             </Text>
 
             <View
-              className="flex-1 flex-row items-center gap-2.5 rounded-2xl bg-white px-4 py-3"
+              className="flex-1 flex-row items-center gap-2.5 rounded-2xl bg-surface px-4 py-3"
               style={CARD_SHADOW}
             >
               <Avatar name={partnerName} size={40} />
@@ -244,7 +250,7 @@ export default function TicTacToePlayScreen() {
           {/* Board */}
           <View className="mt-5 items-center">
             <View
-              className="rounded-[28px] bg-primary p-1.5"
+              className="rounded-[28px] bg-plum-deep p-1.5"
               style={CARD_SHADOW}
             >
               {[0, 1, 2].map((row) => (
@@ -263,14 +269,14 @@ export default function TicTacToePlayScreen() {
                         }
                         className="m-[3px] h-[96px] w-[96px] items-center justify-center rounded-[22px] active:opacity-85"
                         style={{
-                          backgroundColor: isLast ? "#EFEAFF" : "#FFFFFF",
+                          backgroundColor: isLast ? "#946BFF26" : "#1B1826",
                         }}
                       >
                         {mark && (
                           <Text
                             className="font-display-bold text-[52px]"
                             style={{
-                              color: mark === "X" ? "#8A4BE0" : "#FF69B4",
+                              color: mark === "X" ? "#946BFF" : "#FF69B4",
                             }}
                           >
                             {mark}
@@ -286,18 +292,39 @@ export default function TicTacToePlayScreen() {
 
           {/* Interstitial */}
           {interstitial && (
-            <View className="absolute inset-0 z-10 items-center justify-center bg-lavender/90">
+            <View className="absolute inset-0 z-10 items-center justify-center bg-paper/90">
               <View
-                className="items-center gap-3 rounded-3xl bg-white px-10 py-8"
+                className="items-center gap-3 rounded-3xl bg-surface px-10 py-8"
                 style={CARD_SHADOW}
               >
-                <Text className="text-[40px]">
-                  {interstitial.includes("draw")
-                    ? "🤝"
-                    : interstitial.includes("You")
-                      ? "🏆"
-                      : "💪"}
-                </Text>
+                <View
+                  className="h-16 w-16 items-center justify-center rounded-full"
+                  style={{
+                    backgroundColor: interstitial.includes("draw")
+                      ? "#946BFF1F"
+                      : interstitial.includes("You")
+                        ? "#F59E0B1F"
+                        : "#FF5C8A1F",
+                  }}
+                >
+                  <MaterialCommunityIcons
+                    name={
+                      interstitial.includes("draw")
+                        ? "handshake"
+                        : interstitial.includes("You")
+                          ? "trophy"
+                          : "arm-flex"
+                    }
+                    size={32}
+                    color={
+                      interstitial.includes("draw")
+                        ? "#946BFF"
+                        : interstitial.includes("You")
+                          ? "#F59E0B"
+                          : "#FF5C8A"
+                    }
+                  />
+                </View>
                 <Text className="font-display-bold text-[20px] text-ink">
                   {interstitial}
                 </Text>
@@ -310,6 +337,11 @@ export default function TicTacToePlayScreen() {
             {incomingReaction && (
               <View className="absolute -top-12 rounded-full bg-accent-soft px-4 py-2">
                 <Text className="text-[20px]">{incomingReaction}</Text>
+              </View>
+            )}
+            {rejectMsg && (
+              <View className="absolute -top-12 rounded-full bg-red-500/20 px-4 py-2">
+                <Text className="font-ui-semibold text-[13px] text-red-400">{rejectMsg}</Text>
               </View>
             )}
             {REACTIONS.map((r) => (
@@ -372,14 +404,14 @@ function TurnBanner({
       <View
         className="rounded-full px-5 py-2.5"
         style={{
-          backgroundColor: myTurn ? "#8A4BE0" : "#FFFFFF",
+          backgroundColor: myTurn ? "#946BFF" : "#1B1826",
           borderWidth: myTurn ? 0 : 1,
-          borderColor: "#EDEAF7",
+          borderColor: "#2B2539",
         }}
       >
         <Text
           className="font-ui-bold text-[14px]"
-          style={{ color: myTurn ? "#FFFFFF" : "#7A748C" }}
+          style={{ color: myTurn ? "#FFFFFF" : "#B3A8C9" }}
         >
           {myTurn ? "Your turn!" : `Waiting for ${partnerName}...`}
         </Text>

@@ -8,15 +8,18 @@ const SOCKET_URL = getSocketBaseUrl();
 interface SocketState {
   socket: Socket | null;
   connected: boolean;
-  connect: (userId: string) => void;
+  /** Reconnect token — set once, reused on reconnects. */
+  authToken: string | null;
+  connect: (token: string) => void;
   disconnect: () => void;
 }
 
 export const useSocketStore = create<SocketState>((set, get) => ({
   socket: null,
   connected: false,
+  authToken: null,
 
-  connect: (userId: string) => {
+  connect: (token: string) => {
     const existing = get().socket;
     if (existing?.connected) return;
 
@@ -32,7 +35,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
     socket.on('connect', () => {
       set({ connected: true });
-      socket.emit('authenticate', { userId });
+      socket.emit('authenticate', { token });
     });
 
     socket.on('disconnect', () => {
@@ -47,7 +50,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
       useCoupleStore.getState().setCouple(couple);
     });
 
-    set({ socket });
+    set({ socket, authToken: token });
   },
 
   disconnect: () => {
@@ -56,45 +59,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
       socket.off('couple:unlinked');
       socket.off('couple:linked');
       socket.disconnect();
-      set({ socket: null, connected: false });
+      set({ socket: null, connected: false, authToken: null });
     }
   },
 }));
-
-export function useGameSocket() {
-  const socket = useSocketStore((s) => s.socket);
-
-  function createRoom(coupleId: string, gameType: string, totalRounds?: number) {
-    socket?.emit('room:create', { coupleId, gameType, totalRounds });
-  }
-
-  function joinRoom(roomId: string) {
-    socket?.emit('room:join', { roomId });
-  }
-
-  function leaveRoom(roomId: string) {
-    socket?.emit('room:leave', { roomId });
-  }
-
-  function playerReady(roomId: string) {
-    socket?.emit('player:ready', { roomId });
-  }
-
-  function sendAction(roomId: string, action: string, payload?: any) {
-    socket?.emit('game:action', { roomId, action, payload });
-  }
-
-  function sendReaction(roomId: string, reaction: string) {
-    socket?.emit('player:reaction', { roomId, reaction });
-  }
-
-  return {
-    socket,
-    createRoom,
-    joinRoom,
-    leaveRoom,
-    playerReady,
-    sendAction,
-    sendReaction,
-  };
-}
