@@ -18,6 +18,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { useCallback, useEffect, useState } from "react";
 import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { api } from "@/lib/api";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -25,6 +26,7 @@ export default function RootLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const connect = useSocketStore((s) => s.connect);
   const [splashDone, setSplashDone] = useState(false);
+  const [rehydrated, setRehydrated] = useState(false);
   const [fontsLoaded, fontError] = useFonts({
     NunitoSans_400Regular,
     NunitoSans_500Medium,
@@ -36,6 +38,24 @@ export default function RootLayout() {
   });
 
   const fontsReady = fontsLoaded || !!fontError;
+
+  useEffect(() => {
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      setRehydrated(true);
+    });
+    useAuthStore.persist.rehydrate();
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    if (!rehydrated) return;
+    const { token, isAuthenticated } = useAuthStore.getState();
+    if (isAuthenticated && token) {
+      api.auth.getProfile(token).catch(() => {
+        useAuthStore.getState().logout();
+      });
+    }
+  }, [rehydrated]);
 
   useEffect(() => {
     if (!fontsReady) return;
@@ -58,7 +78,7 @@ export default function RootLayout() {
     setSplashDone(true);
   }, []);
 
-  if (!fontsReady) return null;
+  if (!fontsReady || !rehydrated) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#100E17" }}>
