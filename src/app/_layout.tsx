@@ -83,7 +83,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#100E17" }}>
       <View style={{ flex: 1, backgroundColor: "#100E17" }}>
-        <Stack screenOptions={{ headerShown: false }}>
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#100E17" } }}>
           {isAuthenticated ? (
             <Stack.Screen name="(tabs)" />
           ) : (

@@ -40,7 +40,7 @@ export default function LoginPage() {
   };
 
   return (
-    <View className="flex-1">
+    <View className="flex-1 bg-paper">
       <StatusBar style="light" />
       <AuthScreen
         eyebrow="WELCOME BACK"

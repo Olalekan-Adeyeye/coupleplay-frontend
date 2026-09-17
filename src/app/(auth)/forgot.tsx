@@ -35,7 +35,7 @@ export default function ForgotPage() {
   };
 
   return (
-    <View className="flex-1">
+    <View className="flex-1 bg-paper">
       <StatusBar style="light" />
       <AuthScreen
         eyebrow="RESET PASSWORD"

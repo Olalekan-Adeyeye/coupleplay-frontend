@@ -66,7 +66,7 @@ export default function SignupPage() {
   };
 
   return (
-    <View className="flex-1">
+    <View className="flex-1 bg-paper">
       <StatusBar style="light" />
       <AuthScreen
         eyebrow={step === 1 ? "CREATE ACCOUNT" : "CHOOSE YOUR PEEP"}
