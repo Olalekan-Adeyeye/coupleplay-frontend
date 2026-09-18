@@ -6,6 +6,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { useResolvedTheme } from "@/hooks/useResolvedTheme";
 
 const EYE_ON = require("@/assets/images/icons/eye.png");
 const EYE_OFF = require("@/assets/images/icons/eye-off.png");
@@ -29,13 +30,18 @@ export function AuthInput({
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(secureTextEntry ?? false);
   const focusProgress = useSharedValue(0);
+  const resolved = useResolvedTheme();
+  const isLight = resolved === "light";
 
   const containerStyle = useAnimatedStyle(() => ({
-    borderColor: focusProgress.value > 0 ? "#946BFF" : "#2B2539",
-    backgroundColor: "#1B1826",
+    borderColor:
+      focusProgress.value > 0 ? "#946BFF" : isLight ? "#D4D0DE" : "#2B2539",
+    backgroundColor: isLight ? "#FFFFFF" : "#1B1826",
   }));
 
-  const iconTint = focused ? "#946BFF" : "#7E7396";
+  const iconTint = focused ? "#946BFF" : isLight ? "#948CA8" : "#7E7396";
+  const textColor = isLight ? "#1A1528" : "#F4F1FA";
+  const placeholderColor = isLight ? "#948CA8" : "#7E7396";
 
   return (
     <View className="w-full gap-1.5">
@@ -59,12 +65,12 @@ export function AuthInput({
         <TextInput
           className="flex-1 py-[14px] font-ui text-[15px]"
           style={[
-            { color: "#F4F1FA" },
+            { color: textColor },
             icon ? { paddingLeft: 12 } : { paddingLeft: 16 },
             secureToggle ? { paddingRight: 12 } : { paddingRight: 16 },
             style,
           ]}
-          placeholderTextColor="#7E7396"
+          placeholderTextColor={placeholderColor}
           selectionColor="#946BFF"
           secureTextEntry={secureToggle ? hidden : secureTextEntry}
           onFocus={(e) => {
@@ -94,7 +100,7 @@ export function AuthInput({
                   style={{
                     width: 20,
                     height: 20,
-                    tintColor: focused ? "#946BFF" : "#7E7396",
+                    tintColor: focused ? "#946BFF" : placeholderColor,
                     opacity: pressed ? 0.5 : 1,
                   }}
                 />

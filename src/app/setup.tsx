@@ -7,7 +7,6 @@ import { useAuthStore } from "@/stores/authStore";
 import { useCoupleStore } from "@/stores/coupleStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -73,8 +72,7 @@ export default function SetupScreen() {
       couple?.userAId === user?.id ? couple?.userB : couple?.userA;
     return (
       <View className="flex-1 bg-paper">
-        <StatusBar style="light" />
-        <SafeAreaView edges={["top", "bottom"]} className="flex-1">
+      <SafeAreaView edges={["top", "bottom"]} className="flex-1">
           <View className="flex-1 items-center justify-center px-7">
             <PeepPair
               mine={user?.avatar}
@@ -108,7 +106,6 @@ export default function SetupScreen() {
 
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <ScrollView
           contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingBottom: 24 }}

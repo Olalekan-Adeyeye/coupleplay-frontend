@@ -1,6 +1,7 @@
 import { PeepScene } from "@/components/peeps/PeepScene";
 import { PageHeader, SectionTitle, TabScreen } from "@/components/tab-screen";
 import { HeaderButton } from "@/components/ui/header-button";
+import { useResolvedTheme } from "@/hooks/useResolvedTheme";
 import { ActivityItem } from "@/types/stats";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -51,7 +52,7 @@ function SkeletonRow() {
   );
 }
 
-function ActivityRow({ item }: { item: ActivityItem }) {
+function ActivityRow({ item, isLight }: { item: ActivityItem; isLight: boolean }) {
   return (
     <Pressable
       onPress={() =>
@@ -101,7 +102,7 @@ function ActivityRow({ item }: { item: ActivityItem }) {
       <MaterialCommunityIcons
         name="chevron-right"
         size={18}
-        color="#A79DBE"
+        color={isLight ? "#948CA8" : "#A79DBE"}
       />
     </Pressable>
   );
@@ -129,6 +130,8 @@ export default function ActivityScreen() {
   const isLoadingActivity = useStatsStore((s) => s.isLoadingActivity);
   const fetchOverview = useStatsStore((s) => s.fetchOverview);
   const fetchActivity = useStatsStore((s) => s.fetchActivity);
+  const resolved = useResolvedTheme();
+  const isLight = resolved === "light";
 
   useEffect(() => {
     if (token) {
@@ -218,7 +221,7 @@ export default function ActivityScreen() {
               {group.day.toUpperCase()}
             </Text>
             {group.items.map((item) => (
-              <ActivityRow key={item.id} item={item} />
+              <ActivityRow key={item.id} item={item} isLight={isLight} />
             ))}
           </View>
         ))
@@ -233,7 +236,7 @@ export default function ActivityScreen() {
               className="w-[33.33%] items-center gap-1.5 py-4"
               style={
                 i < CAREER.length - 3
-                  ? { borderBottomWidth: 1, borderBottomColor: "#2B2539" }
+                  ? { borderBottomWidth: 1, borderBottomColor: isLight ? "#E0DCE8" : "#2B2539" }
                   : undefined
               }
             >

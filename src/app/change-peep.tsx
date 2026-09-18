@@ -3,7 +3,6 @@ import type { PeepId } from "@/components/peeps/peeps";
 import { useAuthStore } from "@/stores/authStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -39,7 +38,6 @@ export default function ChangePeepScreen() {
 
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <View className="flex-row items-center px-5 pt-2">
           <Pressable

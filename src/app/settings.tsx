@@ -5,9 +5,9 @@ import { useSocketStore } from "@/hooks/useSocket";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 import { useCoupleStore } from "@/stores/coupleStore";
+import { useThemeStore, type ThemePreference } from "@/stores/themeStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   Alert,
@@ -64,8 +64,7 @@ function Row({
       </View>
       <View className="flex-1">
         <Text
-          className="font-ui-semibold text-[14.5px]"
-          style={{ color: danger ? "#F87171" : "#F4F1FA" }}
+          className={`font-ui-semibold text-[14.5px] ${danger ? "text-error-bright" : "text-ink"}`}
         >
           {title}
         </Text>
@@ -99,6 +98,8 @@ export default function SettingsScreen() {
   const [joinInput, setJoinInput] = useState("");
   const [joinError, setJoinError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const themePreference = useThemeStore((s) => s.preference);
+  const setThemePreference = useThemeStore((s) => s.setPreference);
 
   useEffect(() => {
     if (token) fetchCouple(token).catch(() => {});
@@ -216,7 +217,6 @@ export default function SettingsScreen() {
 
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -416,11 +416,50 @@ export default function SettingsScreen() {
             </View>
 
             <View className="gap-2.5">
+              <SectionLabel>APPEARANCE</SectionLabel>
+              {(["system", "dark", "light"] as const).map((t) => (
+                <Pressable
+                  key={t}
+                  onPress={() => setThemePreference(t)}
+                  className="flex-row items-center gap-3 rounded-2xl border border-hairline bg-surface px-4 py-3.5 active:opacity-80"
+                >
+                  <MaterialCommunityIcons
+                    name={
+                      t === "system"
+                        ? "cellphone"
+                        : t === "dark"
+                          ? "moon-waning-crescent"
+                          : "white-balance-sunny"
+                    }
+                    size={20}
+                    color={themePreference === t ? "#946BFF" : "#B3A8C9"}
+                  />
+                  <Text
+                    className="flex-1 font-ui-semibold text-[14.5px] capitalize"
+                    style={{ color: themePreference === t ? "#F4F1FA" : "#B3A8C9" }}
+                  >
+                    {t === "system" ? "System default" : t === "dark" ? "Dark" : "Light"}
+                  </Text>
+                  <View
+                    className="h-5 w-5 items-center justify-center rounded-full border-2"
+                    style={{
+                      borderColor: themePreference === t ? "#946BFF" : "#7E7396",
+                    }}
+                  >
+                    {themePreference === t && (
+                      <View className="h-2.5 w-2.5 rounded-full bg-primary" />
+                    )}
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+
+            <View className="gap-2.5">
               <SectionLabel>ACCOUNT</SectionLabel>
               <Row
                 icon="logout"
                 iconTint="#F4F1EC"
-                iconColor="#F4F1FA"
+                iconColor="#000000"
                 title="Log out"
                 onPress={handleLogout}
               />

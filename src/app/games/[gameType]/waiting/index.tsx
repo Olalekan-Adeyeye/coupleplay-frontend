@@ -8,7 +8,6 @@ import { PeepAvatar } from "@/components/peeps/PeepAvatar";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
 import { useRoomStore } from "@/stores/roomStore";
@@ -237,7 +236,6 @@ export default function WaitingRoomScreen() {
 
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <View className="w-full max-w-[460px] flex-1 self-center px-[22px] pt-[14px] pb-[24px]">
 

@@ -40,11 +40,7 @@ export default function HomeScreen() {
 
   const hasPartner = couple?.userBId != null;
   const isUserA = couple?.userAId === user?.id;
-  const partner = hasPartner
-    ? isUserA
-      ? couple?.userB
-      : couple?.userA
-    : null;
+  const partner = hasPartner ? (isUserA ? couple?.userB : couple?.userA) : null;
   const myName = user?.name?.split(" ")[0] ?? "You";
   const partnerName = partner?.name?.split(" ")[0] ?? "Partner";
 
@@ -52,7 +48,9 @@ export default function HomeScreen() {
     if (!couple?.createdAt) return 0;
     return Math.max(
       1,
-      Math.floor((Date.now() - new Date(couple.createdAt).getTime()) / 86400000),
+      Math.floor(
+        (Date.now() - new Date(couple.createdAt).getTime()) / 86400000,
+      ),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [couple]);
@@ -164,7 +162,7 @@ export default function HomeScreen() {
                 color="#946BFF"
               />
               <Text className="font-ui-bold text-[14px] text-primary">
-                {invite.copied ? "Copied!" : invite.code ?? "Get code"}
+                {invite.copied ? "Copied!" : (invite.code ?? "Get code")}
               </Text>
             </Pressable>
           </View>
@@ -203,13 +201,13 @@ export default function HomeScreen() {
               <Pressable
                 key={g.id}
                 onPress={() => handleGamePress(g.id)}
-                className="mb-3 w-[48.5%] items-center gap-2 rounded-2xl border border-hairline bg-surface px-3 pt-4 pb-4 active:opacity-85"
+                className="mb-3 w-[48.5%] items-center gap-2 rounded-2xl border border-hairline bg-surface px-1.5 pt-1.5 pb-4 active:opacity-85"
                 style={({ pressed }) => ({
                   transform: [{ scale: pressed ? 0.98 : 1 }],
                 })}
               >
                 <View
-                  className="h-[76px] w-[76px] items-center justify-center overflow-hidden rounded-xl"
+                  className="h-[76px] w-full items-center justify-center overflow-hidden rounded-xl"
                   style={{ backgroundColor: g.accent }}
                 >
                   {hero ? (
@@ -226,7 +224,7 @@ export default function HomeScreen() {
                     />
                   )}
                   {!implemented && (
-                    <View className="absolute bottom-1 rounded-full bg-black/70 px-2 py-0.5">
+                    <View className="absolute bottom-2 rounded-full bg-black/70 px-2 py-0.5">
                       <Text className="font-ui-bold text-[9px] tracking-[0.8px] text-white">
                         SOON
                       </Text>
@@ -252,7 +250,6 @@ export default function HomeScreen() {
           })}
         </View>
       </View>
-
     </TabScreen>
   );
 }

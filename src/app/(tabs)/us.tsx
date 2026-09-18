@@ -3,6 +3,7 @@ import { PageHeader, SectionTitle, TabScreen } from "@/components/tab-screen";
 import { CoupleAvatars } from "@/components/ui/couple-avatars";
 import { HeaderButton } from "@/components/ui/header-button";
 import { useInviteAction } from "@/hooks/useInviteAction";
+import { useResolvedTheme } from "@/hooks/useResolvedTheme";
 import { Achievement } from "@/types/stats";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -12,7 +13,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useCoupleStore } from "@/stores/coupleStore";
 import { useStatsStore } from "@/stores/statsStore";
 
-function AchievementCard({ achievement }: { achievement: Achievement }) {
+function AchievementCard({ achievement, isLight }: { achievement: Achievement; isLight: boolean }) {
   const unlocked = achievement.unlocked;
   return (
     <View
@@ -21,13 +22,13 @@ function AchievementCard({ achievement }: { achievement: Achievement }) {
       <View
         className="h-14 w-14 items-center justify-center rounded-full"
         style={{
-          backgroundColor: unlocked ? achievement.color + "1F" : "#F4F1EC",
+          backgroundColor: unlocked ? achievement.color + "1F" : isLight ? "#E8E4EE" : "#F4F1EC",
         }}
       >
         <MaterialCommunityIcons
           name={achievement.icon as any}
           size={27}
-          color={unlocked ? achievement.color : "#A79DBE"}
+          color={unlocked ? achievement.color : isLight ? "#948CA8" : "#A79DBE"}
         />
       </View>
       <Text className="mt-2 text-center font-ui-bold text-[13px] text-ink">
@@ -65,6 +66,8 @@ export default function UsScreen() {
   const fetchOverview = useStatsStore((s) => s.fetchOverview);
   const fetchAchievements = useStatsStore((s) => s.fetchAchievements);
   const invite = useInviteAction();
+  const resolved = useResolvedTheme();
+  const isLight = resolved === "light";
 
   useEffect(() => {
     if (token) {
@@ -262,7 +265,7 @@ export default function UsScreen() {
                 contentContainerStyle={{ gap: 10 }}
               >
                 {unlockedAchievements.map((a) => (
-                  <AchievementCard key={a.id} achievement={a} />
+                  <AchievementCard key={a.id} achievement={a} isLight={isLight} />
                 ))}
               </ScrollView>
             </View>
@@ -278,7 +281,7 @@ export default function UsScreen() {
                 contentContainerStyle={{ gap: 10 }}
               >
                 {lockedAchievements.map((a) => (
-                  <AchievementCard key={a.id} achievement={a} />
+                  <AchievementCard key={a.id} achievement={a} isLight={isLight} />
                 ))}
               </ScrollView>
             </View>

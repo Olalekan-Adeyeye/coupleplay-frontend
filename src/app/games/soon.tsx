@@ -4,7 +4,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -68,7 +67,6 @@ export default function SoonScreen() {
 
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <View className="w-full max-w-[460px] flex-1 self-center px-[22px] pt-[10px] pb-6">
           <View className="flex-row items-center">

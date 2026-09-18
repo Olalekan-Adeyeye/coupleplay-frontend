@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import type { ReactNode } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -12,7 +11,6 @@ const TAB_BAR_CLEARANCE = 108;
 export function TabScreen({ children }: { children: ReactNode }) {
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
       <SafeAreaView edges={["top"]} className="flex-1">
         <ScrollView
           showsVerticalScrollIndicator={false}

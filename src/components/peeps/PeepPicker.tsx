@@ -1,5 +1,6 @@
 import { Image } from "expo-image";
 import { Pressable, Text, View } from "react-native";
+import { useResolvedTheme } from "@/hooks/useResolvedTheme";
 import { peepsOfGender, type PeepGender, type PeepId } from "./peeps";
 
 type PeepPickerProps = {
@@ -20,14 +21,17 @@ function Section({
   cellSize: number;
 }) {
   const presets = peepsOfGender(gender);
+  const resolved = useResolvedTheme();
+  const isLight = resolved === "light";
+
   return (
     <View>
       <Text
+        className="font-ui-bold"
         style={{
           fontSize: 11,
           letterSpacing: 1.2,
-          fontWeight: "700",
-          color: "#B3A8C9",
+          color: isLight ? "#6B6480" : "#B3A8C9",
           marginBottom: 10,
         }}
       >
@@ -55,9 +59,9 @@ function Section({
                   width: cellSize,
                   height: cellSize,
                   borderRadius: cellSize / 2,
-                  backgroundColor: selected ? "#EFEAFF" : "#1B1826",
+                  backgroundColor: selected ? "#EFEAFF" : isLight ? "#F0ECF5" : "#1B1826",
                   borderWidth: selected ? 2 : 1,
-                  borderColor: selected ? "#946BFF" : "#2B2539",
+                  borderColor: selected ? "#946BFF" : isLight ? "#D4D0DE" : "#2B2539",
                   overflow: "hidden",
                   alignItems: "center",
                   justifyContent: "flex-end",
@@ -73,7 +77,7 @@ function Section({
                 style={{
                   fontSize: 11,
                   fontWeight: selected ? "700" : "500",
-                  color: selected ? "#946BFF" : "#B3A8C9",
+                  color: selected ? "#946BFF" : isLight ? "#6B6480" : "#B3A8C9",
                 }}
               >
                 {p.label}

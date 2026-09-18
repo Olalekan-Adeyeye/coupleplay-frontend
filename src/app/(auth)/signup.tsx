@@ -10,7 +10,6 @@ import type { PeepId } from "@/components/peeps/peeps";
 import { useSocketStore } from "@/hooks/useSocket";
 import { useAuthStore } from "@/stores/authStore";
 import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import { Text, View } from "react-native";
 
@@ -71,7 +70,6 @@ export default function SignupPage() {
 
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
       <AuthScreen
         eyebrow={step === 1 ? "CREATE ACCOUNT" : "CHOOSE YOUR PEEP"}
         title={step === 1 ? "Set up your account" : "Which one is you?"}

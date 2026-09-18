@@ -5,7 +5,6 @@ import { PeepScene } from "@/components/peeps/PeepScene";
 import { useSocketStore } from "@/hooks/useSocket";
 import { useAuthStore } from "@/stores/authStore";
 import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
@@ -41,7 +40,6 @@ export default function LoginPage() {
 
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
       <AuthScreen
         eyebrow="WELCOME BACK"
         title="Log in to play together"

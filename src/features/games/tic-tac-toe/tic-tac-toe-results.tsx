@@ -11,7 +11,6 @@ import { useGameAbandoned } from "@/hooks/useGameAbandoned";
 import { CARD_SHADOW, BUTTON_SHADOW } from "@/lib/shadows";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -81,7 +80,6 @@ export default function TicTacToeResultsScreen() {
 
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <View className="w-full max-w-[460px] flex-1 self-center px-[22px] pt-[14px] pb-[24px]">
           {/* Top bar */}

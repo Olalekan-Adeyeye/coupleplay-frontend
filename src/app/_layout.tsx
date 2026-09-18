@@ -1,22 +1,23 @@
 import "../../global.css";
 
 import { SplashOverlay } from "@/components/splash/splash-overlay";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { usePaperColor } from "@/hooks/useResolvedTheme";
 import { useSocketStore } from "@/hooks/useSocket";
 import { useAuthStore } from "@/stores/authStore";
 import {
-  NunitoSans_400Regular,
-  NunitoSans_500Medium,
-  NunitoSans_600SemiBold,
-  NunitoSans_600SemiBold_Italic,
-  NunitoSans_700Bold,
-  NunitoSans_700Bold_Italic,
-  NunitoSans_800ExtraBold,
-} from "@expo-google-fonts/nunito-sans";
+  Urbanist_400Regular,
+  Urbanist_500Medium,
+  Urbanist_600SemiBold,
+  Urbanist_600SemiBold_Italic,
+  Urbanist_700Bold,
+  Urbanist_700Bold_Italic,
+  Urbanist_800ExtraBold,
+} from "@expo-google-fonts/urbanist";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useCallback, useEffect, useState } from "react";
-import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { api } from "@/lib/api";
 
@@ -28,13 +29,13 @@ export default function RootLayout() {
   const [splashDone, setSplashDone] = useState(false);
   const [rehydrated, setRehydrated] = useState(false);
   const [fontsLoaded, fontError] = useFonts({
-    NunitoSans_400Regular,
-    NunitoSans_500Medium,
-    NunitoSans_600SemiBold,
-    NunitoSans_700Bold,
-    NunitoSans_800ExtraBold,
-    NunitoSans_700Bold_Italic,
-    NunitoSans_600SemiBold_Italic,
+    Urbanist_400Regular,
+    Urbanist_500Medium,
+    Urbanist_600SemiBold,
+    Urbanist_700Bold,
+    Urbanist_800ExtraBold,
+    Urbanist_700Bold_Italic,
+    Urbanist_600SemiBold_Italic,
   });
 
   const fontsReady = fontsLoaded || !!fontError;
@@ -78,12 +79,14 @@ export default function RootLayout() {
     setSplashDone(true);
   }, []);
 
+  const paper = usePaperColor();
+
   if (!fontsReady || !rehydrated) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#100E17" }}>
-      <View style={{ flex: 1, backgroundColor: "#100E17" }}>
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#100E17" } }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: paper }}>
+      <ThemeProvider>
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: paper } }}>
           {isAuthenticated ? (
             <Stack.Screen name="(tabs)" />
           ) : (
@@ -91,7 +94,7 @@ export default function RootLayout() {
           )}
         </Stack>
         {!splashDone && <SplashOverlay onFinish={handleSplashFinish} />}
-      </View>
+      </ThemeProvider>
     </GestureHandlerRootView>
   );
 }

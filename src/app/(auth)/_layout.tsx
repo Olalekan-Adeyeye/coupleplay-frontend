@@ -1,12 +1,15 @@
 import { Stack } from 'expo-router';
+import { usePaperColor } from '@/hooks/useResolvedTheme';
 
 export default function AuthLayout() {
+  const paper = usePaperColor();
+
   return (
     <Stack
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
-        contentStyle: { backgroundColor: "#100E17" },
+        contentStyle: { backgroundColor: paper },
       }}
     >
       <Stack.Screen name="index" />

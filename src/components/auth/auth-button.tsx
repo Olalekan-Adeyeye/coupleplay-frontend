@@ -6,6 +6,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
+import { useResolvedTheme } from "@/hooks/useResolvedTheme";
 
 type AuthButtonProps = {
   title: string;
@@ -38,6 +39,8 @@ export function AuthButton({
   showArrow,
 }: AuthButtonProps) {
   const pressed = useSharedValue(0);
+  const resolved = useResolvedTheme();
+  const isLight = resolved === "light";
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: 1 - pressed.value * 0.02 }],
@@ -53,20 +56,20 @@ export function AuthButton({
     if (backgroundColor) return backgroundColor;
     if (isPrimary) return "#946BFF";
     if (isWhite) return "#FFFFFF";
-    if (isOutline) return "rgba(148,107,255,0.09)";
+    if (isOutline) return isLight ? "rgba(148,107,255,0.06)" : "rgba(148,107,255,0.09)";
     return "transparent";
   })();
 
   const fg = (() => {
     if (textColor) return textColor;
     if (isPrimary) return "#FFFFFF";
-    if (isWhite) return "#100E17";
-    if (isOutline) return "#F4F1FA";
-    return "#F4F1FA";
+    if (isWhite) return isLight ? "#1A1528" : "#100E17";
+    if (isOutline) return isLight ? "#1A1528" : "#F4F1FA";
+    return isLight ? "#1A1528" : "#F4F1FA";
   })();
 
   const borderColor = (() => {
-    if (isOutline) return "rgba(148,107,255,0.32)";
+    if (isOutline) return isLight ? "rgba(148,107,255,0.45)" : "rgba(148,107,255,0.32)";
     if (isWhite) return "transparent";
     return "transparent";
   })();
@@ -111,7 +114,7 @@ export function AuthButton({
             <Text
               style={{
                 color: fg,
-                fontFamily: "NunitoSans_700Bold",
+                fontFamily: "Urbanist_700Bold",
                 fontSize: 14.5,
                 letterSpacing: isPrimary || isWhite ? 0.7 : 0.6,
                 fontWeight: "700",

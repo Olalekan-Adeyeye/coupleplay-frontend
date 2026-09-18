@@ -1,18 +1,19 @@
 import { AuthButton } from "@/components/auth/auth-button";
 import { PeepScene } from "@/components/peeps/PeepScene";
 import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { Text, View } from "react-native";
 import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useResolvedTheme } from "@/hooks/useResolvedTheme";
 
 const LOGO = require("@/assets/images/splash/splash-logo.png");
 
 export default function WelcomeScreen() {
+  const resolved = useResolvedTheme();
+  const isLight = resolved === "light";
+
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
-
       {/* Depth — primary-tinted orbs. Flat, no mesh. */}
       <View
         pointerEvents="none"
@@ -63,7 +64,7 @@ export default function WelcomeScreen() {
           <View className="items-center" style={{ height: 380 }}>
             <Image
               source={LOGO}
-              style={{ width: 172, height: 172 }}
+              style={{ width: 200, height: 200 }}
               contentFit="contain"
               contentPosition="center"
               priority="high"
@@ -89,11 +90,11 @@ export default function WelcomeScreen() {
             <Text
               style={{
                 marginTop: 16,
-                fontFamily: "NunitoSans_800ExtraBold",
+                fontFamily: "Urbanist_800ExtraBold",
                 fontSize: 38,
                 lineHeight: 40,
                 letterSpacing: -1.1,
-                color: "#F4F1FA",
+                color: isLight ? "#1A1528" : "#F4F1FA",
                 textAlign: "center",
               }}
             >
@@ -104,10 +105,10 @@ export default function WelcomeScreen() {
               style={{
                 marginTop: 12,
                 maxWidth: 314,
-                fontFamily: "NunitoSans_400Regular",
+                fontFamily: "Urbanist_400Regular",
                 fontSize: 15.5,
                 lineHeight: 23,
-                color: "#B3A8C9",
+                color: isLight ? "#6B6480" : "#B3A8C9",
                 textAlign: "center",
               }}
             >
@@ -138,10 +139,10 @@ export default function WelcomeScreen() {
             <Text
               style={{
                 marginTop: 2,
-                fontFamily: "NunitoSans_500Medium",
+                fontFamily: "Urbanist_500Medium",
                 fontSize: 12,
                 lineHeight: 16,
-                color: "#7E7396",
+                color: isLight ? "#948CA8" : "#7E7396",
                 textAlign: "center",
               }}
             >

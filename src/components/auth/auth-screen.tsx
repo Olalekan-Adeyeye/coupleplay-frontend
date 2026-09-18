@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useResolvedTheme } from "@/hooks/useResolvedTheme";
 
 type AuthScreenProps = {
   /** Micro caps label above the title, e.g. "WELCOME BACK". */
@@ -36,6 +37,10 @@ export function AuthScreen({
   children,
   footer,
 }: AuthScreenProps) {
+  const resolved = useResolvedTheme();
+  const isLight = resolved === "light";
+  const chevronColor = isLight ? "#1A1528" : "#F4F1FA";
+
   return (
     <View className="flex-1 bg-paper">
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
@@ -54,7 +59,7 @@ export function AuthScreen({
               <MaterialCommunityIcons
                 name="chevron-left"
                 size={24}
-                color="#F4F1FA"
+                color={chevronColor}
               />
             </Pressable>
             <View className="flex-1" />
@@ -89,7 +94,7 @@ export function AuthScreen({
                     className="flex-1 rounded-full"
                     style={{
                       backgroundColor:
-                        i < step.current ? "#946BFF" : "#2B2539",
+                        i < step.current ? "#946BFF" : isLight ? "#E0DCE8" : "#2B2539",
                     }}
                   />
                 ))}

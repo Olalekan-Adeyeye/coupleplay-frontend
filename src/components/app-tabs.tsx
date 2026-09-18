@@ -1,4 +1,5 @@
 import { useActiveRoom } from "@/hooks/useActiveRoom";
+import { useResolvedTheme } from "@/hooks/useResolvedTheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import {
   TabList,
@@ -96,6 +97,10 @@ function DockButton({
   activeIcon: keyof typeof MaterialCommunityIcons.glyphMap;
   badged?: boolean;
 }) {
+  const resolved = useResolvedTheme();
+  const isLight = resolved === "light";
+  const inactiveColor = isLight ? "#948CA8" : "#A79DBE";
+
   return (
     <Pressable
       {...props}
@@ -128,7 +133,7 @@ function DockButton({
             <MaterialCommunityIcons
               name={isFocused ? activeIcon : icon}
               size={23}
-              color={isFocused ? "#946BFF" : "#A79DBE"}
+              color={isFocused ? "#946BFF" : inactiveColor}
             />
             {badged && !isFocused && (
               <View
@@ -143,7 +148,7 @@ function DockButton({
                 ? "font-ui-bold text-[11px]"
                 : "font-ui-medium text-[11px]"
             }
-            style={{ color: isFocused ? "#946BFF" : "#A79DBE" }}
+            style={{ color: isFocused ? "#946BFF" : inactiveColor }}
           >
             {label}
           </Text>

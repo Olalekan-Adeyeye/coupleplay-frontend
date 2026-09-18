@@ -2,11 +2,13 @@ import { PageHeader, TabScreen } from "@/components/tab-screen";
 import { HeaderButton } from "@/components/ui/header-button";
 import { GAMES, GAME_IMAGES } from "@/data/games";
 import { isGameImplemented } from "@/features/games/registry";
+import { useResolvedTheme } from "@/hooks/useResolvedTheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
+import { ScrollView } from "react-native-gesture-handler";
 
 const FILTERS = [
   { id: "all", label: "All", icon: "apps" as const },
@@ -20,6 +22,8 @@ export default function GamesScreen() {
   const [filter, setFilter] = useState("all");
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState("");
+  const resolved = useResolvedTheme();
+  const isLight = resolved === "light";
 
   const games = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -53,12 +57,12 @@ export default function GamesScreen() {
 
       {searching && (
         <View className="flex-row items-center gap-2 rounded-xl border border-hairline bg-surface px-4">
-          <MaterialCommunityIcons name="magnify" size={18} color="#A79DBE" />
+          <MaterialCommunityIcons name="magnify" size={18} color={isLight ? "#948CA8" : "#A79DBE"} />
           <TextInput
             value={query}
             onChangeText={setQuery}
             placeholder="Search games or vibes…"
-            placeholderTextColor="#A79DBE"
+            placeholderTextColor={isLight ? "#948CA8" : "#A79DBE"}
             autoFocus
             className="flex-1 py-3 font-ui text-[15px] text-ink"
           />
@@ -67,7 +71,7 @@ export default function GamesScreen() {
               <MaterialCommunityIcons
                 name="close-circle"
                 size={18}
-                color="#A79DBE"
+                color={isLight ? "#948CA8" : "#A79DBE"}
               />
             </Pressable>
           )}
@@ -75,7 +79,11 @@ export default function GamesScreen() {
       )}
 
       <View>
-        <View className="flex-row gap-2">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1, gap: 4 }}
+        >
           {FILTERS.map((f) => {
             const active = filter === f.id;
             return (
@@ -86,35 +94,35 @@ export default function GamesScreen() {
                 accessibilityState={{ selected: active }}
                 className="flex-row items-center gap-1.5 rounded-full px-4 py-2.5 active:opacity-80"
                 style={{
-                  backgroundColor: active ? "#946BFF" : "#1B1826",
+                  backgroundColor: active ? "#946BFF" : isLight ? "#F0ECF5" : "#1B1826",
                   borderWidth: 1,
-                  borderColor: active ? "#946BFF" : "#2B2539",
+                  borderColor: active ? "#946BFF" : isLight ? "#D4D0DE" : "#2B2539",
                 }}
               >
                 <MaterialCommunityIcons
                   name={f.icon}
                   size={14}
-                  color={active ? "#FFFFFF" : "#B3A8C9"}
+                  color={active ? "#FFFFFF" : isLight ? "#6B6480" : "#B3A8C9"}
                 />
                 <Text
                   className="font-ui-semibold text-[13px]"
-                  style={{ color: active ? "#FFFFFF" : "#B3A8C9" }}
+                  style={{ color: active ? "#FFFFFF" : isLight ? "#6B6480" : "#B3A8C9" }}
                 >
                   {f.label}
                 </Text>
               </Pressable>
             );
           })}
-        </View>
+        </ScrollView>
       </View>
 
       {games.length === 0 && (
         <View className="items-center rounded-2xl border border-hairline bg-surface px-6 py-10">
-          <MaterialCommunityIcons
-            name="gamepad-variant-outline"
-            size={36}
-            color="#A79DBE"
-          />
+              <MaterialCommunityIcons
+                name="gamepad-variant-outline"
+                size={36}
+                color={isLight ? "#948CA8" : "#A79DBE"}
+              />
           <Text className="mt-3 font-display-bold text-[16px] text-ink">
             Nothing matches
           </Text>
@@ -150,6 +158,8 @@ function GameRow({ gameId }: { gameId: string }) {
   const g = GAMES.find((x) => x.id === gameId)!;
   const implemented = isGameImplemented(g.id);
   const art = GAME_IMAGES[g.icon];
+  const resolved = useResolvedTheme();
+  const isLight = resolved === "light";
 
   return (
     <Pressable
@@ -220,7 +230,7 @@ function GameRow({ gameId }: { gameId: string }) {
               <MaterialCommunityIcons
                 name="account-group"
                 size={12}
-                color="#A79DBE"
+                color={isLight ? "#948CA8" : "#A79DBE"}
               />
               <Text className="font-ui-medium text-[11px] text-ink-tertiary">
                 {g.players}
@@ -230,7 +240,7 @@ function GameRow({ gameId }: { gameId: string }) {
               <MaterialCommunityIcons
                 name="clock-outline"
                 size={12}
-                color="#A79DBE"
+                color={isLight ? "#948CA8" : "#A79DBE"}
               />
               <Text className="font-ui-medium text-[11px] text-ink-tertiary">
                 {g.duration}
@@ -243,7 +253,7 @@ function GameRow({ gameId }: { gameId: string }) {
           <MaterialCommunityIcons
             name={implemented ? "chevron-right" : "bell-outline"}
             size={17}
-            color="#B3A8C9"
+            color={isLight ? "#6B6480" : "#B3A8C9"}
           />
         </View>
       </View>

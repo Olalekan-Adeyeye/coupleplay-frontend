@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { View, Pressable, Text, Alert, ScrollView } from "react-native";
-import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -289,7 +288,6 @@ export default function NumberHuntPlayScreen() {
 
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <View className="w-full max-w-[460px] flex-1 self-center px-[16px] pt-[14px] pb-[24px]">
           {/* Header */}
