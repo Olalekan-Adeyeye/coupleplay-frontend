@@ -19,9 +19,9 @@ export default function WelcomeScreen() {
         style={{
           position: "absolute",
           top: -140,
-          left: "50%",
-          marginLeft: -260,
-          width: 520,
+          left: "0%",
+          marginLeft: 0,
+          width: 10000,
           height: 520,
           borderBottomWidth: 10,
           borderColor: "#FFFFFF",

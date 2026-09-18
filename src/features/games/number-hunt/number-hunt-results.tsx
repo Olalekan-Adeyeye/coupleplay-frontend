@@ -1,32 +1,20 @@
-import { View, Text, Pressable, Alert } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Avatar } from "@/components/ui/avatar";
+import { StatRow } from "@/components/games/StatRow";
+import { ResultsScoreCard } from "@/components/games/ResultsScoreCard";
 import { usePartnerName } from "@/hooks/usePartnerName";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 import { useCoupleStore } from "@/stores/coupleStore";
 import { useRoomStore } from "@/stores/roomStore";
 import { useSocketStore } from "@/hooks/useSocket";
+import { useGameAbandoned } from "@/hooks/useGameAbandoned";
+import { CARD_SHADOW, BUTTON_SHADOW } from "@/lib/shadows";
 import { useEffect, useState } from "react";
-
-const CARD_SHADOW = {
-  shadowColor: "#4A3B6B",
-  shadowOffset: { width: 0, height: 3 },
-  shadowOpacity: 0.08,
-  shadowRadius: 8,
-  elevation: 2,
-} as const;
-
-const BUTTON_SHADOW = {
-  shadowColor: "#946BFF",
-  shadowOffset: { width: 0, height: 5 },
-  shadowOpacity: 0.25,
-  shadowRadius: 10,
-  elevation: 4,
-} as const;
 
 export default function NumberHuntResultsScreen() {
   const { winnerId, scores, totalRounds, roundsWon, roomId } =
@@ -91,21 +79,7 @@ export default function NumberHuntResultsScreen() {
     }
   };
 
-  useEffect(() => {
-    if (!socket) return;
-    const onAbandoned = (d: any) => {
-      if (d.roomId !== roomId) return;
-      Alert.alert(
-        `${partnerName} left`,
-        "The game room was closed. Back to games?",
-        [{ text: "OK", onPress: () => router.replace("/(tabs)/games") }],
-      );
-    };
-    socket.on("game:abandoned", onAbandoned);
-    return () => {
-      socket.off("game:abandoned", onAbandoned);
-    };
-  }, [socket, roomId, partnerName]);
+  useGameAbandoned(socket, roomId, partnerName);
 
   return (
     <View className="flex-1 bg-paper">
@@ -138,43 +112,15 @@ export default function NumberHuntResultsScreen() {
           </View>
 
           {/* Score card */}
-          <View className="mt-6 flex-row items-center justify-center gap-3">
-            <View
-              className="flex-1 items-center gap-2 rounded-3xl bg-surface px-3 py-6"
-              style={CARD_SHADOW}
-            >
-              <Avatar avatar={user?.avatar} name={user?.name} size={56} />
-              <Text
-                className="font-display-bold text-[14px] text-ink"
-                numberOfLines={1}
-              >
-                You
-              </Text>
-              <Text className="font-display-bold text-[32px] text-[#8B5CF6]">
-                {myScore}
-              </Text>
-            </View>
-
-            <Text className="font-display-bold text-[16px] text-ink-tertiary">
-              VS
-            </Text>
-
-            <View
-              className="flex-1 items-center gap-2 rounded-3xl bg-surface px-3 py-6"
-              style={CARD_SHADOW}
-            >
-              <Avatar name={partnerName} size={56} />
-              <Text
-                className="font-display-bold text-[14px] text-ink"
-                numberOfLines={1}
-              >
-                {partnerName}
-              </Text>
-              <Text className="font-display-bold text-[32px] text-[#F59E0B]">
-                {partnerScore}
-              </Text>
-            </View>
-          </View>
+          <ResultsScoreCard
+            myName={user?.name ?? "You"}
+            myAvatar={user?.avatar}
+            myScore={myScore}
+            myColor="text-[#8B5CF6]"
+            partnerName={partnerName}
+            partnerScore={partnerScore}
+            partnerColor="text-[#F59E0B]"
+          />
 
           {/* Stats */}
           <View
@@ -185,6 +131,8 @@ export default function NumberHuntResultsScreen() {
               label="Points"
               mine={String(myScore)}
               theirs={String(partnerScore)}
+              myColor="text-[#8B5CF6]"
+              theirColor="text-[#F59E0B]"
             />
             {myRoundsWon != null && partnerRoundsWon != null && (
               <>
@@ -193,6 +141,8 @@ export default function NumberHuntResultsScreen() {
                   label="Rounds won"
                   mine={String(myRoundsWon)}
                   theirs={String(partnerRoundsWon)}
+                  myColor="text-[#8B5CF6]"
+                  theirColor="text-[#F59E0B]"
                 />
               </>
             )}
@@ -201,6 +151,8 @@ export default function NumberHuntResultsScreen() {
               label="Total rounds"
               mine={String(rounds)}
               theirs={String(rounds)}
+              myColor="text-[#8B5CF6]"
+              theirColor="text-[#F59E0B]"
             />
           </View>
 
@@ -233,30 +185,6 @@ export default function NumberHuntResultsScreen() {
           </View>
         </View>
       </SafeAreaView>
-    </View>
-  );
-}
-
-function StatRow({
-  label,
-  mine,
-  theirs,
-}: {
-  label: string;
-  mine: string;
-  theirs: string;
-}) {
-  return (
-    <View className="flex-row items-center py-2.5">
-      <Text className="w-14 font-display-bold text-[17px] text-[#8B5CF6]">
-        {mine}
-      </Text>
-      <Text className="flex-1 text-center font-ui-medium text-[14px] text-ink">
-        {label}
-      </Text>
-      <Text className="w-14 text-right font-display-bold text-[17px] text-[#F59E0B]">
-        {theirs}
-      </Text>
     </View>
   );
 }

@@ -1,6 +1,11 @@
 import { Avatar } from "@/components/ui/avatar";
+import { ReactionBar } from "@/components/games/ReactionBar";
+import { LeaveGameButton } from "@/components/games/LeaveGameButton";
+import { InterstitialOverlay } from "@/components/games/InterstitialOverlay";
 import { usePartnerName } from "@/hooks/usePartnerName";
 import { useSocketStore } from "@/hooks/useSocket";
+import { useGameAbandoned } from "@/hooks/useGameAbandoned";
+import { useGameReactions } from "@/hooks/useGameReactions";
 import { useAuthStore } from "@/stores/authStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
@@ -8,6 +13,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
 import { useRoomStore } from "@/stores/roomStore";
+import { CARD_SHADOW } from "@/lib/shadows";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -35,16 +41,6 @@ interface TicTacToeState {
   lastMove: { row: number; col: number } | null;
 }
 
-const REACTIONS = ["❤️", "😂", "😭", "😈", "🔥"];
-
-const CARD_SHADOW = {
-  shadowColor: "#4A3B6B",
-  shadowOffset: { width: 0, height: 3 },
-  shadowOpacity: 0.08,
-  shadowRadius: 8,
-  elevation: 2,
-} as const;
-
 export default function TicTacToePlayScreen() {
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
   const user = useAuthStore((s) => s.user);
@@ -53,8 +49,7 @@ export default function TicTacToePlayScreen() {
 
   const [state, setState] = useState<TicTacToeState | null>(null);
   const [interstitial, setInterstitial] = useState<string | null>(null);
-  const [incomingReaction, setIncomingReaction] = useState<string | null>(null);
-  const [rejectMsg, setRejectMsg] = useState<string | null>(null);
+  const { incomingReaction, rejectMsg, sendReaction } = useGameReactions(socket, roomId, user?.id);
   const leftRef = useRef(false);
   const navigation = useNavigation();
 
@@ -83,30 +78,18 @@ export default function TicTacToePlayScreen() {
         `/games/TIC_TAC_TOE/results?winnerId=${results.winnerId ?? ""}&scores=${JSON.stringify(results.scores)}&totalRounds=${results.totalRounds}&roundsWon=${encodeURIComponent(JSON.stringify(results.roundsWon ?? {}))}&roomId=${roomId}` as any,
       );
     };
-    const onReaction = (d: any) => {
-      if (d.userId !== user?.id) {
-        setIncomingReaction(d.reaction);
-        setTimeout(() => setIncomingReaction(null), 1800);
-      }
-    };
-    const onReject = (d: any) => {
-      setRejectMsg(d.reason ?? "Move rejected");
-      setTimeout(() => setRejectMsg(null), 2000);
-    };
     socket.on("game:state", onState);
     socket.on("game:round_end", onRoundEnd);
     socket.on("game:finished", onFinished);
-    socket.on("player:reaction", onReaction);
-    socket.on("game:reject", onReject);
     socket.emit("game:sync", { roomId });
     return () => {
       socket.off("game:state", onState);
       socket.off("game:round_end", onRoundEnd);
       socket.off("game:finished", onFinished);
-      socket.off("player:reaction", onReaction);
-      socket.off("game:reject", onReject);
     };
   }, [socket, roomId, user?.id, partnerName]);
+
+  useGameAbandoned(socket, roomId, partnerName);
 
   const place = (row: number, col: number) => {
     if (!state || state.status !== "active") return;
@@ -118,32 +101,6 @@ export default function TicTacToePlayScreen() {
       payload: { row, col },
     });
   };
-
-  const handleReaction = (r: string) => {
-    socket?.emit("player:reaction", { roomId, reaction: r });
-  };
-
-  // Partner left the room — it's destroyed. Exit to games.
-  useEffect(() => {
-    if (!socket) return;
-    const onAbandoned = (d: any) => {
-      if (d.roomId !== roomId) return;
-      Alert.alert(
-        `${partnerName} left the game`,
-        "The room was closed. Back to games?",
-        [
-          {
-            text: "OK",
-            onPress: () => router.replace("/(tabs)/games"),
-          },
-        ],
-      );
-    };
-    socket.on("game:abandoned", onAbandoned);
-    return () => {
-      socket.off("game:abandoned", onAbandoned);
-    };
-  }, [socket, roomId, partnerName]);
 
   const handleLeave = () => {
     Alert.alert(
@@ -329,80 +286,23 @@ export default function TicTacToePlayScreen() {
 
           {/* Interstitial */}
           {interstitial && (
-            <View className="absolute inset-0 z-10 items-center justify-center bg-paper/90">
-              <View
-                className="items-center gap-3 rounded-3xl bg-surface px-10 py-8"
-                style={CARD_SHADOW}
-              >
-                <View
-                  className="h-16 w-16 items-center justify-center rounded-full"
-                  style={{
-                    backgroundColor: interstitial.includes("draw")
-                      ? "#946BFF1F"
-                      : interstitial.includes("You")
-                        ? "#F59E0B1F"
-                        : "#FF5C8A1F",
-                  }}
-                >
-                  <MaterialCommunityIcons
-                    name={
-                      interstitial.includes("draw")
-                        ? "handshake"
-                        : interstitial.includes("You")
-                          ? "trophy"
-                          : "arm-flex"
-                    }
-                    size={32}
-                    color={
-                      interstitial.includes("draw")
-                        ? "#946BFF"
-                        : interstitial.includes("You")
-                          ? "#F59E0B"
-                          : "#FF5C8A"
-                    }
-                  />
-                </View>
-                <Text className="font-display-bold text-[20px] text-ink">
-                  {interstitial}
-                </Text>
-              </View>
-            </View>
+            <InterstitialOverlay
+              message={interstitial}
+              icon={interstitial.includes("draw") ? "handshake" : interstitial.includes("You") ? "trophy" : "arm-flex"}
+              iconColor={interstitial.includes("draw") ? "#946BFF" : interstitial.includes("You") ? "#F59E0B" : "#FF5C8A"}
+              iconBg={interstitial.includes("draw") ? "#946BFF1F" : interstitial.includes("You") ? "#F59E0B1F" : "#FF5C8A1F"}
+            />
           )}
 
           {/* Reactions */}
           <View className="mt-auto flex-row items-center justify-center gap-4 pb-2">
-            {incomingReaction && (
-              <View className="absolute -top-12 rounded-full bg-accent-soft px-4 py-2">
-                <Text className="text-[20px]">{incomingReaction}</Text>
-              </View>
-            )}
-            {rejectMsg && (
-              <View className="absolute -top-12 rounded-full bg-red-500/20 px-4 py-2">
-                <Text className="font-ui-semibold text-[13px] text-red-400">{rejectMsg}</Text>
-              </View>
-            )}
-            {REACTIONS.map((r) => (
-              <Pressable
-                key={r}
-                onPress={() => handleReaction(r)}
-                hitSlop={8}
-                className="h-11 w-11 items-center justify-center rounded-full active:opacity-70"
-              >
-                <Text className="text-[22px]">{r}</Text>
-              </Pressable>
-            ))}
+            <ReactionBar
+              incomingReaction={incomingReaction}
+              rejectMsg={rejectMsg}
+              onReaction={(r) => sendReaction(roomId!, r)}
+            />
           </View>
-          <Pressable
-            onPress={handleLeave}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel="Leave game"
-            className="items-center py-1 active:opacity-70"
-          >
-            <Text className="font-ui-semibold text-[14px] text-red-500">
-              Leave Game
-            </Text>
-          </Pressable>
+          <LeaveGameButton onPress={handleLeave} />
         </View>
       </SafeAreaView>
     </View>

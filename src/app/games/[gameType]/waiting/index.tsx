@@ -1,6 +1,7 @@
 import { getGame, GAME_IMAGES } from "@/data/games";
 import { usePartnerName } from "@/hooks/usePartnerName";
 import { useSocketStore } from "@/hooks/useSocket";
+import { useGameAbandoned } from "@/hooks/useGameAbandoned";
 import { useAuthStore } from "@/stores/authStore";
 import { api } from "@/lib/api";
 import { PeepAvatar } from "@/components/peeps/PeepAvatar";
@@ -11,6 +12,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
 import { useRoomStore } from "@/stores/roomStore";
+import { CARD_SHADOW, BUTTON_SHADOW } from "@/lib/shadows";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -19,22 +21,6 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const CARD_SHADOW = {
-  shadowColor: "#4A3B6B",
-  shadowOffset: { width: 0, height: 3 },
-  shadowOpacity: 0.08,
-  shadowRadius: 8,
-  elevation: 2,
-} as const;
-
-const BUTTON_SHADOW = {
-  shadowColor: "#946BFF",
-  shadowOffset: { width: 0, height: 5 },
-  shadowOpacity: 0.25,
-  shadowRadius: 10,
-  elevation: 4,
-} as const;
 
 type Phase = "creating" | "waiting" | "joined" | "ready";
 
@@ -172,28 +158,7 @@ export default function WaitingRoomScreen() {
     };
   }, [socket, user?.id]);
 
-  // Partner explicitly left → room is destroyed. Alert and exit.
-  useEffect(() => {
-    if (!socket) return;
-    const onAbandoned = (d: any) => {
-      if (d.roomId !== roomId) return;
-      useRoomStore.getState().setRoom(null);
-      Alert.alert(
-        `${partnerName} left`,
-        "The game room was closed. Back to games?",
-        [
-          {
-            text: "OK",
-            onPress: () => router.replace("/(tabs)/games"),
-          },
-        ],
-      );
-    };
-    socket.on("game:abandoned", onAbandoned);
-    return () => {
-      socket.off("game:abandoned", onAbandoned);
-    };
-  }, [socket, roomId, partnerName, user?.id]);
+  useGameAbandoned(socket, roomId, partnerName, { clearRoom: true });
 
   // Server started the game -> auto-navigate both players into play.
   useEffect(() => {
