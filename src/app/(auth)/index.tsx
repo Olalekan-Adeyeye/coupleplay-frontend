@@ -23,7 +23,9 @@ export default function WelcomeScreen() {
           marginLeft: -260,
           width: 520,
           height: 520,
-          borderRadius: 260,
+          borderBottomWidth: 10,
+          borderColor: "#FFFFFF",
+          borderRadius: 0,
           backgroundColor: "#946BFF",
           opacity: 0.09,
         }}
@@ -56,12 +58,12 @@ export default function WelcomeScreen() {
       />
 
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
-        <View className="flex-1 px-6">
+        <View className="flex-1 px-6 gap-4">
           {/* Brand mark — your real logo, centered. No fabricated heart. */}
-          <View className="items-center pt-3">
+          <View className="items-center" style={{ height: 380 }}>
             <Image
               source={LOGO}
-              style={{ width: 172, height: 68 }}
+              style={{ width: 172, height: 172 }}
               contentFit="contain"
               contentPosition="center"
               priority="high"
@@ -71,7 +73,7 @@ export default function WelcomeScreen() {
           </View>
 
           {/* Hero — centered, generous air. */}
-          <View className="flex-1 items-center justify-center px-1">
+          <View className="flex items-center justify-center px-1 -mt-32">
             <View
               style={{
                 shadowColor: "#000000",
@@ -115,7 +117,13 @@ export default function WelcomeScreen() {
           </View>
 
           {/* CTAs — primary solid + primary glass, Apple pill language. */}
-          <View style={{ gap: 12, paddingBottom: 4 }}>
+          <View
+            className="flex-1 justify-end"
+            style={{
+              gap: 12,
+              paddingBottom: 4,
+            }}
+          >
             <AuthButton
               title="LOG IN"
               onPress={() => router.push("/(auth)/login" as any)}

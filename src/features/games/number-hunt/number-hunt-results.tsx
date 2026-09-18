@@ -28,7 +28,7 @@ const BUTTON_SHADOW = {
   elevation: 4,
 } as const;
 
-export default function SpeedBattleResultsScreen() {
+export default function NumberHuntResultsScreen() {
   const { winnerId, scores, totalRounds, roundsWon, roomId } =
     useLocalSearchParams<{
       winnerId?: string;
@@ -52,7 +52,6 @@ export default function SpeedBattleResultsScreen() {
     Object.entries(parsed).find(([id]) => id !== user?.id)?.[1] ?? 0;
   const rounds = Number(totalRounds ?? 5);
 
-  // Real per-player rounds won when the server reported them.
   let won: Record<string, number> | null = null;
   try {
     won = roundsWon ? JSON.parse(roundsWon) : null;
@@ -81,18 +80,17 @@ export default function SpeedBattleResultsScreen() {
       if (roomId) socket?.emit("room:leave", { roomId });
       useRoomStore.getState().setRoom(null);
       const room = await api.rooms.create(
-        { coupleId: couple.id, gameType: "SPEED_BATTLE", totalRounds: rounds },
+        { coupleId: couple.id, gameType: "NUMBER_HUNT", totalRounds: rounds },
         token,
       );
       setRoom(room);
-      router.replace(`/games/SPEED_BATTLE/waiting?roomId=${room.id}` as any);
+      router.replace(`/games/NUMBER_HUNT/waiting?roomId=${room.id}` as any);
     } catch (e: any) {
       setRematchError(e.message ?? "Could not start a rematch.");
       setRematching(false);
     }
   };
 
-  // Partner left
   useEffect(() => {
     if (!socket) return;
     const onAbandoned = (d: any) => {
@@ -116,11 +114,11 @@ export default function SpeedBattleResultsScreen() {
         <View className="w-full max-w-[460px] flex-1 self-center px-[22px] pt-[14px] pb-[24px]">
           {/* Trophy */}
           <View className="mt-6 items-center gap-3">
-            <View className="h-24 w-24 items-center justify-center rounded-full bg-amber-100">
+            <View className="h-24 w-24 items-center justify-center rounded-full bg-violet-100">
               <MaterialCommunityIcons
-                name={isDraw ? "handshake" : iWon ? "trophy" : "lightning-bolt"}
+                name={isDraw ? "handshake" : iWon ? "trophy" : "hexagon"}
                 size={46}
-                color={isDraw ? "#946BFF" : iWon ? "#B45309" : "#F59E0B"}
+                color={isDraw ? "#946BFF" : iWon ? "#B45309" : "#8B5CF6"}
               />
             </View>
             <Text className="font-display-bold text-[28px] text-ink">
@@ -134,7 +132,7 @@ export default function SpeedBattleResultsScreen() {
               {isDraw
                 ? "Neck and neck!"
                 : iWon
-                  ? "Fastest finger wins!"
+                  ? "Sharp eyes win the game!"
                   : "So close! Try again?"}
             </Text>
           </View>
@@ -152,7 +150,7 @@ export default function SpeedBattleResultsScreen() {
               >
                 You
               </Text>
-              <Text className="font-display-bold text-[32px] text-primary">
+              <Text className="font-display-bold text-[32px] text-[#8B5CF6]">
                 {myScore}
               </Text>
             </View>
@@ -172,13 +170,13 @@ export default function SpeedBattleResultsScreen() {
               >
                 {partnerName}
               </Text>
-              <Text className="font-display-bold text-[32px] text-accent">
+              <Text className="font-display-bold text-[32px] text-[#F59E0B]">
                 {partnerScore}
               </Text>
             </View>
           </View>
 
-          {/* Stats — real values only */}
+          {/* Stats */}
           <View
             className="mt-4 gap-0 rounded-3xl bg-surface px-5 py-4"
             style={CARD_SHADOW}
@@ -250,13 +248,13 @@ function StatRow({
 }) {
   return (
     <View className="flex-row items-center py-2.5">
-      <Text className="w-14 font-display-bold text-[17px] text-primary">
+      <Text className="w-14 font-display-bold text-[17px] text-[#8B5CF6]">
         {mine}
       </Text>
       <Text className="flex-1 text-center font-ui-medium text-[14px] text-ink">
         {label}
       </Text>
-      <Text className="w-14 text-right font-display-bold text-[17px] text-accent">
+      <Text className="w-14 text-right font-display-bold text-[17px] text-[#F59E0B]">
         {theirs}
       </Text>
     </View>

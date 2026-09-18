@@ -182,7 +182,7 @@ export default function SettingsScreen() {
   const handleLogout = () => {
     disconnect();
     useAuthStore.getState().logout();
-    router.replace("/(auth)");
+    router.replace("/(auth)/login");
   };
 
   const handleDeleteAccount = () => {

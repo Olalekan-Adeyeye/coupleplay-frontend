@@ -5,7 +5,8 @@ export type GameIconName =
   | "draw_guess"
   | "speed_battle"
   | "memory_match"
-  | "would_you_rather";
+  | "would_you_rather"
+  | "number_hunt";
 
 export type GameStep = {
   icon: string;
@@ -49,6 +50,7 @@ export const GAME_IMAGES: Partial<Record<GameIconName, number>> = {
   speed_battle: require("@/assets/images/speed_battle.png"),
   memory_match: require("@/assets/images/memory_match.png"),
   would_you_rather: require("@/assets/images/would_you_rather.png"),
+  number_hunt: require("@/assets/images/number_hunt.png"),
 };
 
 export function getGame(id: string | undefined): Game | undefined {

@@ -70,8 +70,10 @@ export const api = {
     create: (data: { coupleId: string; gameType: string; totalRounds?: number }, token: string) =>
       request<any>('/rooms', { method: 'POST', body: data, token }),
 
-    getActive: (coupleId: string, token: string) =>
-      request<any>(`/rooms/active/${coupleId}`, { token }),
+    getActive: (coupleId: string, token: string, gameType?: string) => {
+      const qs = gameType ? `?gameType=${encodeURIComponent(gameType)}` : '';
+      return request<any>(`/rooms/active/${coupleId}${qs}`, { token });
+    },
 
     get: (id: string, token: string) =>
       request<any>(`/rooms/${id}`, { token }),

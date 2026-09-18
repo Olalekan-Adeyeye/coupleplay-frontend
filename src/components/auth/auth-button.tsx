@@ -71,29 +71,6 @@ export function AuthButton({
     return "transparent";
   })();
 
-  const shadow = (() => {
-    if (backgroundColor) return undefined;
-    if (isPrimary) {
-      return {
-        shadowColor: "#946BFF",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.32,
-        shadowRadius: 20,
-        elevation: 8,
-      } as const;
-    }
-    if (isWhite) {
-      return {
-        shadowColor: "#000000",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.16,
-        shadowRadius: 20,
-        elevation: 8,
-      } as const;
-    }
-    return undefined;
-  })();
-
   return (
     <Animated.View style={animatedStyle}>
       <Pressable
@@ -119,13 +96,15 @@ export function AuthButton({
             justifyContent: "center",
             paddingHorizontal: 24,
           },
-          shadow,
         ]}
       >
         {loading ? (
           <ActivityIndicator color={fg} size="small" />
         ) : (
-          <View className="flex-row items-center justify-center" style={{ gap: 10 }}>
+          <View
+            className="flex-row items-center justify-center"
+            style={{ gap: 10 }}
+          >
             {icon && (
               <MaterialCommunityIcons name={icon} size={18} color={fg} />
             )}
@@ -158,7 +137,11 @@ export function AuthButton({
                   marginLeft: 2,
                 }}
               >
-                <MaterialCommunityIcons name="chevron-right" size={14} color={fg} />
+                <MaterialCommunityIcons
+                  name="chevron-right"
+                  size={14}
+                  color={fg}
+                />
               </View>
             )}
           </View>

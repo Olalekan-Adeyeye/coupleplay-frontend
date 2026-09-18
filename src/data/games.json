@@ -44,6 +44,49 @@
     ]
   },
   {
+    "id": "NUMBER_HUNT",
+    "name": "Number Hunt",
+    "tag": "Sharp",
+    "tagColor": "#8B5CF6",
+    "desc": "Spot the numbers. Beat the clock. Outsmart your partner.",
+    "players": "2 Players",
+    "duration": "~5 min",
+    "rounds": 5,
+    "accent": "#EDE9FE",
+    "icon": "number_hunt",
+    "iconName": "hexagon",
+    "emoji": "🔢",
+    "heroImage": "number_hunt",
+    "objective": "Hunt targets or race to tap first!",
+    "popular": true,
+    "steps": [
+      {
+        "icon": "hexagon",
+        "iconColor": "#8B5CF6",
+        "title": "A honeycomb grid of 100 numbers appears."
+      },
+      {
+        "icon": "crosshairs",
+        "iconColor": "#F59E0B",
+        "title": "Hunt: pick targets for your partner. Race: tap the called number first."
+      },
+      {
+        "icon": "trophy",
+        "iconColor": "#F59E0B",
+        "title": "Most points across 5 rounds wins!"
+      }
+    ],
+    "stats": {
+      "gamesPlayed": 0,
+      "perfectMatches": 0,
+      "winRate": 0
+    },
+    "modes": [
+      "competitive",
+      "brain"
+    ]
+  },
+  {
     "id": "DRAW_GUESS",
     "name": "Draw & Guess",
     "tag": "Creative",

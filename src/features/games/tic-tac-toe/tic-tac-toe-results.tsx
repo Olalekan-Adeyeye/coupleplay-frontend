@@ -66,6 +66,7 @@ export default function TicTacToeResultsScreen() {
 
   const handleLeave = () => {
     if (roomId) socket?.emit("room:leave", { roomId });
+    useRoomStore.getState().setRoom(null);
     router.replace("/(tabs)/games");
   };
 
@@ -74,6 +75,8 @@ export default function TicTacToeResultsScreen() {
     setRematchError(null);
     setRematching(true);
     try {
+      if (roomId) socket?.emit("room:leave", { roomId });
+      useRoomStore.getState().setRoom(null);
       const room = await api.rooms.create(
         { coupleId: couple.id, gameType: "TIC_TAC_TOE", totalRounds: rounds },
         token,

@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { View, ScrollView, Pressable, Text, Alert } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Avatar } from "@/components/ui/avatar";
 import { usePartnerName } from "@/hooks/usePartnerName";
 import { useAuthStore } from "@/stores/authStore";
 import { useSocketStore } from "@/hooks/useSocket";
+import { useRoomStore } from "@/stores/roomStore";
 
 const CARD_SHADOW = {
   shadowColor: "#4A3B6B",
@@ -69,6 +70,8 @@ export default function SpeedBattlePlayScreen() {
   const [interstitial, setInterstitial] = useState<string | null>(null);
   const [rejectMsg, setRejectMsg] = useState<string | null>(null);
   const lastRound = useRef<number | null>(null);
+  const leftRef = useRef(false);
+  const navigation = useNavigation();
 
   const question = state?.questions[state?.currentQuestionIndex ?? 0] ?? null;
   const myAnswer = state?.answers[user?.id ?? ""] ?? null;
@@ -202,12 +205,46 @@ export default function SpeedBattlePlayScreen() {
         text: "Leave",
         style: "destructive",
         onPress: () => {
+          leftRef.current = true;
           socket?.emit("room:leave", { roomId });
+          useRoomStore.getState().setRoom(null);
           router.replace("/(tabs)/games");
         },
       },
     ]);
   };
+
+  // Intercept Android back button
+  useEffect(() => {
+    const unsub = navigation.addListener("beforeRemove" as any, (e: any) => {
+      e.preventDefault();
+      if (leftRef.current) return;
+      Alert.alert("Leave game?", "The game room will be closed for both of you.", [
+        { text: "Stay", style: "cancel" },
+        {
+          text: "Leave",
+          style: "destructive",
+          onPress: () => {
+            leftRef.current = true;
+            socket?.emit("room:leave", { roomId });
+            useRoomStore.getState().setRoom(null);
+            navigation.dispatch(e.data.action);
+          },
+        },
+      ]);
+    });
+    return () => unsub();
+  }, [navigation, socket, roomId]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (!leftRef.current && roomId) {
+        socket?.emit("room:leave", { roomId });
+        useRoomStore.getState().setRoom(null);
+      }
+    };
+  }, [roomId, socket]);
 
   const myScore = state?.scores[user?.id ?? ""] ?? 0;
   const partnerScore = state

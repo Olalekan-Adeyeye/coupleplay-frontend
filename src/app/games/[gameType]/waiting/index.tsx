@@ -6,10 +6,11 @@ import { api } from "@/lib/api";
 import { PeepAvatar } from "@/components/peeps/PeepAvatar";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
+import { useRoomStore } from "@/stores/roomStore";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -110,6 +111,8 @@ export default function WaitingRoomScreen() {
   const [iAmReady, setIAmReady] = useState(false);
   const [partnerReady, setPartnerReady] = useState(false);
   const startedRef = useRef(false);
+  const leftRef = useRef(false);
+  const navigation = useNavigation();
 
   const myFirstName = user?.name?.split(" ")[0] ?? "You";
 
@@ -174,6 +177,7 @@ export default function WaitingRoomScreen() {
     if (!socket) return;
     const onAbandoned = (d: any) => {
       if (d.roomId !== roomId) return;
+      useRoomStore.getState().setRoom(null);
       Alert.alert(
         `${partnerName} left`,
         "The game room was closed. Back to games?",
@@ -221,13 +225,47 @@ export default function WaitingRoomScreen() {
           text: "Leave",
           style: "destructive",
           onPress: () => {
+            leftRef.current = true;
             socket?.emit("room:leave", { roomId });
+            useRoomStore.getState().setRoom(null);
             router.replace("/(tabs)/games");
           },
         },
       ],
     );
   };
+
+  // Intercept Android back button
+  useEffect(() => {
+    const unsub = navigation.addListener("beforeRemove" as any, (e: any) => {
+      e.preventDefault();
+      if (leftRef.current) return;
+      Alert.alert("Leave game?", "The game room will be closed for both of you.", [
+        { text: "Stay", style: "cancel" },
+        {
+          text: "Leave",
+          style: "destructive",
+          onPress: () => {
+            leftRef.current = true;
+            socket?.emit("room:leave", { roomId });
+            useRoomStore.getState().setRoom(null);
+            navigation.dispatch(e.data.action);
+          },
+        },
+      ]);
+    });
+    return () => unsub();
+  }, [navigation, socket, roomId]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (!leftRef.current && roomId) {
+        socket?.emit("room:leave", { roomId });
+        useRoomStore.getState().setRoom(null);
+      }
+    };
+  }, [roomId, socket]);
 
   const rounds = game?.rounds ?? 5;
   const duration = game?.duration ?? "~5 min";

@@ -3,10 +3,11 @@ import { usePartnerName } from "@/hooks/usePartnerName";
 import { useSocketStore } from "@/hooks/useSocket";
 import { useAuthStore } from "@/stores/authStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
+import { useRoomStore } from "@/stores/roomStore";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -54,6 +55,8 @@ export default function TicTacToePlayScreen() {
   const [interstitial, setInterstitial] = useState<string | null>(null);
   const [incomingReaction, setIncomingReaction] = useState<string | null>(null);
   const [rejectMsg, setRejectMsg] = useState<string | null>(null);
+  const leftRef = useRef(false);
+  const navigation = useNavigation();
 
   useEffect(() => {
     if (!socket) return;
@@ -152,13 +155,47 @@ export default function TicTacToePlayScreen() {
           text: "Leave",
           style: "destructive",
           onPress: () => {
+            leftRef.current = true;
             socket?.emit("room:leave", { roomId });
+            useRoomStore.getState().setRoom(null);
             router.replace("/(tabs)/games");
           },
         },
       ],
     );
   };
+
+  // Intercept Android back button
+  useEffect(() => {
+    const unsub = navigation.addListener("beforeRemove" as any, (e: any) => {
+      e.preventDefault();
+      if (leftRef.current) return;
+      Alert.alert("Leave game?", "The game room will be closed for both of you.", [
+        { text: "Stay", style: "cancel" },
+        {
+          text: "Leave",
+          style: "destructive",
+          onPress: () => {
+            leftRef.current = true;
+            socket?.emit("room:leave", { roomId });
+            useRoomStore.getState().setRoom(null);
+            navigation.dispatch(e.data.action);
+          },
+        },
+      ]);
+    });
+    return () => unsub();
+  }, [navigation, socket, roomId]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (!leftRef.current && roomId) {
+        socket?.emit("room:leave", { roomId });
+        useRoomStore.getState().setRoom(null);
+      }
+    };
+  }, [roomId, socket]);
 
   const myMark = state ? (state.marks[user?.id ?? ""] ?? "X") : "X";
   const myTurn = state?.turnUserId === user?.id;

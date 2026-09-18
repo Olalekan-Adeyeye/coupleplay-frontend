@@ -32,7 +32,7 @@ export default function GameDetailScreen() {
       return;
     }
     try {
-      const room = await api.rooms.getActive(coupleId, token);
+      const room = await api.rooms.getActive(coupleId, token, gameType);
       if (!room) {
         setActiveRoom(null);
         return;
@@ -65,7 +65,7 @@ export default function GameDetailScreen() {
     setLoading(true);
     setError(null);
     try {
-      const active = await api.rooms.getActive(couple.id, token!);
+      const active = await api.rooms.getActive(couple.id, token!, game.id);
       if (active) {
         await api.rooms.join(active.id, token!);
         setRoom(active);
