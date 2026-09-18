@@ -1,6 +1,10 @@
 import { AuthButton } from "@/components/auth/auth-button";
 import { AuthInput } from "@/components/auth/auth-input";
-import { AuthError, AuthScreen, AuthSwitch } from "@/components/auth/auth-screen";
+import {
+  AuthError,
+  AuthScreen,
+  AuthSwitch,
+} from "@/components/auth/auth-screen";
 import { PeepPicker } from "@/components/peeps/PeepPicker";
 import type { PeepId } from "@/components/peeps/peeps";
 import { useSocketStore } from "@/hooks/useSocket";
@@ -173,8 +177,8 @@ export default function SignupPage() {
         <AuthError message={error} />
         {step === 2 && (
           <Text className="font-ui-medium text-[12px] leading-[17px] text-ink-tertiary">
-            Five male Peeps, five female Peeps — your pick is your look on
-            every table, lobby and scoreboard.
+            Five male Peeps, five female Peeps — your pick is your look on every
+            table, lobby and scoreboard.
           </Text>
         )}
       </AuthScreen>
