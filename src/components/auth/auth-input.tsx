@@ -49,7 +49,7 @@ export function AuthInput({
         style={containerStyle}
       >
         {icon && (
-          <View className="py-3.5 pl-5">
+          <View className="pl-5">
             <Image
               source={icon}
               style={{ width: 20, height: 20, tintColor: iconTint }}
@@ -80,7 +80,7 @@ export function AuthInput({
           {...rest}
         />
         {secureToggle && (
-          <View className="py-3.5 pr-3.5">
+          <View className="pr-3.5">
             <Pressable
               className="h-9 w-9 items-center justify-center rounded-xl"
               onPress={() => setHidden((h) => !h)}
