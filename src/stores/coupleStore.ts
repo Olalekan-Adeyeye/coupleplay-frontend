@@ -44,8 +44,14 @@ export const useCoupleStore = create<CoupleState>((set) => ({
     try {
       const couple = await api.couples.getMyCouple(token);
       set({ couple: withGenders(couple), isLoading: false });
-    } catch {
-      set({ couple: null, isLoading: false });
+    } catch (e: any) {
+      // 404 means no couple yet — that's expected
+      if (e?.status === 404 || e?.message?.includes('404')) {
+        set({ couple: null, isLoading: false });
+      } else {
+        set({ isLoading: false });
+        throw e;
+      }
     }
   },
 

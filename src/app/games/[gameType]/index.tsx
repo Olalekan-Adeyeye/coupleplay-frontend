@@ -138,7 +138,7 @@ export default function GameDetailScreen() {
             <View className="mt-5 items-center">
               <View
                 className="h-[168px] w-[168px] items-center justify-center overflow-hidden rounded-2xl"
-                style={{ backgroundColor: game.accent }}
+                // style={{ backgroundColor: game.accent }}
               >
                 {heroImage ? (
                   <Image
@@ -162,7 +162,9 @@ export default function GameDetailScreen() {
                   className="font-ui-bold text-[11px] tracking-[1px]"
                   style={{ color: game.tagColor }}
                 >
-                  {game.popular ? `POPULAR · ${game.tag.toUpperCase()}` : game.tag.toUpperCase()}
+                  {game.popular
+                    ? `POPULAR · ${game.tag.toUpperCase()}`
+                    : game.tag.toUpperCase()}
                 </Text>
               </View>
               <Text className="mt-2.5 text-center font-display-bold text-[30px] leading-[36px] text-ink">
@@ -177,7 +179,10 @@ export default function GameDetailScreen() {
               {[
                 { icon: "account-group" as const, label: game.players },
                 { icon: "clock-outline" as const, label: game.duration },
-                { icon: "flag-outline" as const, label: `${game.rounds} Rounds` },
+                {
+                  icon: "flag-outline" as const,
+                  label: `${game.rounds} Rounds`,
+                },
               ].map((m) => (
                 <View
                   key={m.icon}
@@ -236,7 +241,7 @@ export default function GameDetailScreen() {
                   size={18}
                   color="#946BFF"
                 />
-                <Text className="flex-1 font-ui-semibold text-[13px] text-ink">
+                <Text className="flex-1 font-ui-semibold text-[13px]">
                   Your partner already opened a table — hop in!
                 </Text>
               </View>

@@ -1,5 +1,6 @@
 import "../../global.css";
 
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SplashOverlay } from "@/components/splash/splash-overlay";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { usePaperColor } from "@/hooks/useResolvedTheme";
@@ -85,16 +86,18 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: paper }}>
-      <ThemeProvider>
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: paper } }}>
-          {isAuthenticated ? (
-            <Stack.Screen name="(tabs)" />
-          ) : (
-            <Stack.Screen name="(auth)" />
-          )}
-        </Stack>
-        {!splashDone && <SplashOverlay onFinish={handleSplashFinish} />}
-      </ThemeProvider>
+      <ErrorBoundary>
+        <ThemeProvider>
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: paper } }}>
+            {isAuthenticated ? (
+              <Stack.Screen name="(tabs)" />
+            ) : (
+              <Stack.Screen name="(auth)" />
+            )}
+          </Stack>
+          {!splashDone && <SplashOverlay onFinish={handleSplashFinish} />}
+        </ThemeProvider>
+      </ErrorBoundary>
     </GestureHandlerRootView>
   );
 }

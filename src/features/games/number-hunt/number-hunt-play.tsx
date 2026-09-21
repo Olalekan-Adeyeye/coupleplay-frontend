@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { View, Pressable, Text, Alert, ScrollView } from "react-native";
+import { View, Pressable, Text, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -13,6 +13,8 @@ import { useGameReactions } from "@/hooks/useGameReactions";
 import { useAuthStore } from "@/stores/authStore";
 import { useSocketStore } from "@/hooks/useSocket";
 import { useRoomStore } from "@/stores/roomStore";
+import { ConfirmModal, InfoModal } from "@/components/ui/ConfirmModal";
+import { useConfirmModal } from "@/hooks/useConfirmModal";
 import { CARD_SHADOW } from "@/lib/shadows";
 import { HoneycombGrid } from "./honeycomb-grid";
 
@@ -57,6 +59,8 @@ export default function NumberHuntPlayScreen() {
   const lastRound = useRef<number | null>(null);
   const leftRef = useRef(false);
   const navigation = useNavigation();
+  const leaveConfirm = useConfirmModal();
+  const pendingActionRef = useRef<any>(null);
 
   const isPicker = state?.pickerId === user?.id;
   const isFinder = state?.finderId === user?.id;
@@ -93,6 +97,7 @@ export default function NumberHuntPlayScreen() {
     };
     const onFinished = (d: any) => {
       if (d.roomId !== roomId) return;
+      leftRef.current = true;
       const results = d.results;
       router.replace(
         `/games/NUMBER_HUNT/results?winnerId=${results.winnerId ?? ""}&scores=${JSON.stringify(results.scores)}&totalRounds=${results.totalRounds}&roundsWon=${encodeURIComponent(JSON.stringify(results.roundsWon ?? {}))}&roomId=${roomId}` as any,
@@ -109,7 +114,7 @@ export default function NumberHuntPlayScreen() {
     };
   }, [socket, roomId, user?.id, partnerName]);
 
-  useGameAbandoned(socket, roomId, partnerName);
+  const abandoned = useGameAbandoned(socket, roomId, partnerName);
 
   // Timer countdown
   const timeoutSent = useRef(false);
@@ -201,45 +206,45 @@ export default function NumberHuntPlayScreen() {
     });
   };
 
-  useGameAbandoned(socket, roomId, partnerName);
-
-  const handleLeave = () => {
-    Alert.alert("Leave game?", "The game room will be closed for both of you.", [
-      { text: "Stay", style: "cancel" },
-      {
-        text: "Leave",
-        style: "destructive",
-        onPress: () => {
-          leftRef.current = true;
-          socket?.emit("room:leave", { roomId });
-          useRoomStore.getState().setRoom(null);
-          router.replace("/(tabs)/games");
-        },
-      },
-    ]);
+  const doLeave = (action?: any) => {
+    leftRef.current = true;
+    socket?.emit("room:leave", { roomId });
+    useRoomStore.getState().setRoom(null);
+    if (action) {
+      navigation.dispatch(action);
+    } else {
+      router.replace("/(tabs)/games");
+    }
   };
 
-  // Intercept Android back button
+  const handleLeave = () => {
+    leaveConfirm.confirm({
+      title: "Leave game?",
+      message: "The game room will be closed for both of you.",
+      confirmLabel: "Leave",
+      variant: "danger",
+      onConfirm: () => doLeave(),
+    });
+  };
+
+  // Intercept Android back button / iOS swipe-back
   useEffect(() => {
     const unsub = navigation.addListener("beforeRemove" as any, (e: any) => {
-      e.preventDefault();
       if (leftRef.current) return;
-      Alert.alert("Leave game?", "The game room will be closed for both of you.", [
-        { text: "Stay", style: "cancel" },
-        {
-          text: "Leave",
-          style: "destructive",
-          onPress: () => {
-            leftRef.current = true;
-            socket?.emit("room:leave", { roomId });
-            useRoomStore.getState().setRoom(null);
-            navigation.dispatch(e.data.action);
-          },
-        },
-      ]);
+      // Only intercept back gestures/button (POP), let programmatic navigations through
+      if (e.data.action.type !== "POP") return;
+      e.preventDefault();
+      pendingActionRef.current = e.data.action;
+      leaveConfirm.confirm({
+        title: "Leave game?",
+        message: "The game room will be closed for both of you.",
+        confirmLabel: "Leave",
+        variant: "danger",
+        onConfirm: () => doLeave(pendingActionRef.current),
+      });
     });
     return () => unsub();
-  }, [navigation, socket, roomId]);
+  }, [navigation, roomId]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -601,6 +606,8 @@ export default function NumberHuntPlayScreen() {
           iconBg={interstitial.includes("won") ? "#10B9811F" : "#8B5CF61F"}
         />
       )}
+      <ConfirmModal {...leaveConfirm.props} onCancel={leaveConfirm.cancel} />
+      <InfoModal {...abandoned} />
     </View>
   );
 }

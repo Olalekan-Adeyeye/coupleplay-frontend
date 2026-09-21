@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 import { useCoupleStore } from "@/stores/coupleStore";
 import { useRoomStore } from "@/stores/roomStore";
+import { InfoModal } from "@/components/ui/ConfirmModal";
 import { useGameAbandoned } from "@/hooks/useGameAbandoned";
 import { CARD_SHADOW, BUTTON_SHADOW } from "@/lib/shadows";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -76,7 +77,7 @@ export default function TicTacToeResultsScreen() {
     }
   };
 
-  useGameAbandoned(socket, roomId, partnerName);
+  const abandoned = useGameAbandoned(socket, roomId, partnerName);
 
   return (
     <View className="flex-1 bg-paper">
@@ -212,6 +213,7 @@ export default function TicTacToeResultsScreen() {
           </View>
         </View>
       </SafeAreaView>
+      <InfoModal {...abandoned} />
     </View>
   );
 }

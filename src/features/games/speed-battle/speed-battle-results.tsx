@@ -12,6 +12,7 @@ import { useCoupleStore } from "@/stores/coupleStore";
 import { useRoomStore } from "@/stores/roomStore";
 import { useSocketStore } from "@/hooks/useSocket";
 import { useGameAbandoned } from "@/hooks/useGameAbandoned";
+import { InfoModal } from "@/components/ui/ConfirmModal";
 import { CARD_SHADOW, BUTTON_SHADOW } from "@/lib/shadows";
 import { useEffect, useState } from "react";
 
@@ -79,7 +80,7 @@ export default function SpeedBattleResultsScreen() {
     }
   };
 
-  useGameAbandoned(socket, roomId, partnerName);
+  const abandoned = useGameAbandoned(socket, roomId, partnerName);
 
   return (
     <View className="flex-1 bg-paper">
@@ -176,6 +177,7 @@ export default function SpeedBattleResultsScreen() {
           </View>
         </View>
       </SafeAreaView>
+      <InfoModal {...abandoned} />
     </View>
   );
 }

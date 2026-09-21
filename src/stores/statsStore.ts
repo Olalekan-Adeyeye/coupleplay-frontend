@@ -60,7 +60,7 @@ export const useStatsStore = create<StatsState>((set) => ({
       const rawAchievements = await api.stats.getAchievements(token);
       const achievements: Achievement[] = rawAchievements.map((a) => ({
         ...a,
-        category: a.category as 'milestone' | 'game' | 'special',
+        category: a.category as 'milestone' | 'special',
       }));
       set({ achievements, isLoadingAchievements: false });
     } catch (e) {

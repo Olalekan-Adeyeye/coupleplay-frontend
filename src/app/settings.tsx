@@ -1,5 +1,7 @@
 import { PeepAvatar } from "@/components/peeps/PeepAvatar";
 import { CoupleAvatars } from "@/components/ui/couple-avatars";
+import { ConfirmModal, InfoModal } from "@/components/ui/ConfirmModal";
+import { useConfirmModal } from "@/hooks/useConfirmModal";
 import { useInviteAction } from "@/hooks/useInviteAction";
 import { useSocketStore } from "@/hooks/useSocket";
 import { api } from "@/lib/api";
@@ -10,7 +12,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useState, type ReactNode } from "react";
 import {
-  Alert,
   Pressable,
   ScrollView,
   Text,
@@ -100,6 +101,9 @@ export default function SettingsScreen() {
   const [busy, setBusy] = useState(false);
   const themePreference = useThemeStore((s) => s.preference);
   const setThemePreference = useThemeStore((s) => s.setPreference);
+  const unlinkConfirm = useConfirmModal();
+  const deleteConfirm = useConfirmModal();
+  const errorModal = useConfirmModal();
 
   useEffect(() => {
     if (token) fetchCouple(token).catch(() => {});
@@ -155,29 +159,26 @@ export default function SettingsScreen() {
   };
 
   const handleUnlink = () => {
-    Alert.alert(
-      "Unlink partner?",
-      "You'll keep your account and stats, but your shared story ends here.",
-      [
-        { text: "Keep story", style: "cancel" },
-        {
-          text: "Unlink",
-          style: "destructive",
-          onPress: async () => {
-            setBusy(true);
-            try {
-              await unlink(token!);
-              // Notify partner in realtime
-              socket?.emit("couples:unlink");
-            } catch (e: any) {
-              Alert.alert("Error", e.message);
-            } finally {
-              setBusy(false);
-            }
-          },
-        },
-      ],
-    );
+    unlinkConfirm.confirm({
+      title: "Unlink partner?",
+      message: "You'll keep your account and stats, but your shared story ends here.",
+      confirmLabel: "Unlink",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await unlink(token!);
+          socket?.emit("couples:unlink");
+        } catch (e: any) {
+          errorModal.confirm({
+            title: "Error",
+            message: e.message,
+            confirmLabel: "OK",
+            variant: "error",
+            onConfirm: () => {},
+          });
+        }
+      },
+    });
   };
 
   const handleLogout = () => {
@@ -187,32 +188,30 @@ export default function SettingsScreen() {
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      "Delete account?",
-      "This permanently removes your account and stats. There’s no undo.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            setBusy(true);
-            try {
-              // Notify partner in realtime BEFORE disconnecting
-              socket?.emit("couples:unlink");
-              await new Promise((r) => setTimeout(r, 300));
-              await api.users.deleteAccount(token!);
-              disconnect();
-              useAuthStore.getState().logout();
-              router.replace("/(auth)");
-            } catch (e: any) {
-              Alert.alert("Error", e.message);
-              setBusy(false);
-            }
-          },
-        },
-      ],
-    );
+    deleteConfirm.confirm({
+      title: "Delete account?",
+      message: "This permanently removes your account and stats. There's no undo.",
+      confirmLabel: "Delete",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          socket?.emit("couples:unlink");
+          await new Promise((r) => setTimeout(r, 300));
+          await api.users.deleteAccount(token!);
+          disconnect();
+          useAuthStore.getState().logout();
+          router.replace("/(auth)");
+        } catch (e: any) {
+          errorModal.confirm({
+            title: "Error",
+            message: e.message,
+            confirmLabel: "OK",
+            variant: "error",
+            onConfirm: () => {},
+          });
+        }
+      },
+    });
   };
 
   return (
@@ -476,6 +475,9 @@ export default function SettingsScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
+      <ConfirmModal {...unlinkConfirm.props} onCancel={unlinkConfirm.cancel} />
+      <ConfirmModal {...deleteConfirm.props} onCancel={deleteConfirm.cancel} />
+      <ConfirmModal {...errorModal.props} onCancel={errorModal.cancel} />
     </View>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { View, ScrollView, Pressable, Text, Alert } from "react-native";
+import { View, ScrollView, Pressable, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -13,6 +13,8 @@ import { useGameReactions } from "@/hooks/useGameReactions";
 import { useAuthStore } from "@/stores/authStore";
 import { useSocketStore } from "@/hooks/useSocket";
 import { useRoomStore } from "@/stores/roomStore";
+import { ConfirmModal, InfoModal } from "@/components/ui/ConfirmModal";
+import { useConfirmModal } from "@/hooks/useConfirmModal";
 import { CARD_SHADOW, BUTTON_SHADOW } from "@/lib/shadows";
 
 interface Question {
@@ -58,6 +60,8 @@ export default function SpeedBattlePlayScreen() {
   const lastRound = useRef<number | null>(null);
   const leftRef = useRef(false);
   const navigation = useNavigation();
+  const leaveConfirm = useConfirmModal();
+  const pendingActionRef = useRef<any>(null);
 
   const question = state?.questions[state?.currentQuestionIndex ?? 0] ?? null;
   const myAnswer = state?.answers[user?.id ?? ""] ?? null;
@@ -93,6 +97,7 @@ export default function SpeedBattlePlayScreen() {
     };
     const onFinished = (d: any) => {
       if (d.roomId !== roomId) return;
+      leftRef.current = true;
       const results = d.results;
       router.replace(
         `/games/SPEED_BATTLE/results?winnerId=${results.winnerId ?? ""}&scores=${JSON.stringify(results.scores)}&totalRounds=${results.totalRounds}&roundsWon=${encodeURIComponent(JSON.stringify(results.roundsWon ?? {}))}&roomId=${roomId}` as any,
@@ -109,7 +114,7 @@ export default function SpeedBattlePlayScreen() {
     };
   }, [socket, roomId, user?.id, partnerName]);
 
-  useGameAbandoned(socket, roomId, partnerName);
+  const abandoned = useGameAbandoned(socket, roomId, partnerName);
 
   // Timer countdown. Timeout emits ONCE per question (guarded ref) —
   // never a stream of emits while the clock sits at zero.
@@ -151,43 +156,45 @@ export default function SpeedBattlePlayScreen() {
     });
   };
 
-  const handleLeave = () => {
-    Alert.alert("Leave game?", "The game room will be closed for both of you.", [
-      { text: "Stay", style: "cancel" },
-      {
-        text: "Leave",
-        style: "destructive",
-        onPress: () => {
-          leftRef.current = true;
-          socket?.emit("room:leave", { roomId });
-          useRoomStore.getState().setRoom(null);
-          router.replace("/(tabs)/games");
-        },
-      },
-    ]);
+  const doLeave = (action?: any) => {
+    leftRef.current = true;
+    socket?.emit("room:leave", { roomId });
+    useRoomStore.getState().setRoom(null);
+    if (action) {
+      navigation.dispatch(action);
+    } else {
+      router.replace("/(tabs)/games");
+    }
   };
 
-  // Intercept Android back button
+  const handleLeave = () => {
+    leaveConfirm.confirm({
+      title: "Leave game?",
+      message: "The game room will be closed for both of you.",
+      confirmLabel: "Leave",
+      variant: "danger",
+      onConfirm: () => doLeave(),
+    });
+  };
+
+  // Intercept Android back button / iOS swipe-back
   useEffect(() => {
     const unsub = navigation.addListener("beforeRemove" as any, (e: any) => {
-      e.preventDefault();
       if (leftRef.current) return;
-      Alert.alert("Leave game?", "The game room will be closed for both of you.", [
-        { text: "Stay", style: "cancel" },
-        {
-          text: "Leave",
-          style: "destructive",
-          onPress: () => {
-            leftRef.current = true;
-            socket?.emit("room:leave", { roomId });
-            useRoomStore.getState().setRoom(null);
-            navigation.dispatch(e.data.action);
-          },
-        },
-      ]);
+      // Only intercept back gestures/button (POP), let programmatic navigations through
+      if (e.data.action.type !== "POP") return;
+      e.preventDefault();
+      pendingActionRef.current = e.data.action;
+      leaveConfirm.confirm({
+        title: "Leave game?",
+        message: "The game room will be closed for both of you.",
+        confirmLabel: "Leave",
+        variant: "danger",
+        onConfirm: () => doLeave(pendingActionRef.current),
+      });
     });
     return () => unsub();
-  }, [navigation, socket, roomId]);
+  }, [navigation, roomId]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -477,6 +484,8 @@ export default function SpeedBattlePlayScreen() {
           iconBg={interstitial.includes("scored") ? "#F59E0B1F" : "#946BFF1F"}
         />
       )}
+      <ConfirmModal {...leaveConfirm.props} onCancel={leaveConfirm.cancel} />
+      <InfoModal {...abandoned} />
     </View>
   );
 }

@@ -88,7 +88,7 @@ export default function SoonScreen() {
           <View className="flex-1 items-center justify-center">
             <View
               className="h-[160px] w-[160px] items-center justify-center overflow-hidden rounded-2xl"
-              style={{ backgroundColor: game.accent }}
+              // style={{ backgroundColor: game.accent }}
             >
               {art ? (
                 <Image

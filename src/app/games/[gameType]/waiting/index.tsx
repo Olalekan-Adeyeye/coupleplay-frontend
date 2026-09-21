@@ -2,15 +2,18 @@ import { getGame, GAME_IMAGES } from "@/data/games";
 import { usePartnerName } from "@/hooks/usePartnerName";
 import { useSocketStore } from "@/hooks/useSocket";
 import { useGameAbandoned } from "@/hooks/useGameAbandoned";
+import { useConfirmModal } from "@/hooks/useConfirmModal";
 import { useAuthStore } from "@/stores/authStore";
 import { api } from "@/lib/api";
 import { PeepAvatar } from "@/components/peeps/PeepAvatar";
+import { ConfirmModal, InfoModal } from "@/components/ui/ConfirmModal";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Alert, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { useRoomStore } from "@/stores/roomStore";
+import { useCoupleStore } from "@/stores/coupleStore";
 import { CARD_SHADOW, BUTTON_SHADOW } from "@/lib/shadows";
 import Animated, {
   useAnimatedStyle,
@@ -69,13 +72,18 @@ function LobbyAvatar({
   peep,
   seed,
   name,
+  mirror,
 }: {
   peep?: string | null;
   seed?: string | null;
   name?: string;
+  mirror?: boolean;
 }) {
   return (
-    <View className="h-[88px] w-[88px] items-center justify-center">
+    <View
+      className="h-[88px] w-[88px] items-center justify-center"
+      style={mirror ? { transform: [{ scaleX: -1 }] } : undefined}
+    >
       <PeepAvatar peep={peep} seed={seed} name={name} size={88} ring="#FFFFFF" />
     </View>
   );
@@ -90,6 +98,10 @@ export default function WaitingRoomScreen() {
   const token = useAuthStore((s) => s.token);
   const socket = useSocketStore((s) => s.socket);
   const partnerName = usePartnerName();
+  const couple = useCoupleStore((s) => s.couple);
+  const partnerPeep = couple?.userAId === user?.id
+    ? couple?.userB?.avatar
+    : couple?.userA?.avatar;
   const game = getGame(gameType);
 
   const [phase, setPhase] = useState<Phase>("creating");
@@ -157,7 +169,9 @@ export default function WaitingRoomScreen() {
     };
   }, [socket, user?.id]);
 
-  useGameAbandoned(socket, roomId, partnerName, { clearRoom: true });
+  const abandoned = useGameAbandoned(socket, roomId, partnerName, { clearRoom: true });
+  const leaveConfirm = useConfirmModal();
+  const pendingActionRef = useRef<any>(null);
 
   // Server started the game -> auto-navigate both players into play.
   useEffect(() => {
@@ -179,52 +193,48 @@ export default function WaitingRoomScreen() {
     setIAmReady(true);
   };
 
+  const doLeave = (action?: any) => {
+    leftRef.current = true;
+    socket?.emit("room:leave", { roomId });
+    useRoomStore.getState().setRoom(null);
+    if (action) {
+      navigation.dispatch(action);
+    } else {
+      router.replace("/(tabs)/games");
+    }
+  };
+
   const handleLeave = () => {
-    Alert.alert(
-      "Leave game?",
-      "The game room will be closed for both of you.",
-      [
-        { text: "Stay", style: "cancel" },
-        {
-          text: "Leave",
-          style: "destructive",
-          onPress: () => {
-            leftRef.current = true;
-            socket?.emit("room:leave", { roomId });
-            useRoomStore.getState().setRoom(null);
-            router.replace("/(tabs)/games");
-          },
-        },
-      ],
-    );
+    leaveConfirm.confirm({
+      title: "Leave game?",
+      message: "The game room will be closed for both of you.",
+      confirmLabel: "Leave",
+      variant: "danger",
+      onConfirm: () => doLeave(),
+    });
   };
 
   // Intercept Android back button
   useEffect(() => {
     const unsub = navigation.addListener("beforeRemove" as any, (e: any) => {
+      if (leftRef.current || startedRef.current) return;
       e.preventDefault();
-      if (leftRef.current) return;
-      Alert.alert("Leave game?", "The game room will be closed for both of you.", [
-        { text: "Stay", style: "cancel" },
-        {
-          text: "Leave",
-          style: "destructive",
-          onPress: () => {
-            leftRef.current = true;
-            socket?.emit("room:leave", { roomId });
-            useRoomStore.getState().setRoom(null);
-            navigation.dispatch(e.data.action);
-          },
-        },
-      ]);
+      pendingActionRef.current = e.data.action;
+      leaveConfirm.confirm({
+        title: "Leave game?",
+        message: "The game room will be closed for both of you.",
+        confirmLabel: "Leave",
+        variant: "danger",
+        onConfirm: () => doLeave(pendingActionRef.current),
+      });
     });
     return () => unsub();
   }, [navigation, socket, roomId]);
 
-  // Cleanup on unmount
+  // Cleanup on unmount — but NOT when navigating to play screen after game:start
   useEffect(() => {
     return () => {
-      if (!leftRef.current && roomId) {
+      if (!leftRef.current && !startedRef.current && roomId) {
         socket?.emit("room:leave", { roomId });
         useRoomStore.getState().setRoom(null);
       }
@@ -251,7 +261,7 @@ export default function WaitingRoomScreen() {
                 />
                 <LobbyAvatar peep={user?.avatar} seed={user?.id} name={myFirstName} />
                 <PulsingHeart />
-                <LobbyAvatar seed={partnerName} name={partnerName} />
+                <LobbyAvatar peep={partnerPeep} seed={partnerName} name={partnerName} mirror />
                 <MaterialCommunityIcons
                   name="star-four-points"
                   size={14}
@@ -289,7 +299,7 @@ export default function WaitingRoomScreen() {
                 <LobbyAvatar peep={user?.avatar} seed={user?.id} name={myFirstName} />
                 <PulsingHeart />
                 <View>
-                  <LobbyAvatar seed={partnerName} name={partnerName} />
+                  <LobbyAvatar peep={partnerPeep} seed={partnerName} name={partnerName} mirror />
                   <View className="absolute right-1 top-1 h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-ink-tertiary/40">
                     <Text className="text-[11px] text-white">?</Text>
                   </View>
@@ -353,7 +363,7 @@ export default function WaitingRoomScreen() {
                 <LobbyAvatar peep={user?.avatar} seed={user?.id} name={myFirstName} />
                 <PulsingHeart />
                 <View>
-                  <LobbyAvatar seed={partnerName} name={partnerName} />
+                  <LobbyAvatar peep={partnerPeep} seed={partnerName} name={partnerName} mirror />
                   <View className="absolute -right-0.5 -bottom-0.5 h-5 w-5 rounded-full border-2 border-white bg-success" />
                 </View>
                 <MaterialCommunityIcons
@@ -475,7 +485,7 @@ export default function WaitingRoomScreen() {
                     {partnerName}
                   </Text>
                   <View>
-                    <LobbyAvatar seed={partnerName} name={partnerName} />
+                    <LobbyAvatar peep={partnerPeep} seed={partnerName} name={partnerName} mirror />
                     <View className="absolute -right-0.5 -bottom-0.5 h-5 w-5 rounded-full border-2 border-white bg-success" />
                   </View>
 
@@ -550,6 +560,8 @@ export default function WaitingRoomScreen() {
           )}
         </View>
       </SafeAreaView>
+      <ConfirmModal {...leaveConfirm.props} onCancel={leaveConfirm.cancel} />
+      <InfoModal {...abandoned} />
     </View>
   );
 }

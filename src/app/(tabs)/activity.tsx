@@ -4,8 +4,9 @@ import { HeaderButton } from "@/components/ui/header-button";
 import { useResolvedTheme } from "@/hooks/useResolvedTheme";
 import { ActivityItem } from "@/types/stats";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
 import { router } from "expo-router";
-import { useEffect } from "react";
+import { useCallback } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useAuthStore } from "@/stores/authStore";
 import { useStatsStore } from "@/stores/statsStore";
@@ -133,12 +134,14 @@ export default function ActivityScreen() {
   const resolved = useResolvedTheme();
   const isLight = resolved === "light";
 
-  useEffect(() => {
-    if (token) {
-      fetchOverview(token).catch(() => {});
-      fetchActivity(token).catch(() => {});
-    }
-  }, [token, fetchOverview, fetchActivity]);
+  useFocusEffect(
+    useCallback(() => {
+      if (token) {
+        fetchOverview(token).catch(() => {});
+        fetchActivity(token).catch(() => {});
+      }
+    }, [token, fetchOverview, fetchActivity]),
+  );
 
   return (
     <TabScreen>
