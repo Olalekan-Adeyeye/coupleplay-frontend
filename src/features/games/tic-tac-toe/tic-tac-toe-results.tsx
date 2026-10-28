@@ -10,6 +10,8 @@ import { useRoomStore } from "@/stores/roomStore";
 import { InfoModal } from "@/components/ui/ConfirmModal";
 import { useGameAbandoned } from "@/hooks/useGameAbandoned";
 import { CARD_SHADOW, BUTTON_SHADOW } from "@/lib/shadows";
+import { usePalette } from "@/hooks/usePalette";
+import { parseJsonParam } from "@/lib/params";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -30,20 +32,16 @@ export default function TicTacToeResultsScreen() {
   const setRoom = useRoomStore((s) => s.setRoom);
   const socket = useSocketStore((s) => s.socket);
   const partnerName = usePartnerName();
+  const palette = usePalette();
   const [rematching, setRematching] = useState(false);
   const [rematchError, setRematchError] = useState<string | null>(null);
 
-  const parsed: Record<string, number> = scores ? JSON.parse(scores) : {};
+  const parsed = parseJsonParam<Record<string, number>>(scores) ?? {};
   const myScore = parsed[user?.id ?? ""] ?? 0;
   const partnerScore = Object.entries(parsed).find(([id]) => id !== user?.id)?.[1] ?? 0;
   const rounds = Number(totalRounds ?? 3);
 
-  let won: Record<string, number> | null = null;
-  try {
-    won = roundsWon ? JSON.parse(roundsWon) : null;
-  } catch {
-    won = null;
-  }
+  const won = parseJsonParam<Record<string, number>>(roundsWon);
   const myRoundsWon = won ? (won[user?.id ?? ""] ?? 0) : null;
   const partnerRoundsWon = won
     ? (Object.entries(won).find(([id]) => id !== user?.id)?.[1] ?? 0)
@@ -96,7 +94,7 @@ export default function TicTacToeResultsScreen() {
               <MaterialCommunityIcons
                 name="chevron-left"
                 size={26}
-                color="#F4F1FA"
+                color={palette.ink}
               />
             </Pressable>
             <View className="h-11 w-11" />
@@ -108,7 +106,7 @@ export default function TicTacToeResultsScreen() {
               <MaterialCommunityIcons
                 name={isDraw ? "handshake" : "trophy"}
                 size={46}
-                color={isDraw ? "#946BFF" : "#B45309"}
+                color={isDraw ? palette.primary : "#B45309"}
               />
               <MaterialCommunityIcons
                 name="star-four-points"
@@ -140,7 +138,7 @@ export default function TicTacToeResultsScreen() {
 
           {/* Round info */}
           <View className="mt-4 flex-row items-center justify-center gap-2.5">
-            <MaterialCommunityIcons name="flag-checkered" size={16} color="#946BFF" />
+            <MaterialCommunityIcons name="flag-checkered" size={16} color={palette.primary} />
             <Text className="font-ui-semibold text-[13px] text-ink-secondary">
               Best of {rounds} rounds
             </Text>
@@ -204,7 +202,7 @@ export default function TicTacToeResultsScreen() {
               <MaterialCommunityIcons
                 name="gamepad-variant"
                 size={20}
-                color="#B3A8C9"
+                color={palette.inkSecondary}
               />
               <Text className="font-ui-bold text-[15px] text-ink-secondary">
                 Back to Games

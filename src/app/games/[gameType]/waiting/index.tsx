@@ -23,6 +23,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { usePalette } from "@/hooks/usePalette";
 
 type Phase = "creating" | "waiting" | "joined" | "ready";
 
@@ -90,6 +91,7 @@ function LobbyAvatar({
 }
 
 export default function WaitingRoomScreen() {
+  const palette = usePalette();
   const { gameType, roomId } = useLocalSearchParams<{
     gameType: string;
     roomId: string;
@@ -109,6 +111,7 @@ export default function WaitingRoomScreen() {
   const [partnerReady, setPartnerReady] = useState(false);
   const startedRef = useRef(false);
   const leftRef = useRef(false);
+  const readyConfirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigation = useNavigation();
 
   const myFirstName = user?.name?.split(" ")[0] ?? "You";
@@ -116,11 +119,25 @@ export default function WaitingRoomScreen() {
   // Join the room, then move from "creating" into "waiting".
   useEffect(() => {
     if (!socket || !roomId) return;
+    const onReject = (d: any) => {
+      roomErrorModal.confirm({
+        title: "Room unavailable",
+        message: d?.reason ?? "This game room could not be joined.",
+        confirmLabel: "Back",
+        variant: "error",
+        onConfirm: () => doLeave(),
+      });
+    };
+    socket.on("game:reject", onReject);
     socket.emit("room:join", { roomId });
     const t = setTimeout(() => {
       setPhase((p) => (p === "creating" ? "waiting" : p));
     }, 1600);
-    return () => clearTimeout(t);
+    return () => {
+      socket.off("game:reject", onReject);
+      clearTimeout(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, roomId]);
 
   // Fallback: poll room state via HTTP to catch partner presence
@@ -136,9 +153,10 @@ export default function WaitingRoomScreen() {
           (p: any) => p.userId !== user?.id,
         );
         if (partnerInRoom) {
-          // Don't read ready from DB — only detect presence.
-          // Readiness is tracked via socket player:status events.
           setPhase("joined");
+          // joinRoom resets ready flags per session, so DB ready is current
+          const partner = room.players?.find((p: any) => p.userId !== user?.id);
+          if (partner?.ready) setPartnerReady(true);
         }
       } catch {}
     };
@@ -159,7 +177,16 @@ export default function WaitingRoomScreen() {
       setPhase("joined");
     };
     const onStatus = (d: any) => {
-      if (d.userId !== user?.id && d.ready) setPartnerReady(true);
+      if (d.userId === user?.id) {
+        // Server confirmation of our own ready state
+        if (readyConfirmTimer.current) {
+          clearTimeout(readyConfirmTimer.current);
+          readyConfirmTimer.current = null;
+        }
+        setIAmReady(!!d.ready);
+        return;
+      }
+      if (d.ready) setPartnerReady(true);
     };
     socket.on("room:player_joined", onJoined);
     socket.on("player:status", onStatus);
@@ -171,6 +198,7 @@ export default function WaitingRoomScreen() {
 
   const abandoned = useGameAbandoned(socket, roomId, partnerName, { clearRoom: true });
   const leaveConfirm = useConfirmModal();
+  const roomErrorModal = useConfirmModal();
   const pendingActionRef = useRef<any>(null);
 
   // Server started the game -> auto-navigate both players into play.
@@ -191,6 +219,8 @@ export default function WaitingRoomScreen() {
     if (iAmReady) return;
     socket?.emit("player:ready", { roomId });
     setIAmReady(true);
+    if (readyConfirmTimer.current) clearTimeout(readyConfirmTimer.current);
+    readyConfirmTimer.current = setTimeout(() => setIAmReady(false), 4000);
   };
 
   const doLeave = (action?: any) => {
@@ -234,6 +264,7 @@ export default function WaitingRoomScreen() {
   // Cleanup on unmount — but NOT when navigating to play screen after game:start
   useEffect(() => {
     return () => {
+      if (readyConfirmTimer.current) clearTimeout(readyConfirmTimer.current);
       if (!leftRef.current && !startedRef.current && roomId) {
         socket?.emit("room:leave", { roomId });
         useRoomStore.getState().setRoom(null);
@@ -284,7 +315,7 @@ export default function WaitingRoomScreen() {
                 onPress={handleLeave}
                 className="items-center py-1 active:opacity-70"
               >
-                <Text className="font-ui-semibold text-[14px] text-red-500">
+                <Text className="font-ui-semibold text-[14px] text-error-bright">
                   Leave Game
                 </Text>
               </Pressable>
@@ -332,7 +363,7 @@ export default function WaitingRoomScreen() {
                   <MaterialCommunityIcons
                     name="wifi"
                     size={18}
-                    color="#946BFF"
+                    color={palette.primary}
                   />
                 </View>
                 <Text className="flex-1 font-ui-medium text-[13px] leading-[18px] text-ink-secondary">
@@ -343,7 +374,7 @@ export default function WaitingRoomScreen() {
                 onPress={handleLeave}
                 className="items-center py-1 active:opacity-70"
               >
-                <Text className="font-ui-semibold text-[14px] text-red-500">
+                <Text className="font-ui-semibold text-[14px] text-error-bright">
                   Leave Game
                 </Text>
               </Pressable>
@@ -399,7 +430,7 @@ export default function WaitingRoomScreen() {
                 onPress={handleLeave}
                 className="items-center py-1 active:opacity-70"
               >
-                <Text className="font-ui-semibold text-[14px] text-red-500">
+                <Text className="font-ui-semibold text-[14px] text-error-bright">
                   Leave Game
                 </Text>
               </Pressable>
@@ -422,7 +453,7 @@ export default function WaitingRoomScreen() {
                     <MaterialCommunityIcons
                       name="gamepad-variant"
                       size={34}
-                      color="#946BFF"
+                      color={palette.primary}
                     />
                   </View>
                 )}
@@ -551,7 +582,7 @@ export default function WaitingRoomScreen() {
                   onPress={handleLeave}
                   className="items-center py-1 active:opacity-70"
                 >
-                  <Text className="font-ui-semibold text-[14px] text-red-500">
+                  <Text className="font-ui-semibold text-[14px] text-error-bright">
                     Leave Game
                   </Text>
                 </Pressable>
@@ -561,6 +592,7 @@ export default function WaitingRoomScreen() {
         </View>
       </SafeAreaView>
       <ConfirmModal {...leaveConfirm.props} onCancel={leaveConfirm.cancel} />
+      <ConfirmModal {...roomErrorModal.props} onCancel={roomErrorModal.cancel} />
       <InfoModal {...abandoned} />
     </View>
   );

@@ -14,6 +14,8 @@ import { useSocketStore } from "@/hooks/useSocket";
 import { useGameAbandoned } from "@/hooks/useGameAbandoned";
 import { InfoModal } from "@/components/ui/ConfirmModal";
 import { CARD_SHADOW, BUTTON_SHADOW } from "@/lib/shadows";
+import { usePalette } from "@/hooks/usePalette";
+import { parseJsonParam } from "@/lib/params";
 import { useEffect, useState } from "react";
 
 export default function SpeedBattleResultsScreen() {
@@ -31,22 +33,18 @@ export default function SpeedBattleResultsScreen() {
   const setRoom = useRoomStore((s) => s.setRoom);
   const socket = useSocketStore((s) => s.socket);
   const partnerName = usePartnerName();
+  const palette = usePalette();
   const [rematching, setRematching] = useState(false);
   const [rematchError, setRematchError] = useState<string | null>(null);
 
-  const parsed: Record<string, number> = scores ? JSON.parse(scores) : {};
+  const parsed = parseJsonParam<Record<string, number>>(scores) ?? {};
   const myScore = parsed[user?.id ?? ""] ?? 0;
   const partnerScore =
     Object.entries(parsed).find(([id]) => id !== user?.id)?.[1] ?? 0;
   const rounds = Number(totalRounds ?? 5);
 
   // Real per-player rounds won when the server reported them.
-  let won: Record<string, number> | null = null;
-  try {
-    won = roundsWon ? JSON.parse(roundsWon) : null;
-  } catch {
-    won = null;
-  }
+  const won = parseJsonParam<Record<string, number>>(roundsWon);
   const myRoundsWon = won ? (won[user?.id ?? ""] ?? 0) : null;
   const partnerRoundsWon = won
     ? (Object.entries(won).find(([id]) => id !== user?.id)?.[1] ?? 0)
@@ -92,7 +90,7 @@ export default function SpeedBattleResultsScreen() {
               <MaterialCommunityIcons
                 name={isDraw ? "handshake" : iWon ? "trophy" : "lightning-bolt"}
                 size={46}
-                color={isDraw ? "#946BFF" : iWon ? "#B45309" : "#F59E0B"}
+                color={isDraw ? palette.primary : iWon ? "#B45309" : "#F59E0B"}
               />
             </View>
             <Text className="font-display-bold text-[28px] text-ink">

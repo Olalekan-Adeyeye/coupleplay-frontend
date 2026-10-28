@@ -29,7 +29,7 @@ interface NumberHuntState {
   turnUserId: string | null;
   roundWinnerId: string | null;
   winnerId: string | null;
-  mode: "hunt" | "race";
+  mode: "hunt" | "race" | null;
   grid: number[];
   targetNumbers: number[];
   finderId: string | null;
@@ -52,15 +52,21 @@ export default function NumberHuntPlayScreen() {
   const partnerName = usePartnerName();
 
   const [state, setState] = useState<NumberHuntState | null>(null);
+  const [revealState, setRevealState] = useState<NumberHuntState | null>(null);
   const [selectedTargets, setSelectedTargets] = useState<number[]>([]);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const { incomingReaction, rejectMsg, sendReaction } = useGameReactions(socket, roomId, user?.id);
   const [interstitial, setInterstitial] = useState<string | null>(null);
   const lastRound = useRef<number | null>(null);
+  const roundEndTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const leftRef = useRef(false);
   const navigation = useNavigation();
   const leaveConfirm = useConfirmModal();
   const pendingActionRef = useRef<any>(null);
+
+  // During the round-end reveal the ended round's state (with targets
+  // exposed) is shown; the live state takes over once the next round starts.
+  const displayState = revealState ?? state;
 
   const isPicker = state?.pickerId === user?.id;
   const isFinder = state?.finderId === user?.id;
@@ -69,9 +75,7 @@ export default function NumberHuntPlayScreen() {
     ? state.foundByPlayer[
         Object.keys(state.foundByPlayer).find((k) => k !== user?.id) ?? ""
       ] ?? []
-    : [];
-
-  // Socket listeners
+    : [];  // Socket listeners
   useEffect(() => {
     if (!socket) return;
     const onState = (s: NumberHuntState) => {
@@ -80,12 +84,14 @@ export default function NumberHuntPlayScreen() {
       if (lastRound.current !== s.roundNumber) {
         lastRound.current = s.roundNumber;
         setSelectedTargets([]);
+        setRevealState(null);
       }
     };
     const onRoundEnd = (d: any) => {
       if (d.roomId !== roomId) return;
       const won = d.winnerId === user?.id;
       const draw = d.winnerId == null;
+      setRevealState((d.reveal ?? null) as NumberHuntState | null);
       setInterstitial(
         draw
           ? "Round drawn!"
@@ -93,14 +99,18 @@ export default function NumberHuntPlayScreen() {
             ? "You won the round!"
             : `${partnerName} won the round!`,
       );
-      setTimeout(() => setInterstitial(null), 1800);
+      if (roundEndTimer.current) clearTimeout(roundEndTimer.current);
+      roundEndTimer.current = setTimeout(() => {
+        setInterstitial(null);
+        setRevealState(null);
+      }, 1800);
     };
     const onFinished = (d: any) => {
       if (d.roomId !== roomId) return;
       leftRef.current = true;
       const results = d.results;
       router.replace(
-        `/games/NUMBER_HUNT/results?winnerId=${results.winnerId ?? ""}&scores=${JSON.stringify(results.scores)}&totalRounds=${results.totalRounds}&roundsWon=${encodeURIComponent(JSON.stringify(results.roundsWon ?? {}))}&roomId=${roomId}` as any,
+        `/games/NUMBER_HUNT/results?winnerId=${results.winnerId ?? ""}&scores=${encodeURIComponent(JSON.stringify(results.scores))}&totalRounds=${results.totalRounds}&roundsWon=${encodeURIComponent(JSON.stringify(results.roundsWon ?? {}))}&roomId=${roomId}` as any,
       );
     };
     socket.on("game:state", onState);
@@ -113,7 +123,6 @@ export default function NumberHuntPlayScreen() {
       socket.off("game:finished", onFinished);
     };
   }, [socket, roomId, user?.id, partnerName]);
-
   const abandoned = useGameAbandoned(socket, roomId, partnerName);
 
   // Timer countdown
@@ -249,6 +258,7 @@ export default function NumberHuntPlayScreen() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      if (roundEndTimer.current) clearTimeout(roundEndTimer.current);
       if (!leftRef.current && roomId) {
         socket?.emit("room:leave", { roomId });
         useRoomStore.getState().setRoom(null);
@@ -261,11 +271,14 @@ export default function NumberHuntPlayScreen() {
     ? (Object.entries(state.scores).find(([id]) => id !== user?.id)?.[1] ?? 0)
     : 0;
 
-  // Hunt mode: waiting for picker to select targets
+  // Hunt mode: waiting for picker to select targets — for the finder the
+  // targets stay hidden mid-round, so the unstarted round is detected by the
+  // absent deadline (it is set the moment the picker confirms).
   const waitingForTargets =
     state?.mode === "hunt" &&
     isFinder &&
-    state?.targetNumbers.length === 0;
+    state?.targetNumbers.length === 0 &&
+    state?.roundDeadline === null;
 
   // Hunt mode: picker selecting targets
   const selectingTargets =
@@ -277,18 +290,30 @@ export default function NumberHuntPlayScreen() {
   const handleGridPress =
     state?.mode === "hunt" ? (isFinder ? handleFound : handleSelectTarget) : handleTap;
 
+  // During the round-end reveal the honeycomb shows the ended round: its own
+  // grid, the found numbers and the targets (which are hidden while hunting).
+  const revealIsHunt = revealState != null && revealState.mode === "hunt";
+  const displayIsFinder = displayState?.finderId === user?.id;
+  const viewMyFound = displayState?.foundByPlayer[user?.id ?? ""] ?? [];
+  const viewPartnerFound = displayState
+    ? displayState.foundByPlayer[
+        Object.keys(displayState.foundByPlayer).find((k) => k !== user?.id) ?? ""
+      ] ?? []
+    : [];
+
   // Grid found numbers for visual feedback
   const gridFoundNumbers =
-    state?.mode === "hunt"
-      ? isFinder
-        ? myFound
-        : partnerFound
+    displayState?.mode === "hunt"
+      ? displayIsFinder
+        ? viewMyFound
+        : viewPartnerFound
       : [];
 
   // Grid target numbers to show (only after round ends or if picker wants to see)
   const gridTargetNumbers =
-    state?.mode === "hunt" && state.roundWinnerId != null
-      ? state.targetNumbers
+    displayState?.mode === "hunt" &&
+    (revealIsHunt || displayState.roundWinnerId != null)
+      ? displayState.targetNumbers
       : [];
 
   return (
@@ -483,19 +508,18 @@ export default function NumberHuntPlayScreen() {
               </View>
             )}
 
-            {/* Hunt mode: found count */}
-            {state?.mode === "hunt" &&
-              state.targetNumbers.length > 0 &&
-              isFinder && (
-                <View
-                  className="items-center rounded-2xl bg-surface px-4 py-3"
-                  style={CARD_SHADOW}
-                >
-                  <Text className="font-ui-bold text-[14px] text-ink">
-                    Found: {myFound.length} / {state.targetNumbers.length}
-                  </Text>
-                </View>
-              )}
+            {/* Hunt mode: found count — totalTargets is public even though
+                the actual targets stay hidden from the finder until reveal */}
+            {state?.mode === "hunt" && state.totalTargets > 0 && isFinder && (
+              <View
+                className="items-center rounded-2xl bg-surface px-4 py-3"
+                style={CARD_SHADOW}
+              >
+                <Text className="font-ui-bold text-[14px] text-ink">
+                  Found: {myFound.length} / {state.totalTargets}
+                </Text>
+              </View>
+            )}
 
             {/* Race mode: tapped indicator */}
             {state?.mode === "race" &&
@@ -511,20 +535,20 @@ export default function NumberHuntPlayScreen() {
               )}
 
             {/* Honeycomb Grid */}
-            {state && (
+            {displayState && (
               <HoneycombGrid
-                numbers={state.grid}
+                numbers={displayState.grid}
                 onCellPress={
-                  state.status === "active" ? handleGridPress : undefined
+                  state?.status === "active" ? handleGridPress : undefined
                 }
                 foundNumbers={gridFoundNumbers}
                 targetNumbers={gridTargetNumbers}
                 highlightNumber={
-                  state.mode === "race" ? state.currentCall : null
+                  displayState.mode === "race" ? displayState.currentCall : null
                 }
-                disabled={state.status !== "active"}
+                disabled={state?.status !== "active"}
                 showAllTargets={
-                  state.roundWinnerId != null && state.mode === "hunt"
+                  revealIsHunt || displayState.roundWinnerId != null
                 }
               />
             )}

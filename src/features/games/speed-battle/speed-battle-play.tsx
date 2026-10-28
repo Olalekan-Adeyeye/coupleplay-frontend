@@ -16,12 +16,13 @@ import { useRoomStore } from "@/stores/roomStore";
 import { ConfirmModal, InfoModal } from "@/components/ui/ConfirmModal";
 import { useConfirmModal } from "@/hooks/useConfirmModal";
 import { CARD_SHADOW, BUTTON_SHADOW } from "@/lib/shadows";
+import { usePalette } from "@/hooks/usePalette";
 
 interface Question {
   id: string;
   question: string;
   options: { text: string; emoji: string }[];
-  correctIndex: number;
+  correctIndex?: number;
 }
 
 interface SpeedBattleState {
@@ -47,26 +48,31 @@ interface SpeedBattleState {
 }
 
 export default function SpeedBattlePlayScreen() {
+  const palette = usePalette();
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
   const user = useAuthStore((s) => s.user);
   const socket = useSocketStore((s) => s.socket);
   const partnerName = usePartnerName();
 
   const [state, setState] = useState<SpeedBattleState | null>(null);
+  const [revealState, setRevealState] = useState<SpeedBattleState | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(15);
   const { incomingReaction, rejectMsg, sendReaction } = useGameReactions(socket, roomId, user?.id);
   const [interstitial, setInterstitial] = useState<string | null>(null);
   const lastRound = useRef<number | null>(null);
+  const roundEndTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const leftRef = useRef(false);
   const navigation = useNavigation();
   const leaveConfirm = useConfirmModal();
   const pendingActionRef = useRef<any>(null);
 
-  const question = state?.questions[state?.currentQuestionIndex ?? 0] ?? null;
-  const myAnswer = state?.answers[user?.id ?? ""] ?? null;
-  const partnerAnswer = state?.answers[
-    Object.keys(state?.answers ?? {}).find((k) => k !== user?.id) ?? ""
+  const displayState = revealState ?? state;
+  const question =
+    displayState?.questions[displayState?.currentQuestionIndex ?? 0] ?? null;
+  const myAnswer = displayState?.answers[user?.id ?? ""] ?? null;
+  const partnerAnswer = displayState?.answers[
+    Object.keys(displayState?.answers ?? {}).find((k) => k !== user?.id) ?? ""
   ] ?? null;
 
   // Socket listeners
@@ -80,12 +86,14 @@ export default function SpeedBattlePlayScreen() {
       if (lastRound.current !== s.roundNumber) {
         lastRound.current = s.roundNumber;
         setSelected(null);
+        setRevealState(null);
       }
     };
     const onRoundEnd = (d: any) => {
       if (d.roomId !== roomId) return;
       const won = d.winnerId === user?.id;
       const draw = d.winnerId == null;
+      setRevealState((d.reveal ?? null) as SpeedBattleState | null);
       setInterstitial(
         draw
           ? "No one scored!"
@@ -93,14 +101,18 @@ export default function SpeedBattlePlayScreen() {
             ? "You scored!"
             : `${partnerName} scored!`,
       );
-      setTimeout(() => setInterstitial(null), 1800);
+      if (roundEndTimer.current) clearTimeout(roundEndTimer.current);
+      roundEndTimer.current = setTimeout(() => {
+        setInterstitial(null);
+        setRevealState(null);
+      }, 1800);
     };
     const onFinished = (d: any) => {
       if (d.roomId !== roomId) return;
       leftRef.current = true;
       const results = d.results;
       router.replace(
-        `/games/SPEED_BATTLE/results?winnerId=${results.winnerId ?? ""}&scores=${JSON.stringify(results.scores)}&totalRounds=${results.totalRounds}&roundsWon=${encodeURIComponent(JSON.stringify(results.roundsWon ?? {}))}&roomId=${roomId}` as any,
+        `/games/SPEED_BATTLE/results?winnerId=${results.winnerId ?? ""}&scores=${encodeURIComponent(JSON.stringify(results.scores))}&totalRounds=${results.totalRounds}&roundsWon=${encodeURIComponent(JSON.stringify(results.roundsWon ?? {}))}&roomId=${roomId}` as any,
       );
     };
     socket.on("game:state", onState);
@@ -199,6 +211,7 @@ export default function SpeedBattlePlayScreen() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      if (roundEndTimer.current) clearTimeout(roundEndTimer.current);
       if (!leftRef.current && roomId) {
         socket?.emit("room:leave", { roomId });
         useRoomStore.getState().setRoom(null);
@@ -210,7 +223,9 @@ export default function SpeedBattlePlayScreen() {
   const partnerScore = state
     ? (Object.entries(state.scores).find(([id]) => id !== user?.id)?.[1] ?? 0)
     : 0;
-  const showReveal = myAnswer != null && (partnerAnswer != null || secondsLeft <= 0);
+  // The server reveals the ended round via game:round_end — unrevealed
+  // question keys are hidden until then, so reveal only from revealState.
+  const showReveal = revealState != null;
 
   return (
     <View className="flex-1 bg-paper">
@@ -301,18 +316,24 @@ export default function SpeedBattlePlayScreen() {
                 <View
                   className="rounded-full px-2 py-0.5"
                   style={{
-                    backgroundColor: partnerAnswer.correct
-                      ? "#DCFCE7"
-                      : "#FEE2E2",
+                    backgroundColor: revealState
+                      ? partnerAnswer.correct
+                        ? "#DCFCE7"
+                        : "#FEE2E2"
+                      : "#EFEAFF",
                   }}
                 >
                   <Text
                     className="font-ui-bold text-[11px]"
                     style={{
-                      color: partnerAnswer.correct ? "#16A34A" : "#DC2626",
+                      color: revealState
+                        ? partnerAnswer.correct
+                          ? "#16A34A"
+                          : "#DC2626"
+                        : palette.primary,
                     }}
                   >
-                    {partnerAnswer.correct ? "✓" : "✗"}
+                    {revealState ? (partnerAnswer.correct ? "✓" : "✗") : "…"}
                   </Text>
                 </View>
               )}
@@ -480,8 +501,8 @@ export default function SpeedBattlePlayScreen() {
         <InterstitialOverlay
           message={interstitial}
           icon={interstitial.includes("scored") ? "lightning-bolt" : "handshake"}
-          iconColor={interstitial.includes("scored") ? "#F59E0B" : "#946BFF"}
-          iconBg={interstitial.includes("scored") ? "#F59E0B1F" : "#946BFF1F"}
+          iconColor={interstitial.includes("scored") ? "#F59E0B" : palette.primary}
+          iconBg={interstitial.includes("scored") ? "#F59E0B1F" : `${palette.primary}1F`}
         />
       )}
       <ConfirmModal {...leaveConfirm.props} onCancel={leaveConfirm.cancel} />

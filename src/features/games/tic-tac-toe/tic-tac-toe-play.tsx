@@ -15,6 +15,7 @@ import { useRoomStore } from "@/stores/roomStore";
 import { ConfirmModal, InfoModal } from "@/components/ui/ConfirmModal";
 import { useConfirmModal } from "@/hooks/useConfirmModal";
 import { CARD_SHADOW } from "@/lib/shadows";
+import { usePalette } from "@/hooks/usePalette";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -43,6 +44,7 @@ interface TicTacToeState {
 }
 
 export default function TicTacToePlayScreen() {
+  const palette = usePalette();
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
   const user = useAuthStore((s) => s.user);
   const socket = useSocketStore((s) => s.socket);
@@ -52,6 +54,7 @@ export default function TicTacToePlayScreen() {
   const [interstitial, setInterstitial] = useState<string | null>(null);
   const { incomingReaction, rejectMsg, sendReaction } = useGameReactions(socket, roomId, user?.id);
   const leftRef = useRef(false);
+  const roundEndTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigation = useNavigation();
   const leaveConfirm = useConfirmModal();
   const pendingActionRef = useRef<any>(null);
@@ -72,14 +75,15 @@ export default function TicTacToePlayScreen() {
             ? "You won the round!"
             : `${partnerName} won the round`,
       );
-      setTimeout(() => setInterstitial(null), 1800);
+      if (roundEndTimer.current) clearTimeout(roundEndTimer.current);
+      roundEndTimer.current = setTimeout(() => setInterstitial(null), 1800);
     };
     const onFinished = (d: any) => {
       if (d.roomId !== roomId) return;
       leftRef.current = true;
       const results = d.results;
       router.replace(
-        `/games/TIC_TAC_TOE/results?winnerId=${results.winnerId ?? ""}&scores=${JSON.stringify(results.scores)}&totalRounds=${results.totalRounds}&roundsWon=${encodeURIComponent(JSON.stringify(results.roundsWon ?? {}))}&roomId=${roomId}` as any,
+        `/games/TIC_TAC_TOE/results?winnerId=${results.winnerId ?? ""}&scores=${encodeURIComponent(JSON.stringify(results.scores))}&totalRounds=${results.totalRounds}&roundsWon=${encodeURIComponent(JSON.stringify(results.roundsWon ?? {}))}&roomId=${roomId}` as any,
       );
     };
     socket.on("game:state", onState);
@@ -149,6 +153,7 @@ export default function TicTacToePlayScreen() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      if (roundEndTimer.current) clearTimeout(roundEndTimer.current);
       if (!leftRef.current && roomId) {
         socket?.emit("room:leave", { roomId });
         useRoomStore.getState().setRoom(null);
@@ -174,7 +179,7 @@ export default function TicTacToePlayScreen() {
               className="flex-row items-center gap-2 rounded-full bg-surface px-4 py-2"
               style={CARD_SHADOW}
             >
-              <MaterialCommunityIcons name="grid" size={16} color="#946BFF" />
+              <MaterialCommunityIcons name="grid" size={16} color={palette.primary} />
               <Text className="font-ui-bold text-[13px] text-ink">
                 Round {state?.roundNumber ?? 1} of {state?.totalRounds ?? 3}
               </Text>
@@ -262,6 +267,12 @@ export default function TicTacToePlayScreen() {
                         disabled={
                           !myTurn || mark !== null || state?.status !== "active"
                         }
+                        accessibilityRole="button"
+                        accessibilityLabel={`Cell row ${row + 1}, column ${col + 1}${mark ? `, taken by ${mark}` : ", empty"}`}
+                        accessibilityState={{
+                          disabled:
+                            !myTurn || mark !== null || state?.status !== "active",
+                        }}
                         className="m-[3px] h-[96px] w-[96px] items-center justify-center rounded-[22px] active:opacity-85"
                         style={{
                           backgroundColor: isLast ? "#946BFF26" : "#1B1826",
@@ -290,8 +301,8 @@ export default function TicTacToePlayScreen() {
             <InterstitialOverlay
               message={interstitial}
               icon={interstitial.includes("draw") ? "handshake" : interstitial.includes("You") ? "trophy" : "arm-flex"}
-              iconColor={interstitial.includes("draw") ? "#946BFF" : interstitial.includes("You") ? "#F59E0B" : "#FF5C8A"}
-              iconBg={interstitial.includes("draw") ? "#946BFF1F" : interstitial.includes("You") ? "#F59E0B1F" : "#FF5C8A1F"}
+              iconColor={interstitial.includes("draw") ? palette.primary : interstitial.includes("You") ? "#F59E0B" : "#FF5C8A"}
+              iconBg={interstitial.includes("draw") ? `${palette.primary}1F` : interstitial.includes("You") ? "#F59E0B1F" : "#FF5C8A1F"}
             />
           )}
 
@@ -321,6 +332,7 @@ function TurnBanner({
   partnerName: string;
   status: string;
 }) {
+  const palette = usePalette();
   const pulse = useSharedValue(1);
   useEffect(() => {
     pulse.value = withRepeat(
@@ -344,7 +356,7 @@ function TurnBanner({
       <View
         className="rounded-full px-5 py-2.5"
         style={{
-          backgroundColor: myTurn ? "#946BFF" : "#1B1826",
+          backgroundColor: myTurn ? palette.primary : "#1B1826",
           borderWidth: myTurn ? 0 : 1,
           borderColor: "#2B2539",
         }}

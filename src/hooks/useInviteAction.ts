@@ -1,5 +1,5 @@
 import * as Clipboard from "expo-clipboard";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Share } from "react-native";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
@@ -18,6 +18,13 @@ export function useInviteAction() {
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copiedTimer.current) clearTimeout(copiedTimer.current);
+    };
+  }, []);
 
   const ensureCode = useCallback(async (): Promise<string> => {
     const existing = couple?.inviteCode;
@@ -55,7 +62,8 @@ export function useInviteAction() {
       const code = await ensureCode();
       await Clipboard.setStringAsync(code);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copiedTimer.current) clearTimeout(copiedTimer.current);
+      copiedTimer.current = setTimeout(() => setCopied(false), 2000);
       return code;
     } catch (e: any) {
       setError(e.message ?? "Could not copy the code.");
@@ -73,7 +81,7 @@ export function useInviteAction() {
       const couple = await api.couples.joinByCode(code, token);
       // Notify partner in realtime
       const socket = useSocketStore.getState().socket;
-      socket?.emit("couples:joined", { couple });
+      socket?.emit("couples:joined");
       return couple;
     },
     [token],
