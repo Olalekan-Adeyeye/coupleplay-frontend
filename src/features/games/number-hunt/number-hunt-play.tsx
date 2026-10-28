@@ -16,7 +16,6 @@ import { useSocketStore } from "@/hooks/useSocket";
 import { useRoomStore } from "@/stores/roomStore";
 import { ConfirmModal, InfoModal } from "@/components/ui/ConfirmModal";
 import { useConfirmModal } from "@/hooks/useConfirmModal";
-import { CARD_SHADOW } from "@/lib/shadows";
 import { HoneycombGrid } from "./honeycomb-grid";
 
 interface NumberHuntState {
@@ -326,8 +325,7 @@ export default function NumberHuntPlayScreen() {
           <View className="flex-row items-center justify-between">
             <View className="h-11 w-11" />
             <View
-              className="flex-row items-center gap-2 rounded-full bg-surface px-4 py-2"
-              style={CARD_SHADOW}
+              className="flex-row items-center gap-2 rounded-full bg-surface px-4 py-2 border border-hairline"
             >
               <Text className="font-ui-bold text-body-sm text-ink">
                 Round {state?.roundNumber ?? 1} of {state?.totalRounds ?? 5}
@@ -373,8 +371,7 @@ export default function NumberHuntPlayScreen() {
           {/* Players + score */}
           <View className="mt-3 flex-row items-center justify-center gap-3">
             <View
-              className="flex-1 flex-row items-center gap-2.5 rounded-2xl bg-surface px-3 py-2.5"
-              style={CARD_SHADOW}
+              className="flex-1 flex-row items-center gap-2.5 rounded-2xl bg-surface px-3 py-2.5 border border-hairline"
             >
               <Avatar avatar={user?.avatar} name={user?.name} size={36} />
               <View className="flex-1">
@@ -409,8 +406,7 @@ export default function NumberHuntPlayScreen() {
             </Text>
 
             <View
-              className="flex-1 flex-row items-center gap-2.5 rounded-2xl bg-surface px-3 py-2.5"
-              style={CARD_SHADOW}
+              className="flex-1 flex-row items-center gap-2.5 rounded-2xl bg-surface px-3 py-2.5 border border-hairline"
             >
               <Avatar name={partnerName} size={36} />
               <View className="flex-1">
@@ -434,8 +430,7 @@ export default function NumberHuntPlayScreen() {
             {/* Hunt mode: target selection UI */}
             {selectingTargets && (
               <View
-                className="items-center gap-3 rounded-3xl bg-surface px-5 py-4"
-                style={CARD_SHADOW}
+                className="items-center gap-3 rounded-3xl bg-surface px-5 py-4 border border-hairline"
               >
                 <Text className="font-display-bold text-title-xs text-ink">
                   Pick {state?.totalTargets ?? 5} target numbers
@@ -471,8 +466,7 @@ export default function NumberHuntPlayScreen() {
             {/* Hunt mode: finder waiting */}
             {waitingForTargets && (
               <View
-                className="items-center gap-3 rounded-3xl bg-surface px-5 py-4"
-                style={CARD_SHADOW}
+                className="items-center gap-3 rounded-3xl bg-surface px-5 py-4 border border-hairline"
               >
                 <View className="h-12 w-12 items-center justify-center rounded-full bg-primary-soft">
                   <MaterialCommunityIcons
@@ -493,8 +487,7 @@ export default function NumberHuntPlayScreen() {
             {/* Race mode: current call display */}
             {state?.mode === "race" && state.currentCall != null && (
               <View
-                className="items-center gap-2 rounded-3xl bg-surface px-5 py-4"
-                style={CARD_SHADOW}
+                className="items-center gap-2 rounded-3xl bg-surface px-5 py-4 border border-hairline"
               >
                 <Text className="font-ui-medium text-caption text-ink-tertiary">
                   Find & tap this number
@@ -514,8 +507,7 @@ export default function NumberHuntPlayScreen() {
                 the actual targets stay hidden from the finder until reveal */}
             {state?.mode === "hunt" && state.totalTargets > 0 && isFinder && (
               <View
-                className="items-center rounded-2xl bg-surface px-4 py-3"
-                style={CARD_SHADOW}
+                className="items-center rounded-2xl bg-surface px-4 py-3 border border-hairline"
               >
                 <Text className="font-ui-bold text-body text-ink">
                   Found: {myFound.length} / {state.totalTargets}
@@ -527,8 +519,7 @@ export default function NumberHuntPlayScreen() {
             {state?.mode === "race" &&
               state.firstTapped?.[user?.id ?? ""] != null && (
                 <View
-                  className="items-center rounded-2xl bg-surface px-4 py-3"
-                  style={CARD_SHADOW}
+                  className="items-center rounded-2xl bg-surface px-4 py-3 border border-hairline"
                 >
                   <Text className="font-ui-bold text-body text-ink">
                     Waiting for {partnerName}...
@@ -573,8 +564,7 @@ export default function NumberHuntPlayScreen() {
       {state?.mode === null && (
         <View className="absolute inset-0 z-20 items-center justify-center bg-paper/95">
           <View
-            className="items-center gap-5 rounded-3xl bg-surface px-8 py-8"
-            style={CARD_SHADOW}
+            className="items-center gap-5 rounded-3xl bg-surface px-8 py-8 border border-hairline"
           >
             <View className="h-16 w-16 items-center justify-center rounded-full bg-primary-soft">
               <MaterialCommunityIcons name="gamepad-variant" size={30} color={palette.primary} />

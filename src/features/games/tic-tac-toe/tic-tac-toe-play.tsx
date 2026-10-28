@@ -14,7 +14,6 @@ import { Pressable, Text, View } from "react-native";
 import { useRoomStore } from "@/stores/roomStore";
 import { ConfirmModal, InfoModal } from "@/components/ui/ConfirmModal";
 import { useConfirmModal } from "@/hooks/useConfirmModal";
-import { CARD_SHADOW } from "@/lib/shadows";
 import { usePalette } from "@/hooks/usePalette";
 import Animated, {
   useAnimatedStyle,
@@ -176,8 +175,7 @@ export default function TicTacToePlayScreen() {
           <View className="flex-row items-center justify-between">
             <View className="h-11 w-11" />
             <View
-              className="flex-row items-center gap-2 rounded-full bg-surface px-4 py-2"
-              style={CARD_SHADOW}
+              className="flex-row items-center gap-2 rounded-full border border-hairline bg-surface px-4 py-2"
             >
               <MaterialCommunityIcons name="grid" size={16} color={palette.primary} />
               <Text className="font-ui-bold text-body-sm text-ink">
@@ -190,8 +188,7 @@ export default function TicTacToePlayScreen() {
           {/* Players + score */}
           <View className="mt-4 flex-row items-center justify-center gap-3">
             <View
-              className="flex-1 flex-row items-center gap-2.5 rounded-2xl bg-surface px-4 py-3"
-              style={CARD_SHADOW}
+              className="flex-1 flex-row items-center gap-2.5 rounded-2xl border border-hairline bg-surface px-4 py-3"
             >
               <Avatar avatar={user?.avatar} name={user?.name} size={40} />
               <View className="flex-1">
@@ -215,8 +212,7 @@ export default function TicTacToePlayScreen() {
             </Text>
 
             <View
-              className="flex-1 flex-row items-center gap-2.5 rounded-2xl bg-surface px-4 py-3"
-              style={CARD_SHADOW}
+              className="flex-1 flex-row items-center gap-2.5 rounded-2xl border border-hairline bg-surface px-4 py-3"
             >
               <Avatar name={partnerName} size={40} />
               <View className="flex-1">
@@ -250,8 +246,7 @@ export default function TicTacToePlayScreen() {
           {/* Board */}
           <View className="mt-5 items-center">
             <View
-              className="rounded-[28px] bg-plum-deep p-1.5"
-              style={CARD_SHADOW}
+              className="rounded-[28px] border border-hairline bg-surface-soft p-1.5"
             >
               {[0, 1, 2].map((row) => (
                 <View key={row} className="flex-row">
@@ -275,14 +270,16 @@ export default function TicTacToePlayScreen() {
                         }}
                         className="m-[3px] h-[96px] w-[96px] items-center justify-center rounded-[22px] active:opacity-85"
                         style={{
-                          backgroundColor: isLast ? "#946BFF26" : "#1B1826",
+                          backgroundColor: isLast
+                            ? `${palette.primary}26`
+                            : palette.surface,
                         }}
                       >
                         {mark && (
                           <Text
                             className="font-display-bold text-[52px]"
                             style={{
-                              color: mark === "X" ? "#946BFF" : "#FF69B4",
+                              color: mark === "X" ? palette.primary : palette.rose,
                             }}
                           >
                             {mark}
@@ -354,14 +351,14 @@ function TurnBanner({
       <View
         className="rounded-full px-5 py-2.5"
         style={{
-          backgroundColor: myTurn ? palette.primary : "#1B1826",
+          backgroundColor: myTurn ? palette.primary : palette.surface,
           borderWidth: myTurn ? 0 : 1,
-          borderColor: "#2B2539",
+          borderColor: palette.hairline,
         }}
       >
         <Text
           className="font-ui-bold text-body"
-          style={{ color: myTurn ? "#FFFFFF" : "#B3A8C9" }}
+          style={{ color: myTurn ? "#FFFFFF" : palette.inkSecondary }}
         >
           {myTurn ? "Your turn!" : `Waiting for ${partnerName}...`}
         </Text>

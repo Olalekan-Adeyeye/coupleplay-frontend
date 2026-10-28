@@ -60,6 +60,27 @@ jobs:
         run: ./gradlew :app:assembleRelease
         working-directory: android
 
+      - name: Sign APKs
+        env:
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEYSTORE_ALIAS: ${{ secrets.RELEASE_KEYSTORE_ALIAS }}
+          RELEASE_KEYSTORE_KEY_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_KEY_PASSWORD }}
+        run: |
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+          KEYSTORE="$PWD/android/app/release.keystore"
+          OUT="$PWD/android/app/build/outputs/apk/release"
+          for APK in "$OUT"/*.apk; do
+            if ! "$BUILD_TOOLS/apksigner" verify --quiet "$APK"; then
+              "$BUILD_TOOLS/apksigner" sign \
+                --ks "$KEYSTORE" \
+                --ks-key-alias "$RELEASE_KEYSTORE_ALIAS" \
+                --ks-pass "pass:$RELEASE_KEYSTORE_PASSWORD" \
+                --key-pass "pass:$RELEASE_KEYSTORE_KEY_PASSWORD" \
+                "$APK"
+            fi
+            "$BUILD_TOOLS/apksigner" verify --print-certs "$APK" | head -2
+          done
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:

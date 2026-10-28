@@ -1,6 +1,5 @@
 import { View, Text } from "react-native";
 import { Avatar } from "@/components/ui/avatar";
-import { CARD_SHADOW } from "@/lib/shadows";
 
 interface ResultsScoreCardProps {
   myName: string;
@@ -19,14 +18,11 @@ export function ResultsScoreCard({
   myColor = "text-primary",
   partnerName,
   partnerScore,
-  partnerColor = "text-accent",
+  partnerColor = "text-rose",
 }: ResultsScoreCardProps) {
   return (
     <View className="mt-6 flex-row items-center justify-center gap-3">
-      <View
-        className="flex-1 items-center gap-2 rounded-3xl bg-surface px-3 py-6"
-        style={CARD_SHADOW}
-      >
+      <View className="flex-1 items-center gap-2 rounded-2xl border border-hairline bg-surface px-3 py-6">
         <Avatar avatar={myAvatar} name={myName} size={56} />
         <Text
           className="font-display-bold text-body text-ink"
@@ -43,10 +39,7 @@ export function ResultsScoreCard({
         VS
       </Text>
 
-      <View
-        className="flex-1 items-center gap-2 rounded-3xl bg-surface px-3 py-6"
-        style={CARD_SHADOW}
-      >
+      <View className="flex-1 items-center gap-2 rounded-2xl border border-hairline bg-surface px-3 py-6">
         <Avatar name={partnerName} size={56} />
         <Text
           className="font-display-bold text-body text-ink"
