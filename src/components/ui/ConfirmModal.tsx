@@ -1,5 +1,6 @@
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { AppModal } from "./AppModal";
+import { usePalette } from "@/hooks/usePalette";
 
 export type ConfirmModalVariant = "danger" | "info" | "error";
 
@@ -27,7 +28,6 @@ const VARIANT_STYLES: Record<
   error: { confirmBg: "#DC2626", confirmText: "#FFFFFF", icon: "alert" },
   info: { confirmBg: "#946BFF", confirmText: "#FFFFFF", icon: "information" },
 };
-
 /**
  * A beautiful bottom-sheet confirm modal that replaces native Alert.alert.
  *
@@ -47,7 +47,9 @@ export function ConfirmModal({
   onCancel,
   loading = false,
 }: ConfirmModalProps) {
-  const style = VARIANT_STYLES[variant];
+  const palette = usePalette();
+  const style = { ...VARIANT_STYLES[variant] };
+  if (variant === "info") style.confirmBg = palette.primary;
 
   return (
     <AppModal visible={visible} onClose={onCancel} dismissible>

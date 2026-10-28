@@ -4,6 +4,8 @@ import { CoupleAvatars } from "@/components/ui/couple-avatars";
 import { HeaderButton } from "@/components/ui/header-button";
 import { useInviteAction } from "@/hooks/useInviteAction";
 import { useResolvedTheme } from "@/hooks/useResolvedTheme";
+import { usePalette } from "@/hooks/usePalette";
+import { formatDate } from "@/lib/format";
 import { Achievement } from "@/types/stats";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -68,6 +70,7 @@ export default function UsScreen() {
   const invite = useInviteAction();
   const resolved = useResolvedTheme();
   const isLight = resolved === "light";
+  const palette = usePalette();
 
   useEffect(() => {
     if (token) {
@@ -97,17 +100,11 @@ export default function UsScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [couple]);
 
-  const togetherSince = couple?.createdAt
-    ? new Date(couple.createdAt).toLocaleDateString("en-US", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })
-    : "";
+  const togetherSince = couple?.createdAt ? formatDate(couple.createdAt) : "";
 
   const highlights = [
     { label: "Day streak", value: overview.streak, icon: "fire", color: "#F59E0B" },
-    { label: "Games", value: overview.totalGames, icon: "gamepad-variant", color: "#946BFF" },
+    { label: "Games", value: overview.totalGames, icon: "gamepad-variant", color: palette.primary },
     { label: "Won", value: overview.wins, icon: "trophy-outline", color: "#22C55E" },
     { label: "XP", value: overview.xp, icon: "lightning-bolt", color: "#FF5C8A" },
   ];
@@ -153,7 +150,7 @@ export default function UsScreen() {
               <MaterialCommunityIcons
                 name="account-edit-outline"
                 size={15}
-                color="#946BFF"
+                color={palette.primary}
               />
               <Text className="font-ui-semibold text-[13px] text-primary">
                 Edit our look
@@ -193,7 +190,7 @@ export default function UsScreen() {
                 <MaterialCommunityIcons
                   name="content-copy"
                   size={16}
-                  color="#946BFF"
+                  color={palette.primary}
                 />
                 <Text className="font-ui-bold text-[13.5px] text-primary">
                   {invite.copied ? "Copied!" : invite.code ?? "Get code"}

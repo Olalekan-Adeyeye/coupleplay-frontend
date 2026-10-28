@@ -2,6 +2,7 @@ import { PageHeader, TabScreen } from "@/components/tab-screen";
 import { HeaderButton } from "@/components/ui/header-button";
 import { GAMES, GAME_IMAGES } from "@/data/games";
 import { isGameImplemented } from "@/features/games/registry";
+import { usePalette } from "@/hooks/usePalette";
 import { useResolvedTheme } from "@/hooks/useResolvedTheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -24,6 +25,7 @@ export default function GamesScreen() {
   const [query, setQuery] = useState("");
   const resolved = useResolvedTheme();
   const isLight = resolved === "light";
+  const palette = usePalette();
 
   const games = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -94,9 +96,9 @@ export default function GamesScreen() {
                 accessibilityState={{ selected: active }}
                 className="flex-row items-center gap-1.5 rounded-full px-4 py-2.5 active:opacity-80"
                 style={{
-                  backgroundColor: active ? "#946BFF" : isLight ? "#F0ECF5" : "#1B1826",
+                  backgroundColor: active ? palette.primary : isLight ? "#F0ECF5" : "#1B1826",
                   borderWidth: 1,
-                  borderColor: active ? "#946BFF" : isLight ? "#D4D0DE" : "#2B2539",
+                  borderColor: active ? palette.primary : isLight ? "#D4D0DE" : "#2B2539",
                 }}
               >
                 <MaterialCommunityIcons

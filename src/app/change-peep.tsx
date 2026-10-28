@@ -1,14 +1,16 @@
 import { PeepPicker } from "@/components/peeps/PeepPicker";
 import type { PeepId } from "@/components/peeps/peeps";
+import { usePalette } from "@/hooks/usePalette";
 import { useAuthStore } from "@/stores/authStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /** Update your Peep. Persists via PATCH /users/me. */
 export default function ChangePeepScreen() {
+  const palette = usePalette();
   const user = useAuthStore((s) => s.user);
   const updateAvatar = useAuthStore((s) => s.updateAvatar);
   const [peep, setPeep] = useState<PeepId | null>(
@@ -17,6 +19,13 @@ export default function ChangePeepScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (savedTimer.current) clearTimeout(savedTimer.current);
+    };
+  }, []);
 
   const handleSave = async () => {
     if (!peep) {
@@ -28,7 +37,8 @@ export default function ChangePeepScreen() {
     try {
       await updateAvatar(peep);
       setSaved(true);
-      setTimeout(() => router.back(), 600);
+      if (savedTimer.current) clearTimeout(savedTimer.current);
+      savedTimer.current = setTimeout(() => router.back(), 600);
     } catch (e: any) {
       setError(e.message ?? "Could not save your Peep. Try again.");
     } finally {
@@ -50,7 +60,7 @@ export default function ChangePeepScreen() {
             <MaterialCommunityIcons
               name="chevron-left"
               size={24}
-              color="#F4F1FA"
+              color={palette.ink}
             />
           </Pressable>
         </View>

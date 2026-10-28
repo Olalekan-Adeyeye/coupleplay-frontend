@@ -1,5 +1,6 @@
 import { GAME_IMAGES, getGame } from "@/data/games";
 import { useInviteAction } from "@/hooks/useInviteAction";
+import { usePalette } from "@/hooks/usePalette";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -24,6 +25,7 @@ async function readNotified(): Promise<string[]> {
  * game — art, rules preview, notify-me bell and invite CTA instead.
  */
 export default function SoonScreen() {
+  const palette = usePalette();
   const { gameType } = useLocalSearchParams<{ gameType: string }>();
   const game = getGame(gameType);
   const invite = useInviteAction();
@@ -132,16 +134,16 @@ export default function SoonScreen() {
               accessibilityRole="switch"
               accessibilityState={{ checked: notified }}
               className="flex-row items-center justify-center gap-2 rounded-2xl py-4 active:opacity-85"
-              style={{ backgroundColor: notified ? "#EFEAFF" : "#946BFF" }}
+              style={{ backgroundColor: notified ? `${palette.primary}1F` : palette.primary }}
             >
               <MaterialCommunityIcons
                 name={notified ? "bell-check" : "bell-outline"}
                 size={19}
-                color={notified ? "#946BFF" : "#FFFFFF"}
+                color={notified ? palette.primary : "#FFFFFF"}
               />
               <Text
                 className="font-ui-bold text-[15px]"
-                style={{ color: notified ? "#946BFF" : "#FFFFFF" }}
+                style={{ color: notified ? palette.primary : "#FFFFFF" }}
               >
                 {notified ? "We'll ping you at launch" : "Notify me at launch"}
               </Text>
@@ -155,7 +157,7 @@ export default function SoonScreen() {
               <MaterialCommunityIcons
                 name="share-variant"
                 size={18}
-                color="#946BFF"
+                color={palette.primary}
               />
               <Text className="font-ui-bold text-[15px] text-primary">
                 Invite player 2 meanwhile

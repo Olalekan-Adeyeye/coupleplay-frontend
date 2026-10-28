@@ -35,16 +35,14 @@ export default function SetupScreen() {
   // Realtime: partner just linked — auto-transition to "team" screen
   useEffect(() => {
     if (!socket) return;
-    const onLinked = (couple: any) => {
-      if (couple?.userAId === user?.id || couple?.userBId === user?.id) {
-        fetchCouple(token!).catch(() => {});
-      }
+    const onLinked = () => {
+      if (token) fetchCouple(token).catch(() => {});
     };
     socket.on("couple:linked", onLinked);
     return () => {
       socket.off("couple:linked", onLinked);
     };
-  }, [socket, token, user?.id, fetchCouple]);
+  }, [socket, token, fetchCouple]);
 
   const connected = couple?.userBId != null;
 
@@ -211,8 +209,8 @@ export default function SetupScreen() {
                 }}
                 autoCapitalize="characters"
                 autoCorrect={false}
-                maxLength={8}
-                placeholder="e.g. 7K4P9X2Q"
+                maxLength={10}
+                placeholder="e.g. 7K4P9X2QAB"
                 returnKeyType="done"
                 onSubmitEditing={handleJoin}
               />

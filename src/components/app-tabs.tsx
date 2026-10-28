@@ -1,5 +1,5 @@
 import { useActiveRoom } from "@/hooks/useActiveRoom";
-import { useResolvedTheme } from "@/hooks/useResolvedTheme";
+import { usePalette } from "@/hooks/usePalette";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import {
   TabList,
@@ -97,9 +97,8 @@ function DockButton({
   activeIcon: keyof typeof MaterialCommunityIcons.glyphMap;
   badged?: boolean;
 }) {
-  const resolved = useResolvedTheme();
-  const isLight = resolved === "light";
-  const inactiveColor = isLight ? "#948CA8" : "#A79DBE";
+  const palette = usePalette();
+  const inactiveColor = palette.inkTertiary;
 
   return (
     <Pressable
@@ -110,7 +109,7 @@ function DockButton({
       }}
       accessibilityRole="tab"
       accessibilityState={{ selected: isFocused }}
-      accessibilityLabel={label}
+      accessibilityLabel={badged && !isFocused ? `${label}, live game room` : label}
       className="flex-1 active:opacity-75"
       style={(state) => [
         typeof style === "function" ? style(state) : style,
@@ -127,13 +126,12 @@ function DockButton({
             style={{
               width: 52,
               height: 30,
-              // backgroundColor: isFocused ? "#EFEAFF" : "transparent",x
             }}
           >
             <MaterialCommunityIcons
               name={isFocused ? activeIcon : icon}
               size={23}
-              color={isFocused ? "#946BFF" : inactiveColor}
+              color={isFocused ? palette.primary : inactiveColor}
             />
             {badged && !isFocused && (
               <View
@@ -148,7 +146,7 @@ function DockButton({
                 ? "font-ui-bold text-[11px]"
                 : "font-ui-medium text-[11px]"
             }
-            style={{ color: isFocused ? "#946BFF" : inactiveColor }}
+            style={{ color: isFocused ? palette.primary : inactiveColor }}
           >
             {label}
           </Text>

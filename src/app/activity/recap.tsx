@@ -5,9 +5,11 @@ import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { usePalette } from "@/hooks/usePalette";
 
 /** Match recap from a timeline row. Params-driven — no extra fetch. */
 export default function RecapScreen() {
+  const palette = usePalette();
   const params = useLocalSearchParams<{
     id: string;
     title: string;
@@ -22,6 +24,10 @@ export default function RecapScreen() {
   const game = getGame(params.gameType);
   const art = game?.heroImage ? GAME_IMAGES[game.heroImage] : undefined;
   const implemented = game ? isGameImplemented(game.id) : false;
+  const iconName =
+    params.icon && params.icon in MaterialCommunityIcons.glyphMap
+      ? params.icon
+      : "gamepad-variant";
 
   const handleRematch = () => {
     if (!game) return;
@@ -44,7 +50,7 @@ export default function RecapScreen() {
               <MaterialCommunityIcons
                 name="chevron-left"
                 size={24}
-                color="#F4F1FA"
+                color={palette.ink}
               />
             </Pressable>
           </View>
@@ -62,9 +68,9 @@ export default function RecapScreen() {
                 />
               ) : (
                 <MaterialCommunityIcons
-                  name={(params.icon ?? "gamepad-variant") as any}
+                  name={iconName as any}
                   size={52}
-                  color={params.color ?? "#946BFF"}
+                  color={params.color ?? palette.primary}
                 />
               )}
             </View>
@@ -98,7 +104,7 @@ export default function RecapScreen() {
                   <MaterialCommunityIcons
                     name="gamepad-variant"
                     size={19}
-                    color="#946BFF"
+                    color={palette.primary}
                   />
                   <Text className="font-ui-semibold text-[14px] text-ink">
                     Game

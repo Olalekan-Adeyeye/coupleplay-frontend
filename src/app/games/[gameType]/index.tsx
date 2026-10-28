@@ -1,5 +1,6 @@
 import { GAME_IMAGES, getGame } from "@/data/games";
 import { isGameImplemented } from "@/features/games/registry";
+import { usePalette } from "@/hooks/usePalette";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 import { useCoupleStore } from "@/stores/coupleStore";
@@ -12,6 +13,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function GameDetailScreen() {
+  const palette = usePalette();
   const { gameType } = useLocalSearchParams<{ gameType: string }>();
   const game = getGame(gameType);
   const token = useAuthStore((s) => s.token);
@@ -25,13 +27,12 @@ export default function GameDetailScreen() {
   const hasPartner = couple?.userBId != null;
 
   const refreshActiveRoom = useCallback(async () => {
-    const coupleId = couple?.id;
-    if (!token || !coupleId) {
+    if (!token) {
       setActiveRoom(null);
       return;
     }
     try {
-      const room = await api.rooms.getActive(coupleId, token, gameType);
+      const room = await api.rooms.getActive(token, gameType);
       if (!room) {
         setActiveRoom(null);
         return;
@@ -42,7 +43,7 @@ export default function GameDetailScreen() {
       setActiveRoom(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, couple]);
+  }, [token, gameType]);
 
   useFocusEffect(
     useCallback(() => {
@@ -64,7 +65,7 @@ export default function GameDetailScreen() {
     setLoading(true);
     setError(null);
     try {
-      const active = await api.rooms.getActive(couple.id, token!, game.id);
+      const active = await api.rooms.getActive(token!, game.id);
       if (active) {
         await api.rooms.join(active.id, token!);
         setRoom(active);
@@ -115,7 +116,7 @@ export default function GameDetailScreen() {
                 <MaterialCommunityIcons
                   name="chevron-left"
                   size={24}
-                  color="#F4F1FA"
+                  color={palette.ink}
                 />
               </Pressable>
               <Pressable
@@ -130,7 +131,7 @@ export default function GameDetailScreen() {
                 <MaterialCommunityIcons
                   name={bookmarked ? "bookmark" : "bookmark-outline"}
                   size={21}
-                  color={bookmarked ? "#946BFF" : "#B3A8C9"}
+                  color={bookmarked ? palette.primary : "#B3A8C9"}
                 />
               </Pressable>
             </View>
@@ -138,7 +139,6 @@ export default function GameDetailScreen() {
             <View className="mt-5 items-center">
               <View
                 className="h-[168px] w-[168px] items-center justify-center overflow-hidden rounded-2xl"
-                // style={{ backgroundColor: game.accent }}
               >
                 {heroImage ? (
                   <Image
@@ -191,7 +191,7 @@ export default function GameDetailScreen() {
                   <MaterialCommunityIcons
                     name={m.icon}
                     size={15}
-                    color="#946BFF"
+                    color={palette.primary}
                   />
                   <Text className="font-ui-semibold text-[12.5px] text-ink">
                     {m.label}
@@ -239,7 +239,7 @@ export default function GameDetailScreen() {
                 <MaterialCommunityIcons
                   name="information-outline"
                   size={18}
-                  color="#946BFF"
+                  color={palette.primary}
                 />
                 <Text className="flex-1 font-ui-semibold text-[13px]">
                   Your partner already opened a table — hop in!

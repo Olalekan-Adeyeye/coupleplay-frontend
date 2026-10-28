@@ -2,6 +2,7 @@ import { PeepScene } from "@/components/peeps/PeepScene";
 import { PageHeader, SectionTitle, TabScreen } from "@/components/tab-screen";
 import { HeaderButton } from "@/components/ui/header-button";
 import { useResolvedTheme } from "@/hooks/useResolvedTheme";
+import { usePalette } from "@/hooks/usePalette";
 import { ActivityItem } from "@/types/stats";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
@@ -54,6 +55,7 @@ function SkeletonRow() {
 }
 
 function ActivityRow({ item, isLight }: { item: ActivityItem; isLight: boolean }) {
+  const iconName = item.icon in MaterialCommunityIcons.glyphMap ? item.icon : "gamepad-variant";
   return (
     <Pressable
       onPress={() =>
@@ -84,7 +86,7 @@ function ActivityRow({ item, isLight }: { item: ActivityItem; isLight: boolean }
         style={{ backgroundColor: item.bg }}
       >
         <MaterialCommunityIcons
-          name={item.icon as any}
+          name={iconName as any}
           size={20}
           color={item.color}
         />
@@ -121,7 +123,7 @@ const CAREER: {
   { key: "losses", label: "Lost", icon: "close-circle-outline", color: "#EF4444" },
   { key: "draws", label: "Draws", icon: "handshake", color: "#F59E0B" },
   { key: "winRate", label: "Win rate", icon: "chart-line", color: "#8C78FF", suffix: "%" },
-  { key: "streak", label: "Best streak", icon: "fire", color: "#F59E0B" },
+  { key: "streak", label: "Day streak", icon: "fire", color: "#F59E0B" },
 ];
 
 export default function ActivityScreen() {
@@ -133,6 +135,7 @@ export default function ActivityScreen() {
   const fetchActivity = useStatsStore((s) => s.fetchActivity);
   const resolved = useResolvedTheme();
   const isLight = resolved === "light";
+  const palette = usePalette();
 
   useFocusEffect(
     useCallback(() => {
@@ -179,8 +182,8 @@ export default function ActivityScreen() {
             value={overview.totalGames}
             label="Games played"
             icon="gamepad-variant"
-            tint="#946BFF18"
-            color="#946BFF"
+            tint={`${palette.primary}18`}
+            color={palette.primary}
           />
           <View className="h-16 w-px bg-hairline" />
           <HeroStat
@@ -246,7 +249,7 @@ export default function ActivityScreen() {
               <MaterialCommunityIcons
                 name={c.icon as any}
                 size={24}
-                color={c.color}
+                color={c.key === "totalGames" ? palette.primary : c.color}
               />
               <Text className="font-display-bold text-[17px] text-ink">
                 {overview[c.key]}

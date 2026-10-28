@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { Appearance, Pressable, StyleSheet, Text, View } from "react-native";
 
 interface Props {
   children: ReactNode;
@@ -8,15 +8,31 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+  resetCount: number;
 }
+
+const THEMES = {
+  light: {
+    background: "#FAF8FD",
+    title: "#221E33",
+    message: "#6F6690",
+    button: "#7C54E8",
+  },
+  dark: {
+    background: "#1B1826",
+    title: "#F4F1FA",
+    message: "#9B8EC4",
+    button: "#946BFF",
+  },
+};
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, resetCount: 0 };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error };
   }
 
@@ -25,25 +41,38 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: null });
+    // Bump the key so the crashed subtree remounts from scratch — a plain
+    // state reset would re-render the exact stale tree that just crashed.
+    this.setState((s) => ({
+      hasError: false,
+      error: null,
+      resetCount: s.resetCount + 1,
+    }));
   };
 
   render() {
     if (this.state.hasError) {
+      const theme =
+        Appearance.getColorScheme() === "dark" ? THEMES.dark : THEMES.light;
       return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
           <Text style={styles.emoji}>💥</Text>
-          <Text style={styles.title}>Something went wrong</Text>
-          <Text style={styles.message}>
+          <Text style={[styles.title, { color: theme.title }]}>
+            Something went wrong
+          </Text>
+          <Text style={[styles.message, { color: theme.message }]}>
             {this.state.error?.message ?? "An unexpected error occurred."}
           </Text>
-          <Pressable style={styles.button} onPress={this.handleReset}>
+          <Pressable
+            style={[styles.button, { backgroundColor: theme.button }]}
+            onPress={this.handleReset}
+          >
             <Text style={styles.buttonText}>Try Again</Text>
           </Pressable>
         </View>
       );
     }
-    return this.props.children;
+    return <React.Fragment key={this.state.resetCount}>{this.props.children}</React.Fragment>;
   }
 }
 
@@ -53,7 +82,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 32,
-    backgroundColor: "#1B1826",
   },
   emoji: {
     fontSize: 48,
@@ -62,18 +90,15 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontFamily: "Urbanist_700Bold",
-    color: "#F4F1FA",
     marginBottom: 8,
   },
   message: {
     fontSize: 14,
     fontFamily: "Urbanist_400Regular",
-    color: "#9B8EC4",
     textAlign: "center",
     marginBottom: 24,
   },
   button: {
-    backgroundColor: "#946BFF",
     paddingHorizontal: 32,
     paddingVertical: 12,
     borderRadius: 999,

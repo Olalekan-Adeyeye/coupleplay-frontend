@@ -5,6 +5,7 @@ import { HeaderButton } from "@/components/ui/header-button";
 import { GAMES, GAME_IMAGES } from "@/data/games";
 import { isGameImplemented } from "@/features/games/registry";
 import { useInviteAction } from "@/hooks/useInviteAction";
+import { usePalette } from "@/hooks/usePalette";
 import { useAuthStore } from "@/stores/authStore";
 import { useCoupleStore } from "@/stores/coupleStore";
 import { useStatsStore } from "@/stores/statsStore";
@@ -30,6 +31,7 @@ export default function HomeScreen() {
   const overview = useStatsStore((s) => s.overview);
   const fetchOverview = useStatsStore((s) => s.fetchOverview);
   const invite = useInviteAction();
+  const palette = usePalette();
 
   useEffect(() => {
     if (token) {
@@ -159,7 +161,7 @@ export default function HomeScreen() {
               <MaterialCommunityIcons
                 name="content-copy"
                 size={17}
-                color="#946BFF"
+                color={palette.primary}
               />
               <Text className="font-ui-bold text-[14px] text-primary">
                 {invite.copied ? "Copied!" : (invite.code ?? "Get code")}
@@ -188,7 +190,7 @@ export default function HomeScreen() {
               <MaterialCommunityIcons
                 name="chevron-right"
                 size={16}
-                color="#946BFF"
+                color={palette.primary}
               />
             </Pressable>
           }

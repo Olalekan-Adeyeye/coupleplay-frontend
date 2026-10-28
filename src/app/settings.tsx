@@ -19,6 +19,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { usePalette } from "@/hooks/usePalette";
+import { formatDate } from "@/lib/format";
 
 function SectionLabel({ children }: { children: string }) {
   return (
@@ -47,6 +49,7 @@ function Row({
   danger?: boolean;
   right?: ReactNode;
 }) {
+  const palette = usePalette();
   return (
     <Pressable
       onPress={onPress}
@@ -79,7 +82,7 @@ function Row({
         <MaterialCommunityIcons
           name="chevron-right"
           size={19}
-          color="#A79DBE"
+          color={palette.inkTertiary}
         />
       ))}
     </Pressable>
@@ -87,6 +90,7 @@ function Row({
 }
 
 export default function SettingsScreen() {
+  const palette = usePalette();
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
   const couple = useCoupleStore((s) => s.couple);
@@ -124,16 +128,14 @@ export default function SettingsScreen() {
   // Realtime link: partner just linked — update couple immediately
   useEffect(() => {
     if (!socket) return;
-    const onLinked = (couple: any) => {
-      if (couple?.userAId === user?.id || couple?.userBId === user?.id) {
-        fetchCouple(token!).catch(() => {});
-      }
+    const onLinked = () => {
+      if (token) fetchCouple(token).catch(() => {});
     };
     socket.on("couple:linked", onLinked);
     return () => {
       socket.off("couple:linked", onLinked);
     };
-  }, [socket, token, user?.id, fetchCouple]);
+  }, [socket, token, fetchCouple]);
 
   const hasPartner = couple?.userBId != null;
   const isUserA = couple?.userAId === user?.id;
@@ -233,7 +235,7 @@ export default function SettingsScreen() {
                 <MaterialCommunityIcons
                   name="chevron-left"
                   size={26}
-                  color="#F4F1FA"
+                  color={palette.ink}
                 />
               </Pressable>
               <Text className="font-display-bold text-[22px] text-ink">
@@ -263,7 +265,7 @@ export default function SettingsScreen() {
               <Row
                 icon="account-edit-outline"
                 iconTint="#EFEAFF"
-                iconColor="#946BFF"
+                iconColor={palette.primary}
                 title="Change your Peep"
                 subtitle="Your avatar everywhere"
                 onPress={() => router.push("/change-peep" as any)}
@@ -291,7 +293,7 @@ export default function SettingsScreen() {
                     <Text className="mt-0.5 font-ui-medium text-[12.5px] text-ink-secondary">
                       Together since{" "}
                       {couple?.createdAt
-                        ? new Date(couple.createdAt).toLocaleDateString()
+                        ? formatDate(couple.createdAt)
                         : "—"}
                     </Text>
                   </View>
@@ -314,7 +316,7 @@ export default function SettingsScreen() {
                         className="flex-1 rounded-lg py-2.5 active:opacity-80"
                         style={{
                           backgroundColor:
-                            tab === t ? "#946BFF" : "transparent",
+                            tab === t ? palette.primary : "transparent",
                         }}
                       >
                         <Text
@@ -362,7 +364,7 @@ export default function SettingsScreen() {
                           <MaterialCommunityIcons
                             name="content-copy"
                             size={17}
-                            color="#946BFF"
+                            color={palette.primary}
                           />
                           <Text className="font-ui-bold text-[14px] text-primary">
                             {invite.copied ? "Copied!" : "Copy"}
@@ -387,7 +389,7 @@ export default function SettingsScreen() {
                         placeholderTextColor="#A79DBE"
                         autoCapitalize="characters"
                         autoCorrect={false}
-                        maxLength={8}
+                        maxLength={10}
                         className="w-full rounded-xl border border-hairline bg-paper px-4 py-3.5 text-center font-ui-bold text-[17px] tracking-[3px] text-ink"
                       />
                       {joinError && (
@@ -431,18 +433,18 @@ export default function SettingsScreen() {
                           : "white-balance-sunny"
                     }
                     size={20}
-                    color={themePreference === t ? "#946BFF" : "#B3A8C9"}
+                    color={themePreference === t ? palette.primary : palette.inkSecondary}
                   />
                   <Text
                     className="flex-1 font-ui-semibold text-[14.5px] capitalize"
-                    style={{ color: themePreference === t ? "#F4F1FA" : "#B3A8C9" }}
+                    style={{ color: themePreference === t ? palette.ink : palette.inkSecondary }}
                   >
                     {t === "system" ? "System default" : t === "dark" ? "Dark" : "Light"}
                   </Text>
                   <View
                     className="h-5 w-5 items-center justify-center rounded-full border-2"
                     style={{
-                      borderColor: themePreference === t ? "#946BFF" : "#7E7396",
+                      borderColor: themePreference === t ? palette.primary : palette.inkTertiary,
                     }}
                   >
                     {themePreference === t && (

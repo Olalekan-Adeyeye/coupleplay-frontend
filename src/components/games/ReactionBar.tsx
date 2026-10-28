@@ -25,8 +25,8 @@ export function ReactionBar({
         </View>
       )}
       {rejectMsg && (
-        <View className="absolute -top-12 rounded-full bg-red-500/20 px-4 py-2">
-          <Text className="font-ui-semibold text-[13px] text-red-400">
+        <View className="absolute -top-12 rounded-full bg-error-soft px-4 py-2">
+          <Text className="font-ui-semibold text-[13px] text-error-bright">
             {rejectMsg}
           </Text>
         </View>
@@ -36,6 +36,8 @@ export function ReactionBar({
           key={r}
           onPress={() => onReaction(r)}
           hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`Send reaction ${r}`}
           className={`${btnSize} items-center justify-center rounded-full active:opacity-70`}
         >
           <Text className={emojiSize}>{r}</Text>
