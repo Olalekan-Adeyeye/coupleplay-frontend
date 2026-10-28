@@ -6,7 +6,8 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-import { useResolvedTheme } from "@/hooks/useResolvedTheme";
+import { usePalette } from "@/hooks/usePalette";
+import { useRNResolvedTheme } from "@/hooks/usePaletteResolver";
 
 type AuthButtonProps = {
   title: string;
@@ -39,8 +40,8 @@ export function AuthButton({
   showArrow,
 }: AuthButtonProps) {
   const pressed = useSharedValue(0);
-  const resolved = useResolvedTheme();
-  const isLight = resolved === "light";
+  const palette = usePalette();
+  const isLight = useRNResolvedTheme() === "light";
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: 1 - pressed.value * 0.02 }],
@@ -54,23 +55,20 @@ export function AuthButton({
   // Brand mapping — primary everywhere the eye should land
   const bg = (() => {
     if (backgroundColor) return backgroundColor;
-    if (isPrimary) return "#946BFF";
+    if (isPrimary) return palette.primary;
     if (isWhite) return "#FFFFFF";
-    if (isOutline) return isLight ? "rgba(148,107,255,0.06)" : "rgba(148,107,255,0.09)";
+    if (isOutline) return isLight ? "rgba(124,84,232,0.06)" : "rgba(148,107,255,0.09)";
     return "transparent";
   })();
 
   const fg = (() => {
     if (textColor) return textColor;
     if (isPrimary) return "#FFFFFF";
-    if (isWhite) return isLight ? "#1A1528" : "#100E17";
-    if (isOutline) return isLight ? "#1A1528" : "#F4F1FA";
-    return isLight ? "#1A1528" : "#F4F1FA";
+    return palette.ink;
   })();
 
   const borderColor = (() => {
-    if (isOutline) return isLight ? "rgba(148,107,255,0.45)" : "rgba(148,107,255,0.32)";
-    if (isWhite) return "transparent";
+    if (isOutline) return isLight ? `${palette.primary}73` : `${palette.primary}52`;
     return "transparent";
   })();
 

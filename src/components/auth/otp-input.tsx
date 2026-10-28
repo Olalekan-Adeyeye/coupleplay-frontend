@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type ComponentRef } from 'react';
 import { TextInput, View } from 'react-native';
-import type { TextInput as RNTextInput } from 'react-native';
+import { usePalette } from '@/hooks/usePalette';
 
 const CELL_COUNT = 6;
 
@@ -11,7 +11,8 @@ type OtpInputProps = {
 };
 
 export function OtpInput({ value, onChange, onComplete }: OtpInputProps) {
-  const inputs = useRef<(RNTextInput | null)[]>([]);
+  const palette = usePalette();
+  const inputs = useRef<(ComponentRef<typeof TextInput> | null)[]>([]);
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
 
   const chars = value.padEnd(CELL_COUNT, ' ').split('').slice(0, CELL_COUNT);
@@ -44,13 +45,13 @@ export function OtpInput({ value, onChange, onComplete }: OtpInputProps) {
           ref={(el) => { inputs.current[i] = el; }}
           className={
             focusedIndex === i
-              ? 'flex-1 aspect-square max-w-[48px] rounded-[14px] border-2 text-center font-ui-bold text-[22px]'
-              : 'flex-1 aspect-square max-w-[48px] rounded-[14px] border-[1.5px] text-center font-ui-bold text-[22px]'
+              ? 'flex-1 aspect-square max-w-[48px] rounded-[14px] border-2 text-center font-ui-bold text-title-lg'
+              : 'flex-1 aspect-square max-w-[48px] rounded-[14px] border-[1.5px] text-center font-ui-bold text-title-lg'
           }
           style={{
-            backgroundColor: '#1B1826',
-            borderColor: focusedIndex === i ? '#946BFF' : '#2B2539',
-            color: '#F4F1FA',
+            backgroundColor: palette.surface,
+            borderColor: focusedIndex === i ? palette.primary : palette.chip,
+            color: palette.ink,
           }}
           value={char === ' ' ? '' : char}
           onChangeText={(t) => handleChange(t, i)}

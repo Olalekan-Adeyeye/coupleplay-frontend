@@ -50,14 +50,14 @@ export default function SoonScreen() {
   if (!game) {
     return (
       <View className="flex-1 items-center justify-center bg-paper px-8">
-        <Text className="font-display-bold text-[20px] text-ink">
+        <Text className="font-display-bold text-title-sm text-ink">
           Unknown game
         </Text>
         <Pressable
           onPress={() => router.replace("/(tabs)/games")}
           className="mt-4 rounded-xl bg-primary px-6 py-3.5 active:opacity-85"
         >
-          <Text className="font-ui-bold text-[14px] text-white">
+          <Text className="font-ui-bold text-body text-white">
             Back to Games
           </Text>
         </Pressable>
@@ -111,13 +111,13 @@ export default function SoonScreen() {
               style={{ backgroundColor: game.tagColor + "18" }}
             >
               <Text
-                className="font-ui-bold text-[11px] tracking-[1px]"
+                className="font-ui-bold text-label tracking-[1px]"
                 style={{ color: game.tagColor }}
               >
                 {game.tag.toUpperCase()} · COMING SOON
               </Text>
             </View>
-            <Text className="mt-3 font-display-bold text-[28px] text-ink">
+            <Text className="mt-3 font-display-bold text-display text-ink">
               {game.name}
             </Text>
             <Text className="mt-2 max-w-[320px] text-center font-ui-medium text-[14.5px] leading-[21px] text-ink-secondary">
@@ -142,7 +142,7 @@ export default function SoonScreen() {
                 color={notified ? palette.primary : "#FFFFFF"}
               />
               <Text
-                className="font-ui-bold text-[15px]"
+                className="font-ui-bold text-body-lg"
                 style={{ color: notified ? palette.primary : "#FFFFFF" }}
               >
                 {notified ? "We'll ping you at launch" : "Notify me at launch"}
@@ -159,7 +159,7 @@ export default function SoonScreen() {
                 size={18}
                 color={palette.primary}
               />
-              <Text className="font-ui-bold text-[15px] text-primary">
+              <Text className="font-ui-bold text-body-lg text-primary">
                 Invite player 2 meanwhile
               </Text>
             </Pressable>

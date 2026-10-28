@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { Pressable, Text, View } from "react-native";
-import { useResolvedTheme } from "@/hooks/useResolvedTheme";
+import { usePalette } from "@/hooks/usePalette";
 import { peepsOfGender, type PeepGender, type PeepId } from "./peeps";
 
 type PeepPickerProps = {
@@ -21,8 +21,7 @@ function Section({
   cellSize: number;
 }) {
   const presets = peepsOfGender(gender);
-  const resolved = useResolvedTheme();
-  const isLight = resolved === "light";
+  const palette = usePalette();
 
   return (
     <View>
@@ -31,7 +30,7 @@ function Section({
         style={{
           fontSize: 11,
           letterSpacing: 1.2,
-          color: isLight ? "#6B6480" : "#B3A8C9",
+          color: palette.inkTertiary,
           marginBottom: 10,
         }}
       >
@@ -59,9 +58,9 @@ function Section({
                   width: cellSize,
                   height: cellSize,
                   borderRadius: cellSize / 2,
-                  backgroundColor: selected ? "#EFEAFF" : isLight ? "#F0ECF5" : "#1B1826",
+                  backgroundColor: selected ? palette.primarySoft : palette.chipSoft,
                   borderWidth: selected ? 2 : 1,
-                  borderColor: selected ? "#946BFF" : isLight ? "#D4D0DE" : "#2B2539",
+                  borderColor: selected ? palette.primary : palette.chip,
                   overflow: "hidden",
                   alignItems: "center",
                   justifyContent: "flex-end",
@@ -77,7 +76,7 @@ function Section({
                 style={{
                   fontSize: 11,
                   fontWeight: selected ? "700" : "500",
-                  color: selected ? "#946BFF" : isLight ? "#6B6480" : "#B3A8C9",
+                  color: selected ? palette.primary : palette.inkSecondary,
                 }}
               >
                 {p.label}

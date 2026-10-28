@@ -6,6 +6,8 @@ import { Avatar } from "@/components/ui/avatar";
 import { StatRow } from "@/components/games/StatRow";
 import { ResultsScoreCard } from "@/components/games/ResultsScoreCard";
 import { usePartnerName } from "@/hooks/usePartnerName";
+import { usePartner } from "@/hooks/usePartner";
+import { PeepScene } from "@/components/peeps/PeepScene";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 import { useCoupleStore } from "@/stores/coupleStore";
@@ -14,7 +16,6 @@ import { useSocketStore } from "@/hooks/useSocket";
 import { useGameAbandoned } from "@/hooks/useGameAbandoned";
 import { InfoModal } from "@/components/ui/ConfirmModal";
 import { CARD_SHADOW, BUTTON_SHADOW } from "@/lib/shadows";
-import { usePalette } from "@/hooks/usePalette";
 import { parseJsonParam } from "@/lib/params";
 import { useEffect, useState } from "react";
 
@@ -33,7 +34,7 @@ export default function SpeedBattleResultsScreen() {
   const setRoom = useRoomStore((s) => s.setRoom);
   const socket = useSocketStore((s) => s.socket);
   const partnerName = usePartnerName();
-  const palette = usePalette();
+  const partner = usePartner();
   const [rematching, setRematching] = useState(false);
   const [rematchError, setRematchError] = useState<string | null>(null);
 
@@ -85,22 +86,21 @@ export default function SpeedBattleResultsScreen() {
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <View className="w-full max-w-[460px] flex-1 self-center px-[22px] pt-[14px] pb-[24px]">
           {/* Trophy */}
-          <View className="mt-6 items-center gap-3">
-            <View className="h-24 w-24 items-center justify-center rounded-full bg-amber-100">
-              <MaterialCommunityIcons
-                name={isDraw ? "handshake" : iWon ? "trophy" : "lightning-bolt"}
-                size={46}
-                color={isDraw ? palette.primary : iWon ? "#B45309" : "#F59E0B"}
-              />
-            </View>
-            <Text className="font-display-bold text-[28px] text-ink">
+          <View className="mt-6 items-center gap-4">
+            <PeepScene
+              layout="versus"
+              peeps={[user?.avatar, partner?.avatar]}
+              size={72}
+              badge={isDraw ? "handshake" : "trophy"}
+            />
+            <Text className="font-display-bold text-display text-ink">
               {isDraw
                 ? "It's a draw!"
                 : iWon
                   ? "You won!"
                   : `${partnerName} won!`}
             </Text>
-            <Text className="font-ui-medium text-[14px] text-ink-secondary">
+            <Text className="font-ui-medium text-body text-ink-secondary">
               {isDraw
                 ? "Neck and neck!"
                 : iWon
@@ -155,12 +155,12 @@ export default function SpeedBattleResultsScreen() {
               style={[BUTTON_SHADOW, { opacity: rematching ? 0.6 : 1 }]}
             >
               <MaterialCommunityIcons name="restart" size={20} color="#FFFFFF" />
-              <Text className="font-ui-bold text-[15px] text-white">
+              <Text className="font-ui-bold text-body-lg text-white">
                 {rematching ? "Setting up…" : "Rematch"}
               </Text>
             </Pressable>
             {rematchError && (
-              <Text className="text-center font-ui-medium text-[13px] text-error-bright">
+              <Text className="text-center font-ui-medium text-body-sm text-error-bright">
                 {rematchError}
               </Text>
             )}
@@ -168,7 +168,7 @@ export default function SpeedBattleResultsScreen() {
               onPress={handleLeave}
               className="flex-row items-center justify-center gap-2 rounded-full border border-hairline bg-surface py-4 active:opacity-85"
             >
-              <Text className="font-ui-bold text-[15px] text-ink-secondary">
+              <Text className="font-ui-bold text-body-lg text-ink-secondary">
                 Back to Games
               </Text>
             </Pressable>

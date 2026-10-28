@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { View, Pressable, Text, Dimensions } from "react-native";
+import { usePalette } from "@/hooks/usePalette";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const GRID_COLS = 8;
@@ -26,6 +27,7 @@ export function HoneycombGrid({
   disabled = false,
   showAllTargets = false,
 }: HoneycombGridProps) {
+  const palette = usePalette();
   const grid = useMemo(() => {
     const rows: number[][] = [];
     for (let r = 0; r < GRID_ROWS; r++) {
@@ -46,8 +48,8 @@ export function HoneycombGrid({
     switch (state) {
       case "target":
         return {
-          bg: "#8B5CF6",
-          border: "#7C3AED",
+          bg: palette.primary,
+          border: "#482AC4",
           text: "#FFFFFF",
         };
       case "found":

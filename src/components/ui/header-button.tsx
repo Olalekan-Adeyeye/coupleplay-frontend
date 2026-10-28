@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Pressable } from "react-native";
-import { useResolvedTheme } from "@/hooks/useResolvedTheme";
+import { usePalette } from "@/hooks/usePalette";
 
 const HEADER_BUTTON_SHADOW = {
   shadowColor: "#4A3B6B",
@@ -17,8 +17,7 @@ type HeaderButtonProps = {
 };
 
 export function HeaderButton({ icon, onPress, accessibilityLabel }: HeaderButtonProps) {
-  const resolved = useResolvedTheme();
-  const isLight = resolved === "light";
+  const palette = usePalette();
 
   return (
     <Pressable
@@ -31,7 +30,7 @@ export function HeaderButton({ icon, onPress, accessibilityLabel }: HeaderButton
       <MaterialCommunityIcons
         name={icon as any}
         size={22}
-        color={isLight ? "#1A1528" : "#F4F1FA"}
+        color={palette.ink}
       />
     </Pressable>
   );

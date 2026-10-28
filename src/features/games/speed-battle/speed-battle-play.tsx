@@ -238,7 +238,7 @@ export default function SpeedBattlePlayScreen() {
               className="flex-row items-center gap-2 rounded-full bg-surface px-4 py-2"
               style={CARD_SHADOW}
             >
-              <Text className="font-ui-bold text-[13px] text-ink">
+              <Text className="font-ui-bold text-body-sm text-ink">
                 Round {state?.roundNumber ?? 1} of {state?.totalRounds ?? 5}
               </Text>
             </View>
@@ -249,7 +249,7 @@ export default function SpeedBattlePlayScreen() {
               }}
             >
               <Text
-                className="font-ui-bold text-[13px]"
+                className="font-ui-bold text-body-sm"
                 style={{ color: secondsLeft <= 5 ? "#E53E6B" : "#D97706" }}
               >
                 00:{String(Math.max(secondsLeft, 0)).padStart(2, "0")}
@@ -266,12 +266,12 @@ export default function SpeedBattlePlayScreen() {
               <Avatar avatar={user?.avatar} name={user?.name} size={40} />
               <View className="flex-1">
                 <Text
-                  className="font-display-bold text-[13px] text-ink"
+                  className="font-display-bold text-body-sm text-ink"
                   numberOfLines={1}
                 >
                   You
                 </Text>
-                <Text className="font-ui-medium text-[11px] text-ink-tertiary">
+                <Text className="font-ui-medium text-label text-ink-tertiary">
                   {myScore} pts
                 </Text>
               </View>
@@ -283,7 +283,7 @@ export default function SpeedBattlePlayScreen() {
                   }}
                 >
                   <Text
-                    className="font-ui-bold text-[11px]"
+                    className="font-ui-bold text-label"
                     style={{ color: myAnswer.correct ? "#16A34A" : "#DC2626" }}
                   >
                     {myAnswer.correct ? "✓" : "✗"}
@@ -292,7 +292,7 @@ export default function SpeedBattlePlayScreen() {
               )}
             </View>
 
-            <Text className="font-display-bold text-[13px] text-ink-tertiary">
+            <Text className="font-display-bold text-body-sm text-ink-tertiary">
               VS
             </Text>
 
@@ -303,12 +303,12 @@ export default function SpeedBattlePlayScreen() {
               <Avatar name={partnerName} size={40} />
               <View className="flex-1">
                 <Text
-                  className="font-display-bold text-[13px] text-ink"
+                  className="font-display-bold text-body-sm text-ink"
                   numberOfLines={1}
                 >
                   {partnerName}
                 </Text>
-                <Text className="font-ui-medium text-[11px] text-ink-tertiary">
+                <Text className="font-ui-medium text-label text-ink-tertiary">
                   {partnerScore} pts
                 </Text>
               </View>
@@ -320,11 +320,11 @@ export default function SpeedBattlePlayScreen() {
                       ? partnerAnswer.correct
                         ? "#DCFCE7"
                         : "#FEE2E2"
-                      : "#EFEAFF",
+                      : palette.primarySoft,
                   }}
                 >
                   <Text
-                    className="font-ui-bold text-[11px]"
+                    className="font-ui-bold text-label"
                     style={{
                       color: revealState
                         ? partnerAnswer.correct
@@ -357,7 +357,7 @@ export default function SpeedBattlePlayScreen() {
                   color="#F59E0B"
                 />
               </View>
-              <Text className="text-center font-display-bold text-[19px] leading-[27px] text-ink">
+              <Text className="text-center font-display-bold text-title-sm leading-[27px] text-ink">
                 {question?.question ?? "Loading..."}
               </Text>
             </View>
@@ -404,9 +404,9 @@ export default function SpeedBattlePlayScreen() {
                   disabled={!!myAnswer || secondsLeft <= 0}
                   className={`flex-row items-center gap-3 rounded-2xl border-[1.5px] px-4 py-3.5 ${bg} ${border} active:opacity-80`}
                 >
-                  <Text className="text-[20px]">{opt.emoji}</Text>
+                  <Text className="text-title-sm">{opt.emoji}</Text>
                   <Text
-                    className={`flex-1 font-ui-semibold text-[15px] ${textColor}`}
+                    className={`flex-1 font-ui-semibold text-body-lg ${textColor}`}
                   >
                     {opt.text}
                   </Text>
@@ -445,10 +445,10 @@ export default function SpeedBattlePlayScreen() {
                     color="#F59E0B"
                   />
                 </View>
-                <Text className="font-display-bold text-[18px] text-ink">
+                <Text className="font-display-bold text-title-xs text-ink">
                   Answer locked in!
                 </Text>
-                <Text className="text-center font-ui-medium text-[13px] text-ink-secondary">
+                <Text className="text-center font-ui-medium text-body-sm text-ink-secondary">
                   Waiting for {partnerName}...
                 </Text>
               </View>
@@ -473,7 +473,7 @@ export default function SpeedBattlePlayScreen() {
                     color={myAnswer?.correct ? "#16A34A" : "#F87171"}
                   />
                 </View>
-                <Text className="font-display-bold text-[18px] text-ink">
+                <Text className="font-display-bold text-title-xs text-ink">
                   {myAnswer?.correct
                     ? state?.firstCorrectId === user?.id
                       ? "First to answer! +3 pts"
@@ -500,9 +500,7 @@ export default function SpeedBattlePlayScreen() {
       {interstitial && (
         <InterstitialOverlay
           message={interstitial}
-          icon={interstitial.includes("scored") ? "lightning-bolt" : "handshake"}
-          iconColor={interstitial.includes("scored") ? "#F59E0B" : palette.primary}
-          iconBg={interstitial.includes("scored") ? "#F59E0B1F" : `${palette.primary}1F`}
+          peep={user?.avatar}
         />
       )}
       <ConfirmModal {...leaveConfirm.props} onCancel={leaveConfirm.cancel} />

@@ -3,7 +3,6 @@ import { PageHeader, SectionTitle, TabScreen } from "@/components/tab-screen";
 import { CoupleAvatars } from "@/components/ui/couple-avatars";
 import { HeaderButton } from "@/components/ui/header-button";
 import { useInviteAction } from "@/hooks/useInviteAction";
-import { useResolvedTheme } from "@/hooks/useResolvedTheme";
 import { usePalette } from "@/hooks/usePalette";
 import { formatDate } from "@/lib/format";
 import { Achievement } from "@/types/stats";
@@ -15,7 +14,8 @@ import { useAuthStore } from "@/stores/authStore";
 import { useCoupleStore } from "@/stores/coupleStore";
 import { useStatsStore } from "@/stores/statsStore";
 
-function AchievementCard({ achievement, isLight }: { achievement: Achievement; isLight: boolean }) {
+function AchievementCard({ achievement }: { achievement: Achievement }) {
+  const palette = usePalette();
   const unlocked = achievement.unlocked;
   return (
     <View
@@ -24,20 +24,20 @@ function AchievementCard({ achievement, isLight }: { achievement: Achievement; i
       <View
         className="h-14 w-14 items-center justify-center rounded-full"
         style={{
-          backgroundColor: unlocked ? achievement.color + "1F" : isLight ? "#E8E4EE" : "#F4F1EC",
+          backgroundColor: unlocked ? achievement.color + "1F" : palette.surfaceSoft,
         }}
       >
         <MaterialCommunityIcons
           name={achievement.icon as any}
           size={27}
-          color={unlocked ? achievement.color : isLight ? "#948CA8" : "#A79DBE"}
+          color={unlocked ? achievement.color : palette.inkTertiary}
         />
       </View>
-      <Text className="mt-2 text-center font-ui-bold text-[13px] text-ink">
+      <Text className="mt-2 text-center font-ui-bold text-body-sm text-ink">
         {achievement.name}
       </Text>
       {!unlocked && (
-        <Text className="mt-0.5 text-center font-ui-medium text-[11px] leading-[15px] text-ink-tertiary">
+        <Text className="mt-0.5 text-center font-ui-medium text-label leading-[15px] text-ink-tertiary">
           {achievement.progress > 0
             ? `${achievement.progress}% there`
             : "Locked — keep playing"}
@@ -68,8 +68,6 @@ export default function UsScreen() {
   const fetchOverview = useStatsStore((s) => s.fetchOverview);
   const fetchAchievements = useStatsStore((s) => s.fetchAchievements);
   const invite = useInviteAction();
-  const resolved = useResolvedTheme();
-  const isLight = resolved === "light";
   const palette = usePalette();
 
   useEffect(() => {
@@ -103,10 +101,10 @@ export default function UsScreen() {
   const togetherSince = couple?.createdAt ? formatDate(couple.createdAt) : "";
 
   const highlights = [
-    { label: "Day streak", value: overview.streak, icon: "fire", color: "#F59E0B" },
+    { label: "Day streak", value: overview.streak, icon: "fire", color: palette.amber },
     { label: "Games", value: overview.totalGames, icon: "gamepad-variant", color: palette.primary },
-    { label: "Won", value: overview.wins, icon: "trophy-outline", color: "#22C55E" },
-    { label: "XP", value: overview.xp, icon: "lightning-bolt", color: "#FF5C8A" },
+    { label: "Won", value: overview.wins, icon: "trophy-outline", color: palette.emerald },
+    { label: "XP", value: overview.xp, icon: "lightning-bolt", color: palette.primary },
   ];
 
   const unlockedAchievements = achievements.filter((a) => a.unlocked);
@@ -137,10 +135,10 @@ export default function UsScreen() {
         />
         {hasPartner ? (
           <View className="mt-4 items-center">
-            <Text className="font-ui-medium text-[13px] text-ink-secondary">
+            <Text className="font-ui-medium text-body-sm text-ink-secondary">
               Together since {togetherSince}
             </Text>
-            <Text className="mt-1 font-display-bold text-[26px] text-ink">
+            <Text className="mt-1 font-display-bold text-title-lg text-ink">
               {daysTogether} {daysTogether === 1 ? "day" : "days"}
             </Text>
             <Pressable
@@ -152,17 +150,17 @@ export default function UsScreen() {
                 size={15}
                 color={palette.primary}
               />
-              <Text className="font-ui-semibold text-[13px] text-primary">
+              <Text className="font-ui-semibold text-body-sm text-primary">
                 Edit our look
               </Text>
             </Pressable>
           </View>
         ) : (
           <View className="mt-4 items-center">
-            <Text className="font-display-bold text-[18px] text-ink">
+            <Text className="font-display-bold text-title-xs text-ink">
               Waiting for player 2
             </Text>
-            <Text className="mt-1 text-center font-ui-medium text-[13px] leading-[18px] text-ink-secondary">
+            <Text className="mt-1 text-center font-ui-medium text-body-sm leading-[18px] text-ink-secondary">
               Share your code and your story starts the moment they join.
             </Text>
             <View className="mt-4 w-full flex-row gap-2.5">
@@ -223,10 +221,10 @@ export default function UsScreen() {
                   color={h.color}
                 />
               </View>
-              <Text className="font-display-bold text-[19px] text-ink">
+              <Text className="font-display-bold text-title-sm text-ink">
                 {h.value}
               </Text>
-              <Text className="font-ui-medium text-[11px] text-ink-secondary">
+              <Text className="font-ui-medium text-label text-ink-secondary">
                 {h.label}
               </Text>
             </View>
@@ -237,10 +235,10 @@ export default function UsScreen() {
       {achievements.length === 0 ? (
         <View className="items-center rounded-2xl border border-hairline bg-surface px-6 py-7">
           <PeepScene layout="single" size={64} />
-          <Text className="mt-3 font-display-bold text-[16px] text-ink">
+          <Text className="mt-3 font-display-bold text-title-xs text-ink">
             Trophies live here
           </Text>
-          <Text className="mt-1 text-center font-ui-medium text-[13px] text-ink-secondary">
+          <Text className="mt-1 text-center font-ui-medium text-body-sm text-ink-secondary">
             Play matches to unlock achievements together.
           </Text>
         </View>
@@ -251,7 +249,7 @@ export default function UsScreen() {
               <View className="flex-row items-center gap-2">
                 <SectionTitle title="Achievements" />
                 <View className="rounded-full bg-primary-soft px-2 py-0.5">
-                  <Text className="font-ui-bold text-[11px] text-primary">
+                  <Text className="font-ui-bold text-label text-primary">
                     {unlockedAchievements.length}/{achievements.length}
                   </Text>
                 </View>
@@ -262,7 +260,7 @@ export default function UsScreen() {
                 contentContainerStyle={{ gap: 10 }}
               >
                 {unlockedAchievements.map((a) => (
-                  <AchievementCard key={a.id} achievement={a} isLight={isLight} />
+                  <AchievementCard key={a.id} achievement={a} />
                 ))}
               </ScrollView>
             </View>
@@ -278,7 +276,7 @@ export default function UsScreen() {
                 contentContainerStyle={{ gap: 10 }}
               >
                 {lockedAchievements.map((a) => (
-                  <AchievementCard key={a.id} achievement={a} isLight={isLight} />
+                  <AchievementCard key={a.id} achievement={a} />
                 ))}
               </ScrollView>
             </View>

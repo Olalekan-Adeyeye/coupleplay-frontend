@@ -2,6 +2,8 @@ import { Avatar } from "@/components/ui/avatar";
 import { StatRow } from "@/components/games/StatRow";
 import { ResultsScoreCard } from "@/components/games/ResultsScoreCard";
 import { usePartnerName } from "@/hooks/usePartnerName";
+import { usePartner } from "@/hooks/usePartner";
+import { PeepScene } from "@/components/peeps/PeepScene";
 import { useSocketStore } from "@/hooks/useSocket";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
@@ -32,6 +34,7 @@ export default function TicTacToeResultsScreen() {
   const setRoom = useRoomStore((s) => s.setRoom);
   const socket = useSocketStore((s) => s.socket);
   const partnerName = usePartnerName();
+  const partner = usePartner();
   const palette = usePalette();
   const [rematching, setRematching] = useState(false);
   const [rematchError, setRematchError] = useState<string | null>(null);
@@ -101,24 +104,17 @@ export default function TicTacToeResultsScreen() {
           </View>
 
           {/* Trophy */}
-          <View className="mt-6 items-center gap-3">
-            <View className="relative h-24 w-24 items-center justify-center rounded-full bg-primary-soft">
-              <MaterialCommunityIcons
-                name={isDraw ? "handshake" : "trophy"}
-                size={46}
-                color={isDraw ? palette.primary : "#B45309"}
-              />
-              <MaterialCommunityIcons
-                name="star-four-points"
-                size={18}
-                color="#B8A8F5"
-                style={{ position: "absolute", top: -6, right: -4 }}
-              />
-            </View>
-            <Text className="font-display-bold text-[28px] text-ink">
+          <View className="mt-6 items-center gap-4">
+            <PeepScene
+              layout="versus"
+              peeps={[user?.avatar, partner?.avatar]}
+              size={72}
+              badge={isDraw ? "handshake" : "trophy"}
+            />
+            <Text className="font-display-bold text-display text-ink">
               {isDraw ? "It's a draw!" : iWon ? "You won!" : `${partnerName} won!`}
             </Text>
-            <Text className="font-ui-medium text-[14px] text-ink-secondary">
+            <Text className="font-ui-medium text-body text-ink-secondary">
               {isDraw
                 ? "A worthy tie."
                 : iWon
@@ -139,7 +135,7 @@ export default function TicTacToeResultsScreen() {
           {/* Round info */}
           <View className="mt-4 flex-row items-center justify-center gap-2.5">
             <MaterialCommunityIcons name="flag-checkered" size={16} color={palette.primary} />
-            <Text className="font-ui-semibold text-[13px] text-ink-secondary">
+            <Text className="font-ui-semibold text-body-sm text-ink-secondary">
               Best of {rounds} rounds
             </Text>
           </View>
@@ -164,13 +160,13 @@ export default function TicTacToeResultsScreen() {
               )}
               <View className="my-2 h-px bg-surface-border" />
               <View className="flex-row items-center py-2.5">
-                <Text className="w-14 font-display-bold text-[17px] text-primary">
+                <Text className="w-14 font-display-bold text-title-xs text-primary">
                   {rounds}
                 </Text>
-                <Text className="flex-1 text-center font-ui-medium text-[14px] text-ink">
+                <Text className="flex-1 text-center font-ui-medium text-body text-ink">
                   Total rounds
                 </Text>
-                <Text className="w-14 text-right font-display-bold text-[17px] text-accent">
+                <Text className="w-14 text-right font-display-bold text-title-xs text-accent">
                   {rounds}
                 </Text>
               </View>
@@ -186,12 +182,12 @@ export default function TicTacToeResultsScreen() {
               style={[BUTTON_SHADOW, { opacity: rematching ? 0.6 : 1 }]}
             >
               <MaterialCommunityIcons name="restart" size={20} color="#FFFFFF" />
-              <Text className="font-ui-bold text-[15px] text-white">
+              <Text className="font-ui-bold text-body-lg text-white">
                 {rematching ? "Setting up…" : "Rematch"}
               </Text>
             </Pressable>
             {rematchError && (
-              <Text className="text-center font-ui-medium text-[13px] text-error-bright">
+              <Text className="text-center font-ui-medium text-body-sm text-error-bright">
                 {rematchError}
               </Text>
             )}
@@ -204,7 +200,7 @@ export default function TicTacToeResultsScreen() {
                 size={20}
                 color={palette.inkSecondary}
               />
-              <Text className="font-ui-bold text-[15px] text-ink-secondary">
+              <Text className="font-ui-bold text-body-lg text-ink-secondary">
                 Back to Games
               </Text>
             </Pressable>

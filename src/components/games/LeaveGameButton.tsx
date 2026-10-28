@@ -13,7 +13,7 @@ export function LeaveGameButton({ onPress }: LeaveGameButtonProps) {
       accessibilityLabel="Leave game"
       className="items-center py-1 active:opacity-70"
     >
-      <Text className="font-ui-semibold text-[14px] text-red-500">
+      <Text className="font-ui-semibold text-body text-red-500">
         Leave Game
       </Text>
     </Pressable>

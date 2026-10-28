@@ -81,11 +81,11 @@ export default function SetupScreen() {
               theirName={partner?.name ?? undefined}
               size={84}
             />
-            <Text className="mt-6 text-center font-display-bold text-[28px] leading-[34px] text-ink">
+            <Text className="mt-6 text-center font-display-bold text-display leading-[34px] text-ink">
               You&apos;re officially a{"\n"}
               <Text className="text-primary">team!</Text>
             </Text>
-            <Text className="mt-2 text-center font-ui-medium text-[15px] leading-[22px] text-ink-secondary">
+            <Text className="mt-2 text-center font-ui-medium text-body-lg leading-[22px] text-ink-secondary">
               Start playing, competing and making{"\n"}memories together.
             </Text>
             <View className="mt-8 w-full gap-2.5">
@@ -118,13 +118,13 @@ export default function SetupScreen() {
               myName={user?.name ?? undefined}
               size={76}
             />
-            <Text className="mt-5 font-ui-bold text-[11px] tracking-[1.5px] text-primary">
+            <Text className="mt-5 font-ui-bold text-label tracking-[1.5px] text-primary">
               LINK YOUR PARTNER
             </Text>
-            <Text className="mt-2 text-center font-display-bold text-[30px] leading-[36px] text-ink">
+            <Text className="mt-2 text-center font-display-bold text-display leading-[36px] text-ink">
               One code links{"\n"}your story
             </Text>
-            <Text className="mt-2 text-center font-ui-medium text-[15px] leading-[22px] text-ink-secondary">
+            <Text className="mt-2 text-center font-ui-medium text-body-lg leading-[22px] text-ink-secondary">
               Share a code or enter theirs — it takes seconds.
             </Text>
           </View>
@@ -153,7 +153,7 @@ export default function SetupScreen() {
 
           {tab === "invite" ? (
             <View className="mt-4 items-center gap-3 rounded-2xl border border-hairline bg-surface p-5">
-              <Text className="font-ui-bold text-[11px] tracking-[1.5px] text-ink-tertiary">
+              <Text className="font-ui-bold text-label tracking-[1.5px] text-ink-tertiary">
                 YOUR INVITE CODE
               </Text>
               <Text className="font-display-bold text-[36px] tracking-[5px] text-primary">
@@ -171,7 +171,7 @@ export default function SetupScreen() {
                     size={17}
                     color="#FFFFFF"
                   />
-                  <Text className="font-ui-bold text-[14px] text-white">
+                  <Text className="font-ui-bold text-body text-white">
                     Share
                   </Text>
                 </Pressable>
@@ -186,7 +186,7 @@ export default function SetupScreen() {
                     size={17}
                     color="#946BFF"
                   />
-                  <Text className="font-ui-bold text-[14px] text-primary">
+                  <Text className="font-ui-bold text-body text-primary">
                     {invite.copied ? "Copied!" : "Copy"}
                   </Text>
                 </Pressable>
@@ -215,7 +215,7 @@ export default function SetupScreen() {
                 onSubmitEditing={handleJoin}
               />
               {joinError && (
-                <Text className="font-ui-medium text-[13px] text-error-bright">
+                <Text className="font-ui-medium text-body-sm text-error-bright">
                   {joinError}
                 </Text>
               )}
@@ -233,7 +233,7 @@ export default function SetupScreen() {
             onPress={handleFinish}
             className="mt-4 items-center py-2 active:opacity-70"
           >
-            <Text className="font-ui-semibold text-[14px] text-ink-secondary">
+            <Text className="font-ui-semibold text-body text-ink-secondary">
               I&apos;ll do this later
             </Text>
           </Pressable>

@@ -180,7 +180,7 @@ export default function TicTacToePlayScreen() {
               style={CARD_SHADOW}
             >
               <MaterialCommunityIcons name="grid" size={16} color={palette.primary} />
-              <Text className="font-ui-bold text-[13px] text-ink">
+              <Text className="font-ui-bold text-body-sm text-ink">
                 Round {state?.roundNumber ?? 1} of {state?.totalRounds ?? 3}
               </Text>
             </View>
@@ -196,21 +196,21 @@ export default function TicTacToePlayScreen() {
               <Avatar avatar={user?.avatar} name={user?.name} size={40} />
               <View className="flex-1">
                 <Text
-                  className="font-display-bold text-[13px] text-ink"
+                  className="font-display-bold text-body-sm text-ink"
                   numberOfLines={1}
                 >
                   You
                 </Text>
-                <Text className="font-ui-medium text-[11px] text-ink-tertiary">
+                <Text className="font-ui-medium text-label text-ink-tertiary">
                   {myMark === "X" ? "X marks" : "O marks"}
                 </Text>
               </View>
-              <Text className="font-display-bold text-[20px] text-primary">
+              <Text className="font-display-bold text-title-sm text-primary">
                 {myScore}
               </Text>
             </View>
 
-            <Text className="font-display-bold text-[13px] text-ink-tertiary">
+            <Text className="font-display-bold text-body-sm text-ink-tertiary">
               VS
             </Text>
 
@@ -221,16 +221,16 @@ export default function TicTacToePlayScreen() {
               <Avatar name={partnerName} size={40} />
               <View className="flex-1">
                 <Text
-                  className="font-display-bold text-[13px] text-ink"
+                  className="font-display-bold text-body-sm text-ink"
                   numberOfLines={1}
                 >
                   {partnerName}
                 </Text>
-                <Text className="font-ui-medium text-[11px] text-ink-tertiary">
+                <Text className="font-ui-medium text-label text-ink-tertiary">
                   {myMark === "X" ? "O marks" : "X marks"}
                 </Text>
               </View>
-              <Text className="font-display-bold text-[20px] text-accent">
+              <Text className="font-display-bold text-title-sm text-accent">
                 {partnerScore}
               </Text>
             </View>
@@ -300,9 +300,7 @@ export default function TicTacToePlayScreen() {
           {interstitial && (
             <InterstitialOverlay
               message={interstitial}
-              icon={interstitial.includes("draw") ? "handshake" : interstitial.includes("You") ? "trophy" : "arm-flex"}
-              iconColor={interstitial.includes("draw") ? palette.primary : interstitial.includes("You") ? "#F59E0B" : "#FF5C8A"}
-              iconBg={interstitial.includes("draw") ? `${palette.primary}1F` : interstitial.includes("You") ? "#F59E0B1F" : "#FF5C8A1F"}
+              peep={user?.avatar}
             />
           )}
 
@@ -362,7 +360,7 @@ function TurnBanner({
         }}
       >
         <Text
-          className="font-ui-bold text-[14px]"
+          className="font-ui-bold text-body"
           style={{ color: myTurn ? "#FFFFFF" : "#B3A8C9" }}
         >
           {myTurn ? "Your turn!" : `Waiting for ${partnerName}...`}

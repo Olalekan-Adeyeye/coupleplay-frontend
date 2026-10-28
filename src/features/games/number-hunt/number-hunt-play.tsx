@@ -8,6 +8,7 @@ import { ReactionBar } from "@/components/games/ReactionBar";
 import { LeaveGameButton } from "@/components/games/LeaveGameButton";
 import { InterstitialOverlay } from "@/components/games/InterstitialOverlay";
 import { usePartnerName } from "@/hooks/usePartnerName";
+import { usePalette } from "@/hooks/usePalette";
 import { useGameAbandoned } from "@/hooks/useGameAbandoned";
 import { useGameReactions } from "@/hooks/useGameReactions";
 import { useAuthStore } from "@/stores/authStore";
@@ -46,6 +47,7 @@ interface NumberHuntState {
 }
 
 export default function NumberHuntPlayScreen() {
+  const palette = usePalette();
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
   const user = useAuthStore((s) => s.user);
   const socket = useSocketStore((s) => s.socket);
@@ -327,7 +329,7 @@ export default function NumberHuntPlayScreen() {
               className="flex-row items-center gap-2 rounded-full bg-surface px-4 py-2"
               style={CARD_SHADOW}
             >
-              <Text className="font-ui-bold text-[13px] text-ink">
+              <Text className="font-ui-bold text-body-sm text-ink">
                 Round {state?.roundNumber ?? 1} of {state?.totalRounds ?? 5}
               </Text>
             </View>
@@ -338,8 +340,8 @@ export default function NumberHuntPlayScreen() {
               }}
             >
               <Text
-                className="font-ui-bold text-[13px]"
-                style={{ color: secondsLeft <= 5 ? "#E53E6B" : "#8B5CF6" }}
+                className="font-ui-bold text-body-sm"
+                style={{ color: secondsLeft <= 5 ? "#E53E6B" : palette.primary }}
               >
                 00:{String(Math.max(secondsLeft, 0)).padStart(2, "0")}
               </Text>
@@ -353,13 +355,13 @@ export default function NumberHuntPlayScreen() {
                 className="rounded-full px-4 py-1.5"
                 style={{
                   backgroundColor:
-                    state.mode === "hunt" ? "#8B5CF61F" : "#F59E0B1F",
+                    state.mode === "hunt" ? `${palette.primary}1F` : `${palette.amber}1F`,
                 }}
               >
                 <Text
-                  className="font-ui-bold text-[12px]"
+                  className="font-ui-bold text-caption"
                   style={{
-                    color: state.mode === "hunt" ? "#8B5CF6" : "#F59E0B",
+                    color: state.mode === "hunt" ? palette.primary : palette.amber,
                   }}
                 >
                   {state.mode === "hunt" ? "🎯 HUNT MODE" : "⚡ RACE MODE"}
@@ -377,32 +379,32 @@ export default function NumberHuntPlayScreen() {
               <Avatar avatar={user?.avatar} name={user?.name} size={36} />
               <View className="flex-1">
                 <Text
-                  className="font-display-bold text-[12px] text-ink"
+                  className="font-display-bold text-caption text-ink"
                   numberOfLines={1}
                 >
                   You
                 </Text>
-                <Text className="font-ui-medium text-[11px] text-ink-tertiary">
+                <Text className="font-ui-medium text-label text-ink-tertiary">
                   {myScore} pts
                 </Text>
               </View>
               {isPicker && state?.mode === "hunt" && (
-                <View className="rounded-full bg-[#8B5CF61F] px-2 py-0.5">
-                  <Text className="font-ui-bold text-[10px] text-[#8B5CF6]">
+                <View className="rounded-full bg-primary-soft px-2 py-0.5">
+                  <Text className="font-ui-bold text-micro text-primary">
                     PICKER
                   </Text>
                 </View>
               )}
               {isFinder && state?.mode === "hunt" && (
                 <View className="rounded-full bg-[#F59E0B1F] px-2 py-0.5">
-                  <Text className="font-ui-bold text-[10px] text-[#F59E0B]">
+                  <Text className="font-ui-bold text-micro text-[#F59E0B]">
                     FINDER
                   </Text>
                 </View>
               )}
             </View>
 
-            <Text className="font-display-bold text-[13px] text-ink-tertiary">
+            <Text className="font-display-bold text-body-sm text-ink-tertiary">
               VS
             </Text>
 
@@ -413,12 +415,12 @@ export default function NumberHuntPlayScreen() {
               <Avatar name={partnerName} size={36} />
               <View className="flex-1">
                 <Text
-                  className="font-display-bold text-[12px] text-ink"
+                  className="font-display-bold text-caption text-ink"
                   numberOfLines={1}
                 >
                   {partnerName}
                 </Text>
-                <Text className="font-ui-medium text-[11px] text-ink-tertiary">
+                <Text className="font-ui-medium text-label text-ink-tertiary">
                   {partnerScore} pts
                 </Text>
               </View>
@@ -435,13 +437,13 @@ export default function NumberHuntPlayScreen() {
                 className="items-center gap-3 rounded-3xl bg-surface px-5 py-4"
                 style={CARD_SHADOW}
               >
-                <Text className="font-display-bold text-[16px] text-ink">
+                <Text className="font-display-bold text-title-xs text-ink">
                   Pick {state?.totalTargets ?? 5} target numbers
                 </Text>
-                <Text className="text-center font-ui-medium text-[12px] text-ink-secondary">
+                <Text className="text-center font-ui-medium text-caption text-ink-secondary">
                   Tap numbers on the grid. Your partner must find them!
                 </Text>
-                <Text className="font-ui-bold text-[13px] text-[#8B5CF6]">
+                <Text className="font-ui-bold text-body-sm text-primary">
                   {selectedTargets.length} / {state?.totalTargets ?? 5} selected
                 </Text>
                 <Pressable
@@ -450,14 +452,14 @@ export default function NumberHuntPlayScreen() {
                   className="rounded-2xl px-8 py-3 active:opacity-80"
                   style={{
                     backgroundColor:
-                      selectedTargets.length >= 1 ? "#8B5CF6" : "#2D2945",
+                      selectedTargets.length >= 1 ? palette.primary : palette.chip,
                   }}
                 >
                   <Text
-                    className="font-ui-bold text-[14px]"
+                    className="font-ui-bold text-body"
                     style={{
                       color:
-                        selectedTargets.length >= 1 ? "#FFFFFF" : "#6B6480",
+                        selectedTargets.length >= 1 ? "#FFFFFF" : palette.inkTertiary,
                     }}
                   >
                     CONFIRM TARGETS
@@ -472,17 +474,17 @@ export default function NumberHuntPlayScreen() {
                 className="items-center gap-3 rounded-3xl bg-surface px-5 py-4"
                 style={CARD_SHADOW}
               >
-                <View className="h-12 w-12 items-center justify-center rounded-full bg-[#8B5CF61F]">
+                <View className="h-12 w-12 items-center justify-center rounded-full bg-primary-soft">
                   <MaterialCommunityIcons
                     name="crosshairs"
                     size={24}
-                    color="#8B5CF6"
+                    color={palette.primary}
                   />
                 </View>
-                <Text className="font-display-bold text-[16px] text-ink">
+                <Text className="font-display-bold text-title-xs text-ink">
                   Waiting for targets...
                 </Text>
-                <Text className="text-center font-ui-medium text-[12px] text-ink-secondary">
+                <Text className="text-center font-ui-medium text-caption text-ink-secondary">
                   {partnerName} is picking numbers for you to find.
                 </Text>
               </View>
@@ -494,15 +496,15 @@ export default function NumberHuntPlayScreen() {
                 className="items-center gap-2 rounded-3xl bg-surface px-5 py-4"
                 style={CARD_SHADOW}
               >
-                <Text className="font-ui-medium text-[12px] text-ink-tertiary">
+                <Text className="font-ui-medium text-caption text-ink-tertiary">
                   Find & tap this number
                 </Text>
                 <View className="h-16 w-16 items-center justify-center rounded-2xl bg-[#F59E0B1F]">
-                  <Text className="font-display-bold text-[32px] text-[#F59E0B]">
+                  <Text className="font-display-bold text-score text-[#F59E0B]">
                     {state.currentCall}
                   </Text>
                 </View>
-                <Text className="font-ui-medium text-[12px] text-ink-tertiary">
+                <Text className="font-ui-medium text-caption text-ink-tertiary">
                   {state.callIndex + 1} / {state.totalCalls}
                 </Text>
               </View>
@@ -515,7 +517,7 @@ export default function NumberHuntPlayScreen() {
                 className="items-center rounded-2xl bg-surface px-4 py-3"
                 style={CARD_SHADOW}
               >
-                <Text className="font-ui-bold text-[14px] text-ink">
+                <Text className="font-ui-bold text-body text-ink">
                   Found: {myFound.length} / {state.totalTargets}
                 </Text>
               </View>
@@ -528,7 +530,7 @@ export default function NumberHuntPlayScreen() {
                   className="items-center rounded-2xl bg-surface px-4 py-3"
                   style={CARD_SHADOW}
                 >
-                  <Text className="font-ui-bold text-[14px] text-ink">
+                  <Text className="font-ui-bold text-body text-ink">
                     Waiting for {partnerName}...
                   </Text>
                 </View>
@@ -574,28 +576,28 @@ export default function NumberHuntPlayScreen() {
             className="items-center gap-5 rounded-3xl bg-surface px-8 py-8"
             style={CARD_SHADOW}
           >
-            <View className="h-16 w-16 items-center justify-center rounded-full bg-[#8B5CF61F]">
-              <MaterialCommunityIcons name="gamepad-variant" size={30} color="#8B5CF6" />
+            <View className="h-16 w-16 items-center justify-center rounded-full bg-primary-soft">
+              <MaterialCommunityIcons name="gamepad-variant" size={30} color={palette.primary} />
             </View>
-            <Text className="font-display-bold text-[22px] text-ink">
+            <Text className="font-display-bold text-title-lg text-ink">
               Choose Your Mode
             </Text>
-            <Text className="text-center font-ui-medium text-[13px] text-ink-secondary">
+            <Text className="text-center font-ui-medium text-body-sm text-ink-secondary">
               Both players play the same mode for all 5 rounds.
             </Text>
             <View className="w-full gap-3">
               <Pressable
                 onPress={() => handleSelectMode("hunt")}
-                className="flex-row items-center gap-4 rounded-2xl border-[1.5px] border-[#8B5CF6] bg-[#8B5CF61F] px-5 py-4 active:opacity-80"
+                className="flex-row items-center gap-4 rounded-2xl border-[1.5px] border-primary bg-primary-soft px-5 py-4 active:opacity-80"
               >
-                <View className="h-12 w-12 items-center justify-center rounded-xl bg-[#8B5CF6]">
+                <View className="h-12 w-12 items-center justify-center rounded-xl bg-primary">
                   <MaterialCommunityIcons name="crosshairs" size={24} color="#FFFFFF" />
                 </View>
                 <View className="flex-1">
-                  <Text className="font-display-bold text-[16px] text-ink">
+                  <Text className="font-display-bold text-title-xs text-ink">
                     🎯 Hunt
                   </Text>
-                  <Text className="font-ui-medium text-[12px] text-ink-secondary">
+                  <Text className="font-ui-medium text-caption text-ink-secondary">
                     Pick targets for your partner to find on the grid.
                   </Text>
                 </View>
@@ -608,10 +610,10 @@ export default function NumberHuntPlayScreen() {
                   <MaterialCommunityIcons name="lightning-bolt" size={24} color="#FFFFFF" />
                 </View>
                 <View className="flex-1">
-                  <Text className="font-display-bold text-[16px] text-ink">
+                  <Text className="font-display-bold text-title-xs text-ink">
                     ⚡ Race
                   </Text>
-                  <Text className="font-ui-medium text-[12px] text-ink-secondary">
+                  <Text className="font-ui-medium text-caption text-ink-secondary">
                     Race to tap the called number first.
                   </Text>
                 </View>
@@ -625,9 +627,7 @@ export default function NumberHuntPlayScreen() {
       {interstitial && (
         <InterstitialOverlay
           message={interstitial}
-          icon={interstitial.includes("won") ? "trophy" : "handshake"}
-          iconColor={interstitial.includes("won") ? "#10B981" : "#8B5CF6"}
-          iconBg={interstitial.includes("won") ? "#10B9811F" : "#8B5CF61F"}
+          peep={user?.avatar}
         />
       )}
       <ConfirmModal {...leaveConfirm.props} onCancel={leaveConfirm.cancel} />

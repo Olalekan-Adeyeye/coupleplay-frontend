@@ -174,7 +174,7 @@ export default function SignupPage() {
         )}
         <AuthError message={error} />
         {step === 2 && (
-          <Text className="font-ui-medium text-[12px] leading-[17px] text-ink-tertiary">
+          <Text className="font-ui-medium text-caption leading-[17px] text-ink-tertiary">
             Five male Peeps, five female Peeps — your pick is your look on every
             table, lobby and scoreboard.
           </Text>

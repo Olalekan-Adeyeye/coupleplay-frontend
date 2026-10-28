@@ -159,7 +159,7 @@ export default function GameDetailScreen() {
                 style={{ backgroundColor: game.tagColor + "1F" }}
               >
                 <Text
-                  className="font-ui-bold text-[11px] tracking-[1px]"
+                  className="font-ui-bold text-label tracking-[1px]"
                   style={{ color: game.tagColor }}
                 >
                   {game.popular
@@ -167,7 +167,7 @@ export default function GameDetailScreen() {
                     : game.tag.toUpperCase()}
                 </Text>
               </View>
-              <Text className="mt-2.5 text-center font-display-bold text-[30px] leading-[36px] text-ink">
+              <Text className="mt-2.5 text-center font-display-bold text-display leading-[36px] text-ink">
                 {game.name}
               </Text>
               <Text className="mt-2 max-w-[330px] text-center font-ui-medium text-[14.5px] leading-[21px] text-ink-secondary">
@@ -201,7 +201,7 @@ export default function GameDetailScreen() {
             </View>
 
             <View className="mt-7 gap-2.5">
-              <Text className="font-display-bold text-[19px] text-ink">
+              <Text className="font-display-bold text-title-sm text-ink">
                 How to play
               </Text>
               {game.steps.map((step, i) => (
@@ -209,7 +209,7 @@ export default function GameDetailScreen() {
                   key={i}
                   className="flex-row items-center gap-3.5 rounded-2xl border border-hairline bg-surface px-4 py-3.5"
                 >
-                  <Text className="font-display-bold text-[13px] text-ink-tertiary">
+                  <Text className="font-display-bold text-body-sm text-ink-tertiary">
                     0{i + 1}
                   </Text>
                   <View
@@ -241,18 +241,18 @@ export default function GameDetailScreen() {
                   size={18}
                   color={palette.primary}
                 />
-                <Text className="flex-1 font-ui-semibold text-[13px]">
+                <Text className="flex-1 font-ui-semibold text-body-sm">
                   Your partner already opened a table — hop in!
                 </Text>
               </View>
             )}
             {!hasPartner && (
-              <Text className="text-center font-ui-medium text-[13px] text-ink-secondary">
+              <Text className="text-center font-ui-medium text-body-sm text-ink-secondary">
                 Link your partner first — every game needs two players.
               </Text>
             )}
             {error && (
-              <Text className="text-center font-ui-medium text-[13px] text-error-bright">
+              <Text className="text-center font-ui-medium text-body-sm text-error-bright">
                 {error}
               </Text>
             )}

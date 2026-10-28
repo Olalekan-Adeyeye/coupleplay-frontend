@@ -69,13 +69,13 @@ export default function ChangePeepScreen() {
           contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24 }}
           showsVerticalScrollIndicator={false}
         >
-          <Text className="mt-6 font-ui-bold text-[11px] tracking-[1.5px] text-primary">
+          <Text className="mt-6 font-ui-bold text-label tracking-[1.5px] text-primary">
             YOUR LOOK
           </Text>
-          <Text className="mt-2 font-display-bold text-[30px] leading-[36px] text-ink">
+          <Text className="mt-2 font-display-bold text-display leading-[36px] text-ink">
             Change your Peep
           </Text>
-          <Text className="mt-2 font-ui-medium text-[15px] leading-[22px] text-ink-secondary">
+          <Text className="mt-2 font-ui-medium text-body-lg leading-[22px] text-ink-secondary">
             This is how you show up on every table, lobby and leaderboard.
           </Text>
           <View className="mt-7">
@@ -90,7 +90,7 @@ export default function ChangePeepScreen() {
             />
           </View>
           {error && (
-            <Text className="mt-4 font-ui-medium text-[13px] text-error-bright">
+            <Text className="mt-4 font-ui-medium text-body-sm text-error-bright">
               {error}
             </Text>
           )}
@@ -103,7 +103,7 @@ export default function ChangePeepScreen() {
             className="items-center rounded-2xl bg-primary py-4 active:opacity-85"
             style={{ opacity: saving || !peep ? 0.6 : 1 }}
           >
-            <Text className="font-ui-bold text-[15px] text-white">
+            <Text className="font-ui-bold text-body-lg text-white">
               {saving ? "Saving…" : saved ? "Saved!" : "SAVE PEEP"}
             </Text>
           </Pressable>

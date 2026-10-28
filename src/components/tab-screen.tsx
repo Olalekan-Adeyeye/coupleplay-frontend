@@ -40,10 +40,10 @@ export function PageHeader({
   return (
     <View className="flex-row items-center justify-between">
       <View className="flex-1">
-        <Text className="font-display-bold text-[24px] leading-[30px] text-ink">
+        <Text className="font-display-bold text-title-lg leading-[30px] text-ink">
           {title}
         </Text>
-        <Text className="mt-0.5 font-ui-medium text-[14px] text-ink-secondary">
+        <Text className="mt-0.5 font-ui-medium text-body text-ink-secondary">
           {subtitle}
         </Text>
       </View>
@@ -61,7 +61,7 @@ export function SectionTitle({
 }) {
   return (
     <View className="flex-row items-center justify-between">
-      <Text className="font-display-bold text-[19px] text-ink">{title}</Text>
+      <Text className="font-display-bold text-title-sm text-ink">{title}</Text>
       {action}
     </View>
   );

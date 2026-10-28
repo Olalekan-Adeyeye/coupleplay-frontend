@@ -4,7 +4,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { SplashOverlay } from "@/components/splash/splash-overlay";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { usePaperColor } from "@/hooks/useResolvedTheme";
+import { usePalette } from "@/hooks/usePalette";
 import { useSocketStore } from "@/hooks/useSocket";
 import { useAuthStore } from "@/stores/authStore";
 import { setUnauthorizedHandler } from "@/lib/api";
@@ -95,7 +95,7 @@ export default function RootLayout() {
     setSplashDone(true);
   }, []);
 
-  const paper = usePaperColor();
+  const paper = usePalette().paper;
 
   if (!fontsReady || !rehydrated) return null;
 
@@ -104,11 +104,23 @@ export default function RootLayout() {
       <ErrorBoundary>
         <ThemeProvider>
           <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: paper } }}>
+            <Stack.Screen name="index" />
             {isAuthenticated ? (
               <Stack.Screen name="(tabs)" />
             ) : (
               <Stack.Screen name="(auth)" />
             )}
+            <Stack.Screen name="activity/recap" />
+            <Stack.Screen name="activity/all" />
+            <Stack.Screen name="change-peep" />
+            <Stack.Screen name="games/[gameType]" />
+            <Stack.Screen name="games/[gameType]/play" />
+            <Stack.Screen name="games/[gameType]/results" />
+            <Stack.Screen name="games/[gameType]/waiting" />
+            <Stack.Screen name="games/soon" />
+            <Stack.Screen name="join/[code]" />
+            <Stack.Screen name="settings" />
+            <Stack.Screen name="setup" />
           </Stack>
           <OfflineBanner />
           {!splashDone && <SplashOverlay onFinish={handleSplashFinish} />}

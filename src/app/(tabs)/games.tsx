@@ -3,7 +3,6 @@ import { HeaderButton } from "@/components/ui/header-button";
 import { GAMES, GAME_IMAGES } from "@/data/games";
 import { isGameImplemented } from "@/features/games/registry";
 import { usePalette } from "@/hooks/usePalette";
-import { useResolvedTheme } from "@/hooks/useResolvedTheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
@@ -23,8 +22,6 @@ export default function GamesScreen() {
   const [filter, setFilter] = useState("all");
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState("");
-  const resolved = useResolvedTheme();
-  const isLight = resolved === "light";
   const palette = usePalette();
 
   const games = useMemo(() => {
@@ -59,21 +56,21 @@ export default function GamesScreen() {
 
       {searching && (
         <View className="flex-row items-center gap-2 rounded-xl border border-hairline bg-surface px-4">
-          <MaterialCommunityIcons name="magnify" size={18} color={isLight ? "#948CA8" : "#A79DBE"} />
+          <MaterialCommunityIcons name="magnify" size={18} color={palette.inkTertiary} />
           <TextInput
             value={query}
             onChangeText={setQuery}
             placeholder="Search games or vibes…"
-            placeholderTextColor={isLight ? "#948CA8" : "#A79DBE"}
+            placeholderTextColor={palette.inkTertiary}
             autoFocus
-            className="flex-1 py-3 font-ui text-[15px] text-ink"
+            className="flex-1 py-3 font-ui text-body-lg text-ink"
           />
           {query.length > 0 && (
             <Pressable onPress={() => setQuery("")} hitSlop={8}>
               <MaterialCommunityIcons
                 name="close-circle"
                 size={18}
-                color={isLight ? "#948CA8" : "#A79DBE"}
+                color={palette.inkTertiary}
               />
             </Pressable>
           )}
@@ -96,19 +93,19 @@ export default function GamesScreen() {
                 accessibilityState={{ selected: active }}
                 className="flex-row items-center gap-1.5 rounded-full px-4 py-2.5 active:opacity-80"
                 style={{
-                  backgroundColor: active ? palette.primary : isLight ? "#F0ECF5" : "#1B1826",
+                  backgroundColor: active ? palette.primary : palette.chipSoft,
                   borderWidth: 1,
-                  borderColor: active ? palette.primary : isLight ? "#D4D0DE" : "#2B2539",
+                  borderColor: active ? palette.primary : palette.chip,
                 }}
               >
                 <MaterialCommunityIcons
                   name={f.icon}
                   size={14}
-                  color={active ? "#FFFFFF" : isLight ? "#6B6480" : "#B3A8C9"}
+                  color={active ? "#FFFFFF" : palette.inkSecondary}
                 />
                 <Text
-                  className="font-ui-semibold text-[13px]"
-                  style={{ color: active ? "#FFFFFF" : isLight ? "#6B6480" : "#B3A8C9" }}
+                  className="font-ui-semibold text-body-sm"
+                  style={{ color: active ? "#FFFFFF" : palette.inkSecondary }}
                 >
                   {f.label}
                 </Text>
@@ -123,12 +120,12 @@ export default function GamesScreen() {
               <MaterialCommunityIcons
                 name="gamepad-variant-outline"
                 size={36}
-                color={isLight ? "#948CA8" : "#A79DBE"}
+                color={palette.inkTertiary}
               />
-          <Text className="mt-3 font-display-bold text-[16px] text-ink">
+          <Text className="mt-3 font-display-bold text-title-xs text-ink">
             Nothing matches
           </Text>
-          <Text className="mt-1 font-ui-medium text-[13px] text-ink-secondary">
+          <Text className="mt-1 font-ui-medium text-body-sm text-ink-secondary">
             Try a different search or filter.
           </Text>
         </View>
@@ -144,7 +141,7 @@ export default function GamesScreen() {
 
       {soon.length > 0 && (
         <View className="gap-2.5">
-          <Text className="font-ui-bold text-[11px] tracking-[1.5px] text-ink-tertiary">
+          <Text className="font-ui-bold text-label tracking-[1.5px] text-ink-tertiary">
             COMING SOON
           </Text>
           {soon.map((g) => (
@@ -160,8 +157,7 @@ function GameRow({ gameId }: { gameId: string }) {
   const g = GAMES.find((x) => x.id === gameId)!;
   const implemented = isGameImplemented(g.id);
   const art = GAME_IMAGES[g.icon];
-  const resolved = useResolvedTheme();
-  const isLight = resolved === "light";
+  const palette = usePalette();
 
   return (
     <Pressable
@@ -198,7 +194,7 @@ function GameRow({ gameId }: { gameId: string }) {
 
         <View className="flex-1 gap-1">
           <View className="flex-row items-center gap-2">
-            <Text className="font-display-bold text-[16px] text-ink">
+            <Text className="font-display-bold text-title-xs text-ink">
               {g.name}
             </Text>
             {implemented ? (
@@ -207,7 +203,7 @@ function GameRow({ gameId }: { gameId: string }) {
                 style={{ backgroundColor: g.tagColor + "18" }}
               >
                 <Text
-                  className="font-ui-bold text-[10px]"
+                  className="font-ui-bold text-micro"
                   style={{ color: g.tagColor }}
                 >
                   {g.tag}
@@ -215,7 +211,7 @@ function GameRow({ gameId }: { gameId: string }) {
               </View>
             ) : (
               <View className="rounded-full bg-paper px-2 py-[3px]">
-                <Text className="font-ui-bold text-[10px] tracking-[0.8px] text-ink-tertiary">
+                <Text className="font-ui-bold text-micro tracking-[0.8px] text-ink-tertiary">
                   SOON
                 </Text>
               </View>
@@ -232,9 +228,9 @@ function GameRow({ gameId }: { gameId: string }) {
               <MaterialCommunityIcons
                 name="account-group"
                 size={12}
-                color={isLight ? "#948CA8" : "#A79DBE"}
+                color={palette.inkTertiary}
               />
-              <Text className="font-ui-medium text-[11px] text-ink-tertiary">
+              <Text className="font-ui-medium text-label text-ink-tertiary">
                 {g.players}
               </Text>
             </View>
@@ -242,9 +238,9 @@ function GameRow({ gameId }: { gameId: string }) {
               <MaterialCommunityIcons
                 name="clock-outline"
                 size={12}
-                color={isLight ? "#948CA8" : "#A79DBE"}
+                color={palette.inkTertiary}
               />
-              <Text className="font-ui-medium text-[11px] text-ink-tertiary">
+              <Text className="font-ui-medium text-label text-ink-tertiary">
                 {g.duration}
               </Text>
             </View>
@@ -255,7 +251,7 @@ function GameRow({ gameId }: { gameId: string }) {
           <MaterialCommunityIcons
             name={implemented ? "chevron-right" : "bell-outline"}
             size={17}
-            color={isLight ? "#6B6480" : "#B3A8C9"}
+            color={palette.inkSecondary}
           />
         </View>
       </View>

@@ -54,10 +54,10 @@ export function ConfirmModal({
   return (
     <AppModal visible={visible} onClose={onCancel} dismissible>
       <View className="px-6 py-6">
-        <Text className="text-center font-display-bold text-[20px] text-ink">
+        <Text className="text-center font-display-bold text-title-sm text-ink">
           {title}
         </Text>
-        <Text className="mt-2.5 text-center font-ui-medium text-[15px] leading-[22px] text-ink-secondary">
+        <Text className="mt-2.5 text-center font-ui-medium text-body-lg leading-[22px] text-ink-secondary">
           {message}
         </Text>
 
@@ -75,7 +75,7 @@ export function ConfirmModal({
               <ActivityIndicator color={style.confirmText} size="small" />
             ) : (
               <Text
-                className="font-ui-bold text-[15px]"
+                className="font-ui-bold text-body-lg"
                 style={{ color: style.confirmText }}
               >
                 {confirmLabel}
@@ -88,7 +88,7 @@ export function ConfirmModal({
             disabled={loading}
             className="items-center justify-center rounded-2xl border border-hairline bg-surface-soft py-4 active:opacity-80"
           >
-            <Text className="font-ui-semibold text-[15px] text-ink-secondary">
+            <Text className="font-ui-semibold text-body-lg text-ink-secondary">
               {cancelLabel}
             </Text>
           </Pressable>
@@ -117,10 +117,10 @@ export function InfoModal({
   return (
     <AppModal visible={visible} onClose={onDismiss} dismissible>
       <View className="px-6 pt-7 pb-6">
-        <Text className="text-center font-display-bold text-[20px] text-ink">
+        <Text className="text-center font-display-bold text-title-sm text-ink">
           {title}
         </Text>
-        <Text className="mt-2.5 text-center font-ui-medium text-[15px] leading-[22px] text-ink-secondary">
+        <Text className="mt-2.5 text-center font-ui-medium text-body-lg leading-[22px] text-ink-secondary">
           {message}
         </Text>
 
@@ -128,7 +128,7 @@ export function InfoModal({
           onPress={onDismiss}
           className="mt-7 items-center justify-center rounded-2xl bg-primary py-4 active:opacity-80"
         >
-          <Text className="font-ui-bold text-[15px] text-white">
+          <Text className="font-ui-bold text-body-lg text-white">
             {buttonLabel}
           </Text>
         </Pressable>

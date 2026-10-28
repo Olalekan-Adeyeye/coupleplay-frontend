@@ -4,13 +4,12 @@ import { router } from "expo-router";
 import { Text, View } from "react-native";
 import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useResolvedTheme } from "@/hooks/useResolvedTheme";
+import { usePalette } from "@/hooks/usePalette";
 
 const LOGO = require("@/assets/images/splash/splash-logo.png");
 
 export default function WelcomeScreen() {
-  const resolved = useResolvedTheme();
-  const isLight = resolved === "light";
+  const palette = usePalette();
 
   return (
     <View className="flex-1 bg-paper">
@@ -27,7 +26,7 @@ export default function WelcomeScreen() {
           borderBottomWidth: 10,
           borderColor: "#FFFFFF",
           borderRadius: 0,
-          backgroundColor: "#946BFF",
+          backgroundColor: palette.primary,
           opacity: 0.09,
         }}
       />
@@ -40,7 +39,7 @@ export default function WelcomeScreen() {
           width: 380,
           height: 380,
           borderRadius: 190,
-          backgroundColor: "#946BFF",
+          backgroundColor: palette.primary,
           opacity: 0.06,
         }}
       />
@@ -53,7 +52,7 @@ export default function WelcomeScreen() {
           width: 260,
           height: 260,
           borderRadius: 130,
-          backgroundColor: "#946BFF",
+          backgroundColor: palette.primary,
           opacity: 0.03,
         }}
       />
@@ -94,7 +93,7 @@ export default function WelcomeScreen() {
                 fontSize: 38,
                 lineHeight: 40,
                 letterSpacing: -1.1,
-                color: isLight ? "#1A1528" : "#F4F1FA",
+                color: palette.ink,
                 textAlign: "center",
               }}
             >
@@ -108,7 +107,7 @@ export default function WelcomeScreen() {
                 fontFamily: "Urbanist_400Regular",
                 fontSize: 15.5,
                 lineHeight: 23,
-                color: isLight ? "#6B6480" : "#B3A8C9",
+                color: palette.inkSecondary,
                 textAlign: "center",
               }}
             >
@@ -142,7 +141,7 @@ export default function WelcomeScreen() {
                 fontFamily: "Urbanist_500Medium",
                 fontSize: 12,
                 lineHeight: 16,
-                color: isLight ? "#948CA8" : "#7E7396",
+                color: palette.inkTertiary,
                 textAlign: "center",
               }}
             >

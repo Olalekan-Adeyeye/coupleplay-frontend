@@ -100,7 +100,7 @@ export default function LoginPage() {
           className="self-end"
           hitSlop={8}
         >
-          <Text className="font-ui-semibold text-[13px] text-primary">
+          <Text className="font-ui-semibold text-body-sm text-primary">
             Forgot password?
           </Text>
         </Pressable>

@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useResolvedTheme } from "@/hooks/useResolvedTheme";
+import { usePalette } from "@/hooks/usePalette";
 
 type AuthScreenProps = {
   /** Micro caps label above the title, e.g. "WELCOME BACK". */
@@ -37,9 +37,8 @@ export function AuthScreen({
   children,
   footer,
 }: AuthScreenProps) {
-  const resolved = useResolvedTheme();
-  const isLight = resolved === "light";
-  const chevronColor = isLight ? "#1A1528" : "#F4F1FA";
+  const palette = usePalette();
+  const chevronColor = palette.ink;
 
   return (
     <View className="flex-1 bg-paper">
@@ -64,7 +63,7 @@ export function AuthScreen({
             </Pressable>
             <View className="flex-1" />
             {step && (
-              <Text className="font-ui-bold text-[11px] tracking-[1.5px] text-ink-tertiary">
+              <Text className="font-ui-bold text-label tracking-[1.5px] text-ink-tertiary">
                 0{step.current} / 0{step.total}
               </Text>
             )}
@@ -76,13 +75,13 @@ export function AuthScreen({
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <Text className="mt-6 font-ui-bold text-[11px] tracking-[1.5px] text-primary">
+            <Text className="mt-6 font-ui-bold text-label tracking-[1.5px] text-primary">
               {eyebrow}
             </Text>
-            <Text className="mt-2 font-display-bold text-[30px] leading-[36px] text-ink">
+            <Text className="mt-2 font-display-bold text-display leading-[36px] text-ink">
               {title}
             </Text>
-            <Text className="mt-2 font-ui-medium text-[15px] leading-[22px] text-ink-secondary">
+            <Text className="mt-2 font-ui-medium text-body-lg leading-[22px] text-ink-secondary">
               {subtitle}
             </Text>
 
@@ -94,7 +93,7 @@ export function AuthScreen({
                     className="flex-1 rounded-full"
                     style={{
                       backgroundColor:
-                        i < step.current ? "#946BFF" : isLight ? "#E0DCE8" : "#2B2539",
+                        i < step.current ? palette.primary : palette.chip,
                     }}
                   />
                 ))}
@@ -120,7 +119,7 @@ export function AuthError({ message }: { message: string | null }) {
   if (!message) return null;
   return (
     <View className="w-full rounded-xl border border-[#F3C2CC] bg-[#FDEAEE] px-4 py-2.5">
-      <Text className="font-ui-medium text-[13px] leading-[18px] text-[#DC2626]">
+      <Text className="font-ui-medium text-body-sm leading-[18px] text-[#DC2626]">
         {message}
       </Text>
     </View>
@@ -141,10 +140,10 @@ export function AuthSwitch({
       onPress={onPress}
       className="flex-row items-center justify-center gap-1 py-3 active:opacity-70"
     >
-      <Text className="font-ui-medium text-[14px] text-ink-secondary">
+      <Text className="font-ui-medium text-body text-ink-secondary">
         {prompt}
       </Text>
-      <Text className="font-ui-semibold text-[14px] text-primary">{action}</Text>
+      <Text className="font-ui-semibold text-body text-primary">{action}</Text>
     </Pressable>
   );
 }

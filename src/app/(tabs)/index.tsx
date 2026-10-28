@@ -73,10 +73,10 @@ export default function HomeScreen() {
     <TabScreen>
       <View className="flex-row items-center justify-between">
         <View>
-          <Text className="font-ui-semibold text-[14px] text-ink-secondary">
+          <Text className="font-ui-semibold text-body text-ink-secondary">
             {greeting()}, {myName}
           </Text>
-          <Text className="mt-0.5 font-display-bold text-[28px] leading-[34px] text-ink">
+          <Text className="mt-0.5 font-display-bold text-display leading-[34px] text-ink">
             Game night?
           </Text>
         </View>
@@ -88,7 +88,7 @@ export default function HomeScreen() {
               className="flex-row items-center gap-1 rounded-full border border-hairline bg-surface px-3 py-2 active:opacity-70"
             >
               <MaterialCommunityIcons name="fire" size={16} color="#F59E0B" />
-              <Text className="font-ui-bold text-[13px] text-ink">
+              <Text className="font-ui-bold text-body-sm text-ink">
                 {overview.streak}
               </Text>
             </Pressable>
@@ -109,10 +109,10 @@ export default function HomeScreen() {
           myName={user?.name ?? undefined}
           theirName={partner?.name ?? undefined}
         />
-        <Text className="mt-3 font-display-bold text-[17px] text-ink">
+        <Text className="mt-3 font-display-bold text-title-xs text-ink">
           {hasPartner ? `${myName} & ${partnerName}` : "You + Player 2"}
         </Text>
-        <Text className="mt-1 font-ui-medium text-[13px] text-ink-secondary">
+        <Text className="mt-1 font-ui-medium text-body-sm text-ink-secondary">
           {hasPartner
             ? `${daysTogether} ${daysTogether === 1 ? "day" : "days"} together`
             : "Your story starts with an invite"}
@@ -120,7 +120,7 @@ export default function HomeScreen() {
         {hasPartner && overview.streak > 0 && (
           <View className="mt-3 flex-row items-center gap-1.5 rounded-full bg-paper px-4 py-1.5">
             <MaterialCommunityIcons name="fire" size={14} color="#F59E0B" />
-            <Text className="font-ui-semibold text-[12px] text-ink">
+            <Text className="font-ui-semibold text-caption text-ink">
               {overview.streak}-day streak
             </Text>
           </View>
@@ -130,10 +130,10 @@ export default function HomeScreen() {
       {!hasPartner && (
         <View className="items-center rounded-2xl border border-hairline bg-surface px-6 py-5">
           <PeepScene layout="duo" size={64} />
-          <Text className="mt-3 font-display-bold text-[16px] text-ink">
+          <Text className="mt-3 font-display-bold text-title-xs text-ink">
             Invite your player 2
           </Text>
-          <Text className="mt-1 text-center font-ui-medium text-[13px] leading-[18px] text-ink-secondary">
+          <Text className="mt-1 text-center font-ui-medium text-body-sm leading-[18px] text-ink-secondary">
             Share a code and link your story before game night.
           </Text>
           <View className="mt-4 w-full flex-row gap-2.5">
@@ -148,7 +148,7 @@ export default function HomeScreen() {
                 size={17}
                 color="#FFFFFF"
               />
-              <Text className="font-ui-bold text-[14px] text-white">
+              <Text className="font-ui-bold text-body text-white">
                 Share invite
               </Text>
             </Pressable>
@@ -163,7 +163,7 @@ export default function HomeScreen() {
                 size={17}
                 color={palette.primary}
               />
-              <Text className="font-ui-bold text-[14px] text-primary">
+              <Text className="font-ui-bold text-body text-primary">
                 {invite.copied ? "Copied!" : (invite.code ?? "Get code")}
               </Text>
             </Pressable>
@@ -184,7 +184,7 @@ export default function HomeScreen() {
               onPress={() => router.push("/(tabs)/games")}
               className="flex-row items-center gap-0.5 active:opacity-70"
             >
-              <Text className="font-ui-semibold text-[14px] text-primary">
+              <Text className="font-ui-semibold text-body text-primary">
                 See all
               </Text>
               <MaterialCommunityIcons
@@ -227,13 +227,13 @@ export default function HomeScreen() {
                   )}
                   {!implemented && (
                     <View className="absolute bottom-2 rounded-full bg-black/70 px-2 py-0.5">
-                      <Text className="font-ui-bold text-[9px] tracking-[0.8px] text-white">
+                      <Text className="font-ui-bold text-micro tracking-[0.8px] text-white">
                         SOON
                       </Text>
                     </View>
                   )}
                 </View>
-                <Text className="text-center font-display-bold text-[15px] text-ink">
+                <Text className="text-center font-display-bold text-body-lg text-ink">
                   {g.name}
                 </Text>
                 <View
@@ -241,7 +241,7 @@ export default function HomeScreen() {
                   style={{ backgroundColor: g.tagColor + "18" }}
                 >
                   <Text
-                    className="font-ui-bold text-[10px]"
+                    className="font-ui-bold text-micro"
                     style={{ color: g.tagColor }}
                   >
                     {g.tag}

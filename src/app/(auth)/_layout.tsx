@@ -1,8 +1,8 @@
 import { Stack } from 'expo-router';
-import { usePaperColor } from '@/hooks/useResolvedTheme';
+import { usePalette } from '@/hooks/usePalette';
 
 export default function AuthLayout() {
-  const paper = usePaperColor();
+  const paper = usePalette().paper;
 
   return (
     <Stack

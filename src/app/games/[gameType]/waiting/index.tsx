@@ -301,13 +301,13 @@ export default function WaitingRoomScreen() {
                 />
               </View>
               <View className="items-center">
-                <Text className="font-display-bold text-[24px] text-ink">
+                <Text className="font-display-bold text-title-lg text-ink">
                   Getting everything
                 </Text>
-                <Text className="font-display-bold text-[24px] text-primary">
+                <Text className="font-display-bold text-title-lg text-primary">
                   ready...
                 </Text>
-                <Text className="mt-3 text-center font-ui-medium text-[14px] leading-[20px] text-ink-secondary">
+                <Text className="mt-3 text-center font-ui-medium text-body leading-[20px] text-ink-secondary">
                   Setting up your game room
                 </Text>
               </View>
@@ -315,7 +315,7 @@ export default function WaitingRoomScreen() {
                 onPress={handleLeave}
                 className="items-center py-1 active:opacity-70"
               >
-                <Text className="font-ui-semibold text-[14px] text-error-bright">
+                <Text className="font-ui-semibold text-body text-error-bright">
                   Leave Game
                 </Text>
               </Pressable>
@@ -332,7 +332,7 @@ export default function WaitingRoomScreen() {
                 <View>
                   <LobbyAvatar peep={partnerPeep} seed={partnerName} name={partnerName} mirror />
                   <View className="absolute right-1 top-1 h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-ink-tertiary/40">
-                    <Text className="text-[11px] text-white">?</Text>
+                    <Text className="text-label text-white">?</Text>
                   </View>
                 </View>
                 <MaterialCommunityIcons
@@ -350,7 +350,7 @@ export default function WaitingRoomScreen() {
               </View>
 
               <View className="items-center gap-1.5">
-                <Text className="font-display-bold text-[24px] text-ink">
+                <Text className="font-display-bold text-title-lg text-ink">
                   Waiting for{" "}
                   <Text className="text-primary">{partnerName}...</Text>
                 </Text>
@@ -366,7 +366,7 @@ export default function WaitingRoomScreen() {
                     color={palette.primary}
                   />
                 </View>
-                <Text className="flex-1 font-ui-medium text-[13px] leading-[18px] text-ink-secondary">
+                <Text className="flex-1 font-ui-medium text-body-sm leading-[18px] text-ink-secondary">
                   Make sure you both have a good connection!
                 </Text>
               </View>
@@ -374,7 +374,7 @@ export default function WaitingRoomScreen() {
                 onPress={handleLeave}
                 className="items-center py-1 active:opacity-70"
               >
-                <Text className="font-ui-semibold text-[14px] text-error-bright">
+                <Text className="font-ui-semibold text-body text-error-bright">
                   Leave Game
                 </Text>
               </Pressable>
@@ -405,10 +405,10 @@ export default function WaitingRoomScreen() {
                 />
               </View>
               <View className="items-center gap-1.5">
-                <Text className="font-display-bold text-[24px] text-ink">
+                <Text className="font-display-bold text-title-lg text-ink">
                   <Text className="text-primary">{partnerName}</Text> is here!
                 </Text>
-                <Text className="font-ui-medium text-[14px] text-ink-secondary">
+                <Text className="font-ui-medium text-body text-ink-secondary">
                   Looks like someone&apos;s ready to play.
                 </Text>
               </View>
@@ -417,7 +417,7 @@ export default function WaitingRoomScreen() {
                 className="w-full flex-row items-center justify-center gap-2 rounded-full bg-primary py-4 active:opacity-85"
                 style={BUTTON_SHADOW}
               >
-                <Text className="font-ui-bold text-[15px] text-white">
+                <Text className="font-ui-bold text-body-lg text-white">
                   Continue
                 </Text>
                 <MaterialCommunityIcons
@@ -430,7 +430,7 @@ export default function WaitingRoomScreen() {
                 onPress={handleLeave}
                 className="items-center py-1 active:opacity-70"
               >
-                <Text className="font-ui-semibold text-[14px] text-error-bright">
+                <Text className="font-ui-semibold text-body text-error-bright">
                   Leave Game
                 </Text>
               </Pressable>
@@ -457,17 +457,17 @@ export default function WaitingRoomScreen() {
                     />
                   </View>
                 )}
-                <Text className="font-display-bold text-[24px] text-ink">
+                <Text className="font-display-bold text-title-lg text-ink">
                   {game?.name ?? "Game"}
                 </Text>
                 <View className="flex-row gap-2.5">
                   <View className="rounded-full bg-surface px-3.5 py-1.5 border border-hairline">
-                    <Text className="font-ui-semibold text-[12px] text-ink">
+                    <Text className="font-ui-semibold text-caption text-ink">
                       {rounds} Rounds
                     </Text>
                   </View>
                   <View className="rounded-full bg-surface px-3.5 py-1.5 border border-hairline">
-                    <Text className="font-ui-semibold text-[12px] text-ink">
+                    <Text className="font-ui-semibold text-caption text-ink">
                       {duration}
                     </Text>
                   </View>
@@ -478,7 +478,7 @@ export default function WaitingRoomScreen() {
               <View className="flex-row items-center justify-center gap-3">
                 <View className="flex-1 items-center gap-2 rounded-3xl bg-surface px-3 py-5 border border-hairline">
                   <Text
-                    className="font-display-bold text-[14px] text-ink"
+                    className="font-display-bold text-body text-ink"
                     numberOfLines={1}
                   >
                     {myFirstName}
@@ -498,7 +498,7 @@ export default function WaitingRoomScreen() {
                       />
                     )}
                     <Text
-                      className="font-ui-bold text-[12px]"
+                      className="font-ui-bold text-caption"
                       style={{ color: iAmReady ? "#22C55E" : "#B3A8C9" }}
                     >
                       {iAmReady ? "Ready" : "Not ready"}
@@ -510,7 +510,7 @@ export default function WaitingRoomScreen() {
 
                 <View className="flex-1 items-center gap-2 rounded-3xl bg-surface px-3 py-5 border border-hairline">
                   <Text
-                    className="font-display-bold text-[14px] text-ink"
+                    className="font-display-bold text-body text-ink"
                     numberOfLines={1}
                   >
                     {partnerName}
@@ -534,7 +534,7 @@ export default function WaitingRoomScreen() {
                       />
                     )}
                     <Text
-                      className="font-ui-bold text-[12px]"
+                      className="font-ui-bold text-caption"
                       style={{ color: partnerReady ? "#22C55E" : "#B3A8C9" }}
                     >
                       {partnerReady ? "Ready" : "Not ready"}
@@ -553,11 +553,11 @@ export default function WaitingRoomScreen() {
                       size={16}
                       color="#F59E0B"
                     />
-                    <Text className="font-display-bold text-[14px] text-ink">
+                    <Text className="font-display-bold text-body text-ink">
                       {game?.objective ?? "First to 10 points wins!"}
                     </Text>
                   </View>
-                  <Text className="font-ui-medium text-[13px] text-ink-secondary">
+                  <Text className="font-ui-medium text-body-sm text-ink-secondary">
                     Both players need to be ready to start the game.
                   </Text>
                 </View>
@@ -572,7 +572,7 @@ export default function WaitingRoomScreen() {
                     size={18}
                     color="#FFFFFF"
                   />
-                  <Text className="font-ui-bold text-[15px] text-white">
+                  <Text className="font-ui-bold text-body-lg text-white">
                     {iAmReady
                       ? `Waiting for ${partnerName}...`
                       : "I'm Ready!"}
@@ -582,7 +582,7 @@ export default function WaitingRoomScreen() {
                   onPress={handleLeave}
                   className="items-center py-1 active:opacity-70"
                 >
-                  <Text className="font-ui-semibold text-[14px] text-error-bright">
+                  <Text className="font-ui-semibold text-body text-error-bright">
                     Leave Game
                   </Text>
                 </Pressable>

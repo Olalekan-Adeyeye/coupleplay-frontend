@@ -114,9 +114,9 @@ export const api = {
         xp: number;
       }>('/stats/overview', { token }),
 
-    getActivity: (token: string) =>
-      request<
-        {
+    getActivity: (token: string, cursor?: string) =>
+      request<{
+        groups: {
           day: string;
           items: {
             id: string;
@@ -128,8 +128,11 @@ export const api = {
             bg: string;
             gameType: string;
           }[];
-        }[]
-      >('/stats/activity', { token }),
+        }[];
+        nextCursor: string | null;
+      }>(`/stats/activity${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`, {
+        token,
+      }),
 
     getAchievements: (token: string) =>
       request<

@@ -32,7 +32,7 @@ export function OfflineBanner() {
       className="absolute inset-x-0 z-50 bg-neutral-900/95 px-4 pb-3 pt-2"
       style={{ top: insets.top }}
     >
-      <Text className="text-center font-ui-medium text-[13px] leading-[18px] text-white">
+      <Text className="text-center font-ui-medium text-body-sm leading-[18px] text-white">
         No internet connection — reconnecting as soon as you're back online.
       </Text>
     </View>

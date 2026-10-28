@@ -15,18 +15,18 @@ export function ReactionBar({
   size = "md",
 }: ReactionBarProps) {
   const btnSize = size === "sm" ? "h-10 w-10" : "h-11 w-11";
-  const emojiSize = size === "sm" ? "text-[20px]" : "text-[22px]";
+  const emojiSize = size === "sm" ? "text-title-sm" : "text-title-lg";
 
   return (
     <>
       {incomingReaction && (
         <View className="absolute -top-12 rounded-full bg-accent-soft px-4 py-2">
-          <Text className="text-[20px]">{incomingReaction}</Text>
+          <Text className="text-title-sm">{incomingReaction}</Text>
         </View>
       )}
       {rejectMsg && (
         <View className="absolute -top-12 rounded-full bg-error-soft px-4 py-2">
-          <Text className="font-ui-semibold text-[13px] text-error-bright">
+          <Text className="font-ui-semibold text-body-sm text-error-bright">
             {rejectMsg}
           </Text>
         </View>

@@ -22,28 +22,28 @@ const TABS: {
 }[] = [
   {
     name: "index",
-    href: "/",
+    href: "/(tabs)",
     label: "Home",
     icon: "home-outline",
     activeIcon: "home",
   },
   {
     name: "games",
-    href: "/games",
+    href: "/(tabs)/games",
     label: "Games",
     icon: "gamepad-variant-outline",
     activeIcon: "gamepad-variant",
   },
   {
     name: "activity",
-    href: "/activity",
+    href: "/(tabs)/activity",
     label: "Activity",
     icon: "chart-line",
     activeIcon: "chart-line",
   },
   {
     name: "us",
-    href: "/us",
+    href: "/(tabs)/us",
     label: "Us",
     icon: "heart-outline",
     activeIcon: "heart",
@@ -89,6 +89,7 @@ function DockButton({
   isFocused,
   style,
   onPress,
+  ref: _slotRef,
   ...props
 }: TabTriggerSlotProps & {
   name: string;
@@ -143,8 +144,8 @@ function DockButton({
           <Text
             className={
               isFocused
-                ? "font-ui-bold text-[11px]"
-                : "font-ui-medium text-[11px]"
+                ? "font-ui-bold text-label"
+                : "font-ui-medium text-label"
             }
             style={{ color: isFocused ? palette.primary : inactiveColor }}
           >

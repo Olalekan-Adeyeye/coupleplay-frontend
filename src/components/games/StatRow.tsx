@@ -17,13 +17,13 @@ export function StatRow({
 }: StatRowProps) {
   return (
     <View className="flex-row items-center py-2.5">
-      <Text className={`w-14 font-display-bold text-[17px] ${myColor}`}>
+      <Text className={`w-14 font-display-bold text-title-xs ${myColor}`}>
         {mine}
       </Text>
-      <Text className="flex-1 text-center font-ui-medium text-[14px] text-ink">
+      <Text className="flex-1 text-center font-ui-medium text-body text-ink">
         {label}
       </Text>
-      <Text className={`w-14 text-right font-display-bold text-[17px] ${theirColor}`}>
+      <Text className={`w-14 text-right font-display-bold text-title-xs ${theirColor}`}>
         {theirs}
       </Text>
     </View>

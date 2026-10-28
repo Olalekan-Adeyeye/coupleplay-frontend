@@ -29,17 +29,17 @@ export function ResultsScoreCard({
       >
         <Avatar avatar={myAvatar} name={myName} size={56} />
         <Text
-          className="font-display-bold text-[14px] text-ink"
+          className="font-display-bold text-body text-ink"
           numberOfLines={1}
         >
           You
         </Text>
-        <Text className={`font-display-bold text-[32px] ${myColor}`}>
+        <Text className={`font-display-bold text-score ${myColor}`}>
           {myScore}
         </Text>
       </View>
 
-      <Text className="font-display-bold text-[16px] text-ink-tertiary">
+      <Text className="font-display-bold text-title-xs text-ink-tertiary">
         VS
       </Text>
 
@@ -49,12 +49,12 @@ export function ResultsScoreCard({
       >
         <Avatar name={partnerName} size={56} />
         <Text
-          className="font-display-bold text-[14px] text-ink"
+          className="font-display-bold text-body text-ink"
           numberOfLines={1}
         >
           {partnerName}
         </Text>
-        <Text className={`font-display-bold text-[32px] ${partnerColor}`}>
+        <Text className={`font-display-bold text-score ${partnerColor}`}>
           {partnerScore}
         </Text>
       </View>

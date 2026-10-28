@@ -45,11 +45,11 @@ export default function JoinPage() {
     <View className="flex-1 bg-paper">
       <View className="flex-1 items-center justify-center px-7">
         <PeepScene layout="single" size={96} />
-        <Text className="mt-6 text-center font-display-bold text-[26px] leading-[32px] text-ink">
+        <Text className="mt-6 text-center font-display-bold text-title-lg leading-[32px] text-ink">
           Join with code{"\n"}
           <Text className="text-primary">{targetCode || "····"}</Text>
         </Text>
-        <Text className="mt-2 text-center font-ui-medium text-[15px] leading-[22px] text-ink-secondary">
+        <Text className="mt-2 text-center font-ui-medium text-body-lg leading-[22px] text-ink-secondary">
           {token
             ? status === "joining"
               ? "Linking you up…"

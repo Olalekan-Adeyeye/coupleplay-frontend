@@ -58,7 +58,7 @@ export default function RecapScreen() {
           <View className="mt-6 items-center">
             <View
               className="h-[120px] w-[120px] items-center justify-center overflow-hidden rounded-2xl"
-              style={{ backgroundColor: game?.accent ?? "#EFEAFF" }}
+              style={{ backgroundColor: game?.accent ?? palette.primarySoft }}
             >
               {art ? (
                 <Image
@@ -74,10 +74,10 @@ export default function RecapScreen() {
                 />
               )}
             </View>
-            <Text className="mt-4 text-center font-display-bold text-[24px] leading-[30px] text-ink">
+            <Text className="mt-4 text-center font-display-bold text-title-lg leading-[30px] text-ink">
               {params.title ?? "Match recap"}
             </Text>
-            <Text className="mt-1 font-ui-medium text-[13px] text-ink-tertiary">
+            <Text className="mt-1 font-ui-medium text-body-sm text-ink-tertiary">
               {params.time ?? ""}
             </Text>
           </View>
@@ -90,11 +90,11 @@ export default function RecapScreen() {
                   size={19}
                   color="#F59E0B"
                 />
-                <Text className="font-ui-semibold text-[14px] text-ink">
+                <Text className="font-ui-semibold text-body text-ink">
                   XP earned
                 </Text>
               </View>
-              <Text className="font-display-bold text-[16px] text-primary">
+              <Text className="font-display-bold text-title-xs text-primary">
                 {params.xp ?? "—"}
               </Text>
             </View>
@@ -106,11 +106,11 @@ export default function RecapScreen() {
                     size={19}
                     color={palette.primary}
                   />
-                  <Text className="font-ui-semibold text-[14px] text-ink">
+                  <Text className="font-ui-semibold text-body text-ink">
                     Game
                   </Text>
                 </View>
-                <Text className="font-ui-semibold text-[14px] text-ink-secondary">
+                <Text className="font-ui-semibold text-body text-ink-secondary">
                   {game.name}
                 </Text>
               </View>
@@ -129,7 +129,7 @@ export default function RecapScreen() {
                 size={19}
                 color="#FFFFFF"
               />
-              <Text className="font-ui-bold text-[15px] text-white">
+              <Text className="font-ui-bold text-body-lg text-white">
                 {implemented ? "Rematch" : "View game"}
               </Text>
             </Pressable>
@@ -137,7 +137,7 @@ export default function RecapScreen() {
               onPress={() => router.replace("/(tabs)/activity")}
               className="items-center py-2 active:opacity-70"
             >
-              <Text className="font-ui-semibold text-[14px] text-ink-secondary">
+              <Text className="font-ui-semibold text-body text-ink-secondary">
                 Back to Activity
               </Text>
             </Pressable>

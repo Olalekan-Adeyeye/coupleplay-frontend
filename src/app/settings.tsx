@@ -24,7 +24,7 @@ import { formatDate } from "@/lib/format";
 
 function SectionLabel({ children }: { children: string }) {
   return (
-    <Text className="font-ui-bold text-[11px] tracking-[1.5px] text-ink-tertiary">
+    <Text className="font-ui-bold text-label tracking-[1.5px] text-ink-tertiary">
       {children}
     </Text>
   );
@@ -238,7 +238,7 @@ export default function SettingsScreen() {
                   color={palette.ink}
                 />
               </Pressable>
-              <Text className="font-display-bold text-[22px] text-ink">
+              <Text className="font-display-bold text-title-lg text-ink">
                 Settings
               </Text>
               <View className="h-11 w-11" />
@@ -254,7 +254,7 @@ export default function SettingsScreen() {
                   size={52}
                 />
                 <View className="flex-1">
-                  <Text className="font-display-bold text-[16px] text-ink">
+                  <Text className="font-display-bold text-title-xs text-ink">
                     {user?.name ?? "Player"}
                   </Text>
                   <Text className="font-ui-medium text-[12.5px] text-ink-secondary">
@@ -264,7 +264,7 @@ export default function SettingsScreen() {
               </View>
               <Row
                 icon="account-edit-outline"
-                iconTint="#EFEAFF"
+                iconTint={palette.primarySoft}
                 iconColor={palette.primary}
                 title="Change your Peep"
                 subtitle="Your avatar everywhere"
@@ -286,7 +286,7 @@ export default function SettingsScreen() {
                       myName={user?.name ?? undefined}
                       theirName={partner?.name ?? undefined}
                     />
-                    <Text className="mt-3 font-ui-semibold text-[14px] text-ink">
+                    <Text className="mt-3 font-ui-semibold text-body text-ink">
                       {user?.name?.split(" ")[0]} &{" "}
                       {partner?.name?.split(" ")[0]}
                     </Text>
@@ -333,7 +333,7 @@ export default function SettingsScreen() {
 
                   {tab === "invite" ? (
                     <View className="items-center gap-3 rounded-2xl border border-hairline bg-surface p-5">
-                      <Text className="font-ui-bold text-[11px] tracking-[1.5px] text-ink-tertiary">
+                      <Text className="font-ui-bold text-label tracking-[1.5px] text-ink-tertiary">
                         YOUR INVITE CODE
                       </Text>
                       <Text className="font-display-bold text-[34px] tracking-[4px] text-primary">
@@ -351,7 +351,7 @@ export default function SettingsScreen() {
                             size={17}
                             color="#FFFFFF"
                           />
-                          <Text className="font-ui-bold text-[14px] text-white">
+                          <Text className="font-ui-bold text-body text-white">
                             Share
                           </Text>
                         </Pressable>
@@ -366,7 +366,7 @@ export default function SettingsScreen() {
                             size={17}
                             color={palette.primary}
                           />
-                          <Text className="font-ui-bold text-[14px] text-primary">
+                          <Text className="font-ui-bold text-body text-primary">
                             {invite.copied ? "Copied!" : "Copy"}
                           </Text>
                         </Pressable>
@@ -390,7 +390,7 @@ export default function SettingsScreen() {
                         autoCapitalize="characters"
                         autoCorrect={false}
                         maxLength={10}
-                        className="w-full rounded-xl border border-hairline bg-paper px-4 py-3.5 text-center font-ui-bold text-[17px] tracking-[3px] text-ink"
+                        className="w-full rounded-xl border border-hairline bg-paper px-4 py-3.5 text-center font-ui-bold text-title-xs tracking-[3px] text-ink"
                       />
                       {joinError && (
                         <Text className="text-center font-ui-medium text-[12.5px] text-error-bright">
@@ -459,8 +459,8 @@ export default function SettingsScreen() {
               <SectionLabel>ACCOUNT</SectionLabel>
               <Row
                 icon="logout"
-                iconTint="#F4F1EC"
-                iconColor="#000000"
+                iconTint="#FDEAEE"
+                iconColor="#DC2626"
                 title="Log out"
                 onPress={handleLogout}
               />
