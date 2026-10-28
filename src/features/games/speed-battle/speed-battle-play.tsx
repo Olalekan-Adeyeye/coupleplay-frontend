@@ -1,20 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { View, ScrollView, Pressable, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Avatar } from "@/components/ui/avatar";
 import { ReactionBar } from "@/components/games/ReactionBar";
 import { LeaveGameButton } from "@/components/games/LeaveGameButton";
 import { InterstitialOverlay } from "@/components/games/InterstitialOverlay";
-import { usePartnerName } from "@/hooks/usePartnerName";
-import { useGameAbandoned } from "@/hooks/useGameAbandoned";
+import { useGameRoom } from "@/hooks/useGameRoom";
 import { useGameReactions } from "@/hooks/useGameReactions";
-import { useAuthStore } from "@/stores/authStore";
-import { useSocketStore } from "@/hooks/useSocket";
-import { useRoomStore } from "@/stores/roomStore";
 import { ConfirmModal, InfoModal } from "@/components/ui/ConfirmModal";
-import { useConfirmModal } from "@/hooks/useConfirmModal";
 import { usePalette } from "@/hooks/usePalette";
 
 interface Question {
@@ -48,23 +42,27 @@ interface SpeedBattleState {
 
 export default function SpeedBattlePlayScreen() {
   const palette = usePalette();
-  const { roomId } = useLocalSearchParams<{ roomId: string }>();
-  const user = useAuthStore((s) => s.user);
-  const socket = useSocketStore((s) => s.socket);
-  const partnerName = usePartnerName();
+  const {
+    roomId,
+    socket,
+    user,
+    partnerName,
+    state,
+    revealState,
+    interstitial,
+    abandoned,
+    askLeave,
+    leaveConfirmProps,
+    cancelLeave,
+  } = useGameRoom<SpeedBattleState>("SPEED_BATTLE", {
+    roundEndMessage: ({ won, draw, partnerName: name }) =>
+      draw ? "No one scored!" : won ? "You scored!" : `${name} scored!`,
+    onNewRound: () => setSelected(null),
+  });
 
-  const [state, setState] = useState<SpeedBattleState | null>(null);
-  const [revealState, setRevealState] = useState<SpeedBattleState | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(15);
   const { incomingReaction, rejectMsg, sendReaction } = useGameReactions(socket, roomId, user?.id);
-  const [interstitial, setInterstitial] = useState<string | null>(null);
-  const lastRound = useRef<number | null>(null);
-  const roundEndTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const leftRef = useRef(false);
-  const navigation = useNavigation();
-  const leaveConfirm = useConfirmModal();
-  const pendingActionRef = useRef<any>(null);
 
   const displayState = revealState ?? state;
   const question =
@@ -74,61 +72,7 @@ export default function SpeedBattlePlayScreen() {
     Object.keys(displayState?.answers ?? {}).find((k) => k !== user?.id) ?? ""
   ] ?? null;
 
-  // Socket listeners
-  useEffect(() => {
-    if (!socket) return;
-    const onState = (s: SpeedBattleState) => {
-      if (s.roomId !== roomId) return;
-      setState(s);
-      // New question arrived — clear the local pick inside the event
-      // handler (not an effect) to avoid render cascades.
-      if (lastRound.current !== s.roundNumber) {
-        lastRound.current = s.roundNumber;
-        setSelected(null);
-        setRevealState(null);
-      }
-    };
-    const onRoundEnd = (d: any) => {
-      if (d.roomId !== roomId) return;
-      const won = d.winnerId === user?.id;
-      const draw = d.winnerId == null;
-      setRevealState((d.reveal ?? null) as SpeedBattleState | null);
-      setInterstitial(
-        draw
-          ? "No one scored!"
-          : won
-            ? "You scored!"
-            : `${partnerName} scored!`,
-      );
-      if (roundEndTimer.current) clearTimeout(roundEndTimer.current);
-      roundEndTimer.current = setTimeout(() => {
-        setInterstitial(null);
-        setRevealState(null);
-      }, 1800);
-    };
-    const onFinished = (d: any) => {
-      if (d.roomId !== roomId) return;
-      leftRef.current = true;
-      const results = d.results;
-      router.replace(
-        `/games/SPEED_BATTLE/results?winnerId=${results.winnerId ?? ""}&scores=${encodeURIComponent(JSON.stringify(results.scores))}&totalRounds=${results.totalRounds}&roundsWon=${encodeURIComponent(JSON.stringify(results.roundsWon ?? {}))}&roomId=${roomId}` as any,
-      );
-    };
-    socket.on("game:state", onState);
-    socket.on("game:round_end", onRoundEnd);
-    socket.on("game:finished", onFinished);
-    socket.emit("game:sync", { roomId });
-    return () => {
-      socket.off("game:state", onState);
-      socket.off("game:round_end", onRoundEnd);
-      socket.off("game:finished", onFinished);
-    };
-  }, [socket, roomId, user?.id, partnerName]);
-
-  const abandoned = useGameAbandoned(socket, roomId, partnerName);
-
-  // Timer countdown. Timeout emits ONCE per question (guarded ref) —
-  // never a stream of emits while the clock sits at zero.
+  // Timer countdown — the timeout emit is guarded so it fires once per question.
   const timeoutSent = useRef(false);
   useEffect(() => {
     timeoutSent.current = false;
@@ -167,70 +111,17 @@ export default function SpeedBattlePlayScreen() {
     });
   };
 
-  const doLeave = (action?: any) => {
-    leftRef.current = true;
-    socket?.emit("room:leave", { roomId });
-    useRoomStore.getState().setRoom(null);
-    if (action) {
-      navigation.dispatch(action);
-    } else {
-      router.replace("/(tabs)/games");
-    }
-  };
-
-  const handleLeave = () => {
-    leaveConfirm.confirm({
-      title: "Leave game?",
-      message: "The game room will be closed for both of you.",
-      confirmLabel: "Leave",
-      variant: "danger",
-      onConfirm: () => doLeave(),
-    });
-  };
-
-  // Intercept Android back button / iOS swipe-back
-  useEffect(() => {
-    const unsub = navigation.addListener("beforeRemove" as any, (e: any) => {
-      if (leftRef.current) return;
-      // Only intercept back gestures/button (POP), let programmatic navigations through
-      if (e.data.action.type !== "POP") return;
-      e.preventDefault();
-      pendingActionRef.current = e.data.action;
-      leaveConfirm.confirm({
-        title: "Leave game?",
-        message: "The game room will be closed for both of you.",
-        confirmLabel: "Leave",
-        variant: "danger",
-        onConfirm: () => doLeave(pendingActionRef.current),
-      });
-    });
-    return () => unsub();
-  }, [navigation, roomId]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (roundEndTimer.current) clearTimeout(roundEndTimer.current);
-      if (!leftRef.current && roomId) {
-        socket?.emit("room:leave", { roomId });
-        useRoomStore.getState().setRoom(null);
-      }
-    };
-  }, [roomId, socket]);
-
   const myScore = state?.scores[user?.id ?? ""] ?? 0;
   const partnerScore = state
     ? (Object.entries(state.scores).find(([id]) => id !== user?.id)?.[1] ?? 0)
     : 0;
-  // The server reveals the ended round via game:round_end — unrevealed
-  // question keys are hidden until then, so reveal only from revealState.
+  // Partner taps are hidden until the round-end reveal.
   const showReveal = revealState != null;
 
   return (
     <View className="flex-1 bg-paper">
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <View className="w-full max-w-[460px] flex-1 self-center px-[22px] pt-[14px] pb-[24px]">
-          {/* Header */}
           <View className="flex-row items-center justify-between">
             <View className="h-11 w-11" />
             <View
@@ -255,7 +146,6 @@ export default function SpeedBattlePlayScreen() {
             </View>
           </View>
 
-          {/* Players + score */}
           <View className="mt-4 flex-row items-center justify-center gap-3">
             <View
               className="flex-1 flex-row items-center gap-2.5 rounded-2xl bg-surface px-4 py-3 border border-hairline"
@@ -336,12 +226,10 @@ export default function SpeedBattlePlayScreen() {
             </View>
           </View>
 
-          {/* Question + options */}
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingTop: 16, gap: 12, paddingBottom: 8 }}
           >
-            {/* Question card */}
             <View
               className="items-center gap-3 rounded-3xl bg-surface px-6 py-6 border border-hairline"
             >
@@ -357,7 +245,6 @@ export default function SpeedBattlePlayScreen() {
               </Text>
             </View>
 
-            {/* Options */}
             {question?.options.map((opt, i) => {
               const isSelected = selected === i;
               const isCorrectAnswer = showReveal && i === question.correctIndex;
@@ -427,7 +314,6 @@ export default function SpeedBattlePlayScreen() {
               );
             })}
 
-            {/* Waiting / result card */}
             {myAnswer && !showReveal && (
               <View
                 className="items-center gap-3 rounded-3xl bg-surface px-6 py-6 border border-hairline"
@@ -477,26 +363,25 @@ export default function SpeedBattlePlayScreen() {
             )}
           </ScrollView>
 
-          {/* Reactions + leave */}
           <View className="flex-row items-center justify-center gap-3 pb-2 pt-2">
             <ReactionBar
               incomingReaction={incomingReaction}
               rejectMsg={rejectMsg}
               onReaction={(r) => sendReaction(roomId!, r)}
+              partnerName={partnerName}
             />
           </View>
-          <LeaveGameButton onPress={handleLeave} />
+          <LeaveGameButton onPress={askLeave} />
         </View>
       </SafeAreaView>
 
-      {/* Interstitial overlay */}
       {interstitial && (
         <InterstitialOverlay
           message={interstitial}
           peep={user?.avatar}
         />
       )}
-      <ConfirmModal {...leaveConfirm.props} onCancel={leaveConfirm.cancel} />
+      <ConfirmModal {...leaveConfirmProps} onCancel={cancelLeave} />
       <InfoModal {...abandoned} />
     </View>
   );

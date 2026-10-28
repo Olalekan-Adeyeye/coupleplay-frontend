@@ -18,6 +18,7 @@ export default function GameDetailScreen() {
   const game = getGame(gameType);
   const token = useAuthStore((s) => s.token);
   const couple = useCoupleStore((s) => s.couple);
+  const coupleLoaded = useCoupleStore((s) => s.loaded);
   const setRoom = useRoomStore((s) => s.setRoom);
   const user = useAuthStore((s) => s.user);
   const [bookmarked, setBookmarked] = useState(false);
@@ -55,6 +56,7 @@ export default function GameDetailScreen() {
   const canJoin =
     activeRoom != null &&
     !activeRoom.players?.some((p: any) => p.userId === user?.id);
+  const awaitingCouple = !canJoin && !hasPartner && !coupleLoaded;
 
   const handleStart = async () => {
     if (!game || loading) return;
@@ -246,7 +248,7 @@ export default function GameDetailScreen() {
                 </Text>
               </View>
             )}
-            {!hasPartner && (
+            {coupleLoaded && !hasPartner && (
               <Text className="text-center font-ui-medium text-body-sm text-ink-secondary">
                 Link your partner first — every game needs two players.
               </Text>
@@ -258,12 +260,20 @@ export default function GameDetailScreen() {
             )}
             <Pressable
               onPress={handleStart}
-              disabled={loading}
+              disabled={loading || awaitingCouple}
               className="flex-row items-center justify-center gap-2 rounded-2xl bg-primary py-4 active:opacity-85"
-              style={{ opacity: loading ? 0.6 : 1 }}
+              style={{ opacity: loading || awaitingCouple ? 0.6 : 1 }}
             >
               <MaterialCommunityIcons
-                name={canJoin ? "login" : hasPartner ? "play" : "account-plus"}
+                name={
+                  awaitingCouple
+                    ? "loading"
+                    : canJoin
+                      ? "login"
+                      : hasPartner
+                        ? "play"
+                        : "account-plus"
+                }
                 size={20}
                 color="#FFFFFF"
               />
@@ -272,11 +282,13 @@ export default function GameDetailScreen() {
                   ? canJoin
                     ? "Joining…"
                     : "Creating table…"
-                  : canJoin
-                    ? "Join Game"
-                    : hasPartner
-                      ? "Start Game"
-                      : "Invite Partner"}
+                  : awaitingCouple
+                    ? "Preparing table…"
+                    : canJoin
+                      ? "Join Game"
+                      : hasPartner
+                        ? "Start Game"
+                        : "Invite Partner"}
               </Text>
             </Pressable>
           </View>

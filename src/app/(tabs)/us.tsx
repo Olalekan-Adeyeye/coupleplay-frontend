@@ -62,6 +62,7 @@ export default function UsScreen() {
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
   const couple = useCoupleStore((s) => s.couple);
+  const coupleLoaded = useCoupleStore((s) => s.loaded);
   const fetchCouple = useCoupleStore((s) => s.fetchCouple);
   const overview = useStatsStore((s) => s.overview);
   const achievements = useStatsStore((s) => s.achievements);
@@ -155,7 +156,7 @@ export default function UsScreen() {
               </Text>
             </Pressable>
           </View>
-        ) : (
+        ) : coupleLoaded ? (
           <View className="mt-4 items-center">
             <Text className="font-display-bold text-title-xs text-ink">
               Waiting for player 2
@@ -196,7 +197,7 @@ export default function UsScreen() {
               </Pressable>
             </View>
           </View>
-        )}
+        ) : null}
       </View>
 
       <View className="gap-3">

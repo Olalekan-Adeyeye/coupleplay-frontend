@@ -27,6 +27,7 @@ export default function HomeScreen() {
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
   const couple = useCoupleStore((s) => s.couple);
+  const coupleLoaded = useCoupleStore((s) => s.loaded);
   const fetchCouple = useCoupleStore((s) => s.fetchCouple);
   const overview = useStatsStore((s) => s.overview);
   const fetchOverview = useStatsStore((s) => s.fetchOverview);
@@ -77,7 +78,7 @@ export default function HomeScreen() {
             {greeting()}, {myName}
           </Text>
           <Text className="mt-0.5 font-display-bold text-display leading-[34px] text-ink">
-            Game night?
+            Game time?
           </Text>
         </View>
         <View className="flex-row items-center gap-2">
@@ -110,13 +111,17 @@ export default function HomeScreen() {
           theirName={partner?.name ?? undefined}
         />
         <Text className="mt-3 font-display-bold text-title-xs text-ink">
-          {hasPartner ? `${myName} & ${partnerName}` : "You + Player 2"}
+          {hasPartner ? `${myName} & ${partnerName}` : coupleLoaded ? "You + Player 2" : ""}
         </Text>
-        <Text className="mt-1 font-ui-medium text-body-sm text-ink-secondary">
-          {hasPartner
-            ? `${daysTogether} ${daysTogether === 1 ? "day" : "days"} together`
-            : "Your story starts with an invite"}
-        </Text>
+        {hasPartner ? (
+          <Text className="mt-1 font-ui-medium text-body-sm text-ink-secondary">
+            {daysTogether} {daysTogether === 1 ? "day" : "days"} together
+          </Text>
+        ) : coupleLoaded ? (
+          <Text className="mt-1 font-ui-medium text-body-sm text-ink-secondary">
+            Your story starts with an invite
+          </Text>
+        ) : null}
         {hasPartner && overview.streak > 0 && (
           <View className="mt-3 flex-row items-center gap-1.5 rounded-full bg-paper px-4 py-1.5">
             <MaterialCommunityIcons name="fire" size={14} color="#F59E0B" />
@@ -127,7 +132,7 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {!hasPartner && (
+      {coupleLoaded && !hasPartner && (
         <View className="items-center rounded-2xl border border-hairline bg-surface px-6 py-5">
           <PeepScene layout="duo" size={64} />
           <Text className="mt-3 font-display-bold text-title-xs text-ink">

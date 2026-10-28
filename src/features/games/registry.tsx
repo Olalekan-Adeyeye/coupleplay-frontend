@@ -5,17 +5,21 @@ import SpeedBattlePlayScreen from "./speed-battle/speed-battle-play";
 import SpeedBattleResultsScreen from "./speed-battle/speed-battle-results";
 import NumberHuntPlayScreen from "./number-hunt/number-hunt-play";
 import NumberHuntResultsScreen from "./number-hunt/number-hunt-results";
+import MemoryMatchPlayScreen from "./memory-match/memory-match-play";
+import MemoryMatchResultsScreen from "./memory-match/memory-match-results";
 
 export const PLAY_SCREENS: Record<string, ComponentType<any>> = {
   TIC_TAC_TOE: TicTacToePlayScreen,
   SPEED_BATTLE: SpeedBattlePlayScreen,
   NUMBER_HUNT: NumberHuntPlayScreen,
+  MEMORY_MATCH: MemoryMatchPlayScreen,
 };
 
 export const RESULTS_SCREENS: Record<string, ComponentType<any>> = {
   TIC_TAC_TOE: TicTacToeResultsScreen,
   SPEED_BATTLE: SpeedBattleResultsScreen,
   NUMBER_HUNT: NumberHuntResultsScreen,
+  MEMORY_MATCH: MemoryMatchResultsScreen,
 };
 
 /** Games with real play + results screens. Everything else is "Soon". */

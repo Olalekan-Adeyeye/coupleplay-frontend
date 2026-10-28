@@ -3,9 +3,8 @@ import { View, Pressable, Text, Dimensions } from "react-native";
 import { usePalette } from "@/hooks/usePalette";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
-const GRID_COLS = 8;
-const GRID_ROWS = 13;
-const HEX_SIZE = Math.floor((SCREEN_WIDTH - 32) / GRID_COLS);
+const MAX_COLS = 8;
+const HEX_SIZE = Math.floor((SCREEN_WIDTH - 32) / MAX_COLS);
 const HEX_GAP = 3;
 
 interface HoneycombGridProps {
@@ -13,7 +12,6 @@ interface HoneycombGridProps {
   onCellPress?: (number: number) => void;
   foundNumbers?: number[];
   targetNumbers?: number[];
-  highlightNumber?: number | null;
   disabled?: boolean;
   showAllTargets?: boolean;
 }
@@ -23,16 +21,18 @@ export function HoneycombGrid({
   onCellPress,
   foundNumbers = [],
   targetNumbers = [],
-  highlightNumber = null,
   disabled = false,
   showAllTargets = false,
 }: HoneycombGridProps) {
   const palette = usePalette();
   const grid = useMemo(() => {
+    // Alternating 8/7-wide rows give the staggered honeycomb shape.
     const rows: number[][] = [];
-    for (let r = 0; r < GRID_ROWS; r++) {
-      const start = r * GRID_COLS;
-      rows.push(numbers.slice(start, start + GRID_COLS));
+    let start = 0;
+    while (start < numbers.length) {
+      const cols = rows.length % 2 === 1 ? MAX_COLS - 1 : MAX_COLS;
+      rows.push(numbers.slice(start, start + cols));
+      start += cols;
     }
     return rows;
   }, [numbers]);
@@ -40,7 +40,6 @@ export function HoneycombGrid({
   const getCellState = (num: number) => {
     if (showAllTargets && targetNumbers.includes(num)) return "target";
     if (foundNumbers.includes(num)) return "found";
-    if (num === highlightNumber) return "highlight";
     return "default";
   };
 
@@ -56,12 +55,6 @@ export function HoneycombGrid({
         return {
           bg: "#10B981",
           border: "#059669",
-          text: "#FFFFFF",
-        };
-      case "highlight":
-        return {
-          bg: "#F59E0B",
-          border: "#D97706",
           text: "#FFFFFF",
         };
       default:

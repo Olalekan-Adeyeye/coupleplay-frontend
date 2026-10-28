@@ -1,25 +1,36 @@
 import { useEffect, useRef, useState } from "react";
 import { Socket } from "socket.io-client";
 
+export interface IncomingReaction {
+  emoji: string;
+  mine: boolean;
+  /** Increments per event so the UI can replay animations on repeats. */
+  seq: number;
+}
+
 export function useGameReactions(
   socket: Socket | null,
   roomId: string | undefined,
   userId: string | undefined,
 ) {
-  const [incomingReaction, setIncomingReaction] = useState<string | null>(null);
+  const [incomingReaction, setIncomingReaction] = useState<IncomingReaction | null>(null);
   const [rejectMsg, setRejectMsg] = useState<string | null>(null);
   const reactionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rejectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const seq = useRef(0);
 
   useEffect(() => {
     if (!socket) return;
-    const onReaction = (d: any) => {
-      if (d.userId === userId) return;
-      setIncomingReaction(d.reaction);
+    const onReaction = (d: { userId: string; reaction: string }) => {
+      setIncomingReaction({
+        emoji: d.reaction,
+        mine: d.userId === userId,
+        seq: ++seq.current,
+      });
       if (reactionTimer.current) clearTimeout(reactionTimer.current);
-      reactionTimer.current = setTimeout(() => setIncomingReaction(null), 1800);
+      reactionTimer.current = setTimeout(() => setIncomingReaction(null), 1900);
     };
-    const onReject = (d: any) => {
+    const onReject = (d: { reason?: string }) => {
       setRejectMsg(d.reason ?? "Move rejected");
       if (rejectTimer.current) clearTimeout(rejectTimer.current);
       rejectTimer.current = setTimeout(() => setRejectMsg(null), 2000);

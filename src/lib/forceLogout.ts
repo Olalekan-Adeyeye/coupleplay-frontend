@@ -9,5 +9,5 @@ import { useCoupleStore } from "@/stores/coupleStore";
 export function handleForceLogout() {
   useAuthStore.getState().logout();
   useSocketStore.getState().disconnect();
-  useCoupleStore.getState().setCouple(null);
+  useCoupleStore.getState().reset();
 }

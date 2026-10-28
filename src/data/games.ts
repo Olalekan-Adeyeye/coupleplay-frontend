@@ -3,7 +3,8 @@ import rawGames from "./games.json";
 export type GameIconName =
   | "tic_tac_toe"
   | "speed_battle"
-  | "number_hunt";
+  | "number_hunt"
+  | "memory_match";
 
 export type GameStep = {
   icon: string;
@@ -45,6 +46,7 @@ export const GAME_IMAGES: Partial<Record<GameIconName, number>> = {
   tic_tac_toe: require("@/assets/images/tic_tac_toe.png"),
   speed_battle: require("@/assets/images/speed_battle.png"),
   number_hunt: require("@/assets/images/number_hunt.png"),
+  memory_match: require("@/assets/images/memory_match.png"),
 };
 
 export function getGame(id: string | undefined): Game | undefined {

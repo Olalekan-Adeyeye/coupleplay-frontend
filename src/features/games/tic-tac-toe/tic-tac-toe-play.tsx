@@ -2,18 +2,12 @@ import { Avatar } from "@/components/ui/avatar";
 import { ReactionBar } from "@/components/games/ReactionBar";
 import { LeaveGameButton } from "@/components/games/LeaveGameButton";
 import { InterstitialOverlay } from "@/components/games/InterstitialOverlay";
-import { usePartnerName } from "@/hooks/usePartnerName";
-import { useSocketStore } from "@/hooks/useSocket";
-import { useGameAbandoned } from "@/hooks/useGameAbandoned";
+import { useGameRoom } from "@/hooks/useGameRoom";
 import { useGameReactions } from "@/hooks/useGameReactions";
-import { useAuthStore } from "@/stores/authStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { router, useLocalSearchParams, useNavigation } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import { useRoomStore } from "@/stores/roomStore";
 import { ConfirmModal, InfoModal } from "@/components/ui/ConfirmModal";
-import { useConfirmModal } from "@/hooks/useConfirmModal";
 import { usePalette } from "@/hooks/usePalette";
 import Animated, {
   useAnimatedStyle,
@@ -44,59 +38,22 @@ interface TicTacToeState {
 
 export default function TicTacToePlayScreen() {
   const palette = usePalette();
-  const { roomId } = useLocalSearchParams<{ roomId: string }>();
-  const user = useAuthStore((s) => s.user);
-  const socket = useSocketStore((s) => s.socket);
-  const partnerName = usePartnerName();
-
-  const [state, setState] = useState<TicTacToeState | null>(null);
-  const [interstitial, setInterstitial] = useState<string | null>(null);
+  const {
+    roomId,
+    socket,
+    user,
+    partnerName,
+    state,
+    interstitial,
+    abandoned,
+    askLeave,
+    leaveConfirmProps,
+    cancelLeave,
+  } = useGameRoom<TicTacToeState>("TIC_TAC_TOE", {
+    roundEndMessage: ({ won, draw, partnerName: name }) =>
+      draw ? "Round draw!" : won ? "You won the round!" : `${name} won the round`,
+  });
   const { incomingReaction, rejectMsg, sendReaction } = useGameReactions(socket, roomId, user?.id);
-  const leftRef = useRef(false);
-  const roundEndTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const navigation = useNavigation();
-  const leaveConfirm = useConfirmModal();
-  const pendingActionRef = useRef<any>(null);
-
-  useEffect(() => {
-    if (!socket) return;
-    const onState = (s: TicTacToeState) => {
-      if (s.roomId !== roomId) return;
-      setState(s);
-    };
-    const onRoundEnd = (d: any) => {
-      if (d.roomId !== roomId) return;
-      const won = d.winnerId === user?.id;
-      setInterstitial(
-        d.winnerId == null
-          ? "Round draw!"
-          : won
-            ? "You won the round!"
-            : `${partnerName} won the round`,
-      );
-      if (roundEndTimer.current) clearTimeout(roundEndTimer.current);
-      roundEndTimer.current = setTimeout(() => setInterstitial(null), 1800);
-    };
-    const onFinished = (d: any) => {
-      if (d.roomId !== roomId) return;
-      leftRef.current = true;
-      const results = d.results;
-      router.replace(
-        `/games/TIC_TAC_TOE/results?winnerId=${results.winnerId ?? ""}&scores=${encodeURIComponent(JSON.stringify(results.scores))}&totalRounds=${results.totalRounds}&roundsWon=${encodeURIComponent(JSON.stringify(results.roundsWon ?? {}))}&roomId=${roomId}` as any,
-      );
-    };
-    socket.on("game:state", onState);
-    socket.on("game:round_end", onRoundEnd);
-    socket.on("game:finished", onFinished);
-    socket.emit("game:sync", { roomId });
-    return () => {
-      socket.off("game:state", onState);
-      socket.off("game:round_end", onRoundEnd);
-      socket.off("game:finished", onFinished);
-    };
-  }, [socket, roomId, user?.id, partnerName]);
-
-  const abandoned = useGameAbandoned(socket, roomId, partnerName);
 
   const place = (row: number, col: number) => {
     if (!state || state.status !== "active") return;
@@ -109,57 +66,6 @@ export default function TicTacToePlayScreen() {
     });
   };
 
-  const doLeave = (action?: any) => {
-    leftRef.current = true;
-    socket?.emit("room:leave", { roomId });
-    useRoomStore.getState().setRoom(null);
-    if (action) {
-      navigation.dispatch(action);
-    } else {
-      router.replace("/(tabs)/games");
-    }
-  };
-
-  const handleLeave = () => {
-    leaveConfirm.confirm({
-      title: "Leave game?",
-      message: "The game room will be closed for both of you.",
-      confirmLabel: "Leave",
-      variant: "danger",
-      onConfirm: () => doLeave(),
-    });
-  };
-
-  // Intercept Android back button / iOS swipe-back
-  useEffect(() => {
-    const unsub = navigation.addListener("beforeRemove" as any, (e: any) => {
-      if (leftRef.current) return;
-      // Only intercept back gestures/button (POP), let programmatic navigations through
-      if (e.data.action.type !== "POP") return;
-      e.preventDefault();
-      pendingActionRef.current = e.data.action;
-      leaveConfirm.confirm({
-        title: "Leave game?",
-        message: "The game room will be closed for both of you.",
-        confirmLabel: "Leave",
-        variant: "danger",
-        onConfirm: () => doLeave(pendingActionRef.current),
-      });
-    });
-    return () => unsub();
-  }, [navigation, roomId]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (roundEndTimer.current) clearTimeout(roundEndTimer.current);
-      if (!leftRef.current && roomId) {
-        socket?.emit("room:leave", { roomId });
-        useRoomStore.getState().setRoom(null);
-      }
-    };
-  }, [roomId, socket]);
-
   const myMark = state ? (state.marks[user?.id ?? ""] ?? "X") : "X";
   const myTurn = state?.turnUserId === user?.id;
   const myScore = state ? (state.scores[user?.id ?? ""] ?? 0) : 0;
@@ -171,7 +77,6 @@ export default function TicTacToePlayScreen() {
     <View className="flex-1 bg-paper">
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <View className="w-full max-w-[460px] flex-1 self-center px-[22px] pt-[14px] pb-[24px]">
-          {/* Top bar */}
           <View className="flex-row items-center justify-between">
             <View className="h-11 w-11" />
             <View
@@ -185,7 +90,6 @@ export default function TicTacToePlayScreen() {
             <View className="h-11 w-11" />
           </View>
 
-          {/* Players + score */}
           <View className="mt-4 flex-row items-center justify-center gap-3">
             <View
               className="flex-1 flex-row items-center gap-2.5 rounded-2xl border border-hairline bg-surface px-4 py-3"
@@ -232,7 +136,6 @@ export default function TicTacToePlayScreen() {
             </View>
           </View>
 
-          {/* Turn banner */}
           <View className="mt-4 items-center">
             {state && (
               <TurnBanner
@@ -243,7 +146,6 @@ export default function TicTacToePlayScreen() {
             )}
           </View>
 
-          {/* Board */}
           <View className="mt-5 items-center">
             <View
               className="rounded-[28px] border border-hairline bg-surface-soft p-1.5"
@@ -293,7 +195,6 @@ export default function TicTacToePlayScreen() {
             </View>
           </View>
 
-          {/* Interstitial */}
           {interstitial && (
             <InterstitialOverlay
               message={interstitial}
@@ -301,18 +202,18 @@ export default function TicTacToePlayScreen() {
             />
           )}
 
-          {/* Reactions */}
           <View className="mt-auto flex-row items-center justify-center gap-4 pb-2">
             <ReactionBar
               incomingReaction={incomingReaction}
               rejectMsg={rejectMsg}
               onReaction={(r) => sendReaction(roomId!, r)}
+              partnerName={partnerName}
             />
           </View>
-          <LeaveGameButton onPress={handleLeave} />
+          <LeaveGameButton onPress={askLeave} />
         </View>
       </SafeAreaView>
-      <ConfirmModal {...leaveConfirm.props} onCancel={leaveConfirm.cancel} />
+      <ConfirmModal {...leaveConfirmProps} onCancel={cancelLeave} />
       <InfoModal {...abandoned} />
     </View>
   );

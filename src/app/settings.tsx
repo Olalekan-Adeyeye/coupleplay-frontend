@@ -94,6 +94,7 @@ export default function SettingsScreen() {
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
   const couple = useCoupleStore((s) => s.couple);
+  const coupleLoaded = useCoupleStore((s) => s.loaded);
   const fetchCouple = useCoupleStore((s) => s.fetchCouple);
   const unlink = useCoupleStore((s) => s.unlink);
   const disconnect = useSocketStore((s) => s.disconnect);
@@ -186,6 +187,7 @@ export default function SettingsScreen() {
   const handleLogout = () => {
     disconnect();
     useAuthStore.getState().logout();
+    useCoupleStore.getState().reset();
     router.replace("/(auth)/login");
   };
 
@@ -202,6 +204,7 @@ export default function SettingsScreen() {
           await api.users.deleteAccount(token!);
           disconnect();
           useAuthStore.getState().logout();
+          useCoupleStore.getState().reset();
           router.replace("/(auth)");
         } catch (e: any) {
           errorModal.confirm({
@@ -274,7 +277,7 @@ export default function SettingsScreen() {
 
             <View className="gap-2.5">
               <SectionLabel>
-                {hasPartner ? "YOUR PARTNER" : "LINK YOUR PARTNER"}
+                {hasPartner ? "YOUR PARTNER" : coupleLoaded ? "LINK YOUR PARTNER" : ""}
               </SectionLabel>
               {hasPartner ? (
                 <>
@@ -306,7 +309,7 @@ export default function SettingsScreen() {
                     onPress={handleUnlink}
                   />
                 </>
-              ) : (
+              ) : coupleLoaded ? (
                 <>
                   <View className="flex-row rounded-xl border border-hairline bg-surface p-1">
                     {(["invite", "enter"] as const).map((t) => (
@@ -413,6 +416,11 @@ export default function SettingsScreen() {
                     </View>
                   )}
                 </>
+              ) : (
+                <View className="rounded-2xl border border-hairline bg-surface p-5">
+                  <View className="mx-auto h-3.5 w-1/3 rounded-full bg-paper" />
+                  <View className="mx-auto mt-3 h-12 w-2/5 rounded-xl bg-paper" />
+                </View>
               )}
             </View>
 

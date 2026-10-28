@@ -48,7 +48,7 @@
     "name": "Number Hunt",
     "tag": "Sharp",
     "tagColor": "#8B5CF6",
-    "desc": "Spot the numbers. Beat the clock. Outsmart your partner.",
+    "desc": "Race to tap the called number before your partner does.",
     "players": "2 Players",
     "duration": "~5 min",
     "rounds": 5,
@@ -57,23 +57,23 @@
     "iconName": "hexagon",
     "emoji": "🔢",
     "heroImage": "number_hunt",
-    "objective": "Hunt targets or race to tap first!",
+    "objective": "Tap the called number first!",
     "popular": true,
     "steps": [
       {
         "icon": "hexagon",
         "iconColor": "#8B5CF6",
-        "title": "A honeycomb grid of 100 numbers appears."
+        "title": "A honeycomb grid of 50 numbers appears."
       },
       {
-        "icon": "crosshairs",
+        "icon": "lightning-bolt",
         "iconColor": "#F59E0B",
-        "title": "Hunt: pick targets for your partner. Race: tap the called number first."
+        "title": "A number is called — race to tap it on the grid first."
       },
       {
         "icon": "trophy",
         "iconColor": "#F59E0B",
-        "title": "Most points across 5 rounds wins!"
+        "title": "Correct taps score, wrong ones cost. Most points wins!"
       }
     ],
     "stats": {
@@ -82,8 +82,7 @@
       "winRate": 0
     },
     "modes": [
-      "competitive",
-      "brain"
+      "competitive"
     ]
   },
   {
@@ -127,6 +126,49 @@
       "quick",
       "competitive",
       "brain"
+    ]
+  },
+  {
+    "id": "MEMORY_MATCH",
+    "name": "Memory Match",
+    "tag": "Brain",
+    "tagColor": "#0EA5E9",
+    "desc": "Memorize the board, then flip the pairs before your partner does.",
+    "players": "2 Players",
+    "duration": "~7 min",
+    "rounds": 3,
+    "accent": "#E0F2FE",
+    "icon": "memory_match",
+    "iconName": "cards-variant",
+    "emoji": "🃏",
+    "heroImage": "memory_match",
+    "objective": "Match more pairs than your partner!",
+    "popular": false,
+    "steps": [
+      {
+        "icon": "cards-variant",
+        "iconColor": "#0EA5E9",
+        "title": "All cards show for 5 seconds — memorize them."
+      },
+      {
+        "icon": "flip-vertical",
+        "iconColor": "#0EA5E9",
+        "title": "Take turns flipping two cards; a match stays open and keeps your turn."
+      },
+      {
+        "icon": "trophy",
+        "iconColor": "#F59E0B",
+        "title": "Most pairs across 3 rounds wins!"
+      }
+    ],
+    "stats": {
+      "gamesPlayed": 0,
+      "perfectMatches": 0,
+      "winRate": 0
+    },
+    "modes": [
+      "brain",
+      "competitive"
     ]
   }
 ]

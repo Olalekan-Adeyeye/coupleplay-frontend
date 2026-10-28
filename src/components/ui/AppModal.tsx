@@ -4,8 +4,6 @@ import { Modal as RNModal } from "react-native";
 import Animated, {
   FadeIn,
   FadeOut,
-  SlideInDown,
-  SlideOutDown,
   useSharedValue,
   useAnimatedStyle,
   withTiming,
@@ -22,7 +20,7 @@ type AppModalProps = {
 /**
  * Thin wrapper around React Native Modal that adds:
  *  - Semi-transparent backdrop (press to dismiss)
- *  - Slide-up card animation via Reanimated
+ *  - Fade in/out card animation via Reanimated
  *  - Theme-aware surface background
  */
 export function AppModal({
@@ -41,8 +39,8 @@ export function AppModal({
     >
       {visible && <Backdrop onPress={dismissible ? onClose : undefined} />}
       <Animated.View
-        entering={SlideInDown.springify().damping(28).stiffness(260)}
-        exiting={SlideOutDown.duration(200)}
+        entering={FadeIn.duration(200)}
+        exiting={FadeOut.duration(180)}
         className="absolute inset-0 items-center justify-center px-4"
         style={{ maxHeight: "85%" }}
         pointerEvents={visible ? "auto" : "none"}

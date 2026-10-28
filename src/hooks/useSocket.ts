@@ -2,8 +2,17 @@ import { io, Socket } from "socket.io-client";
 import { create } from "zustand";
 import { getSocketBaseUrl } from "@/lib/env";
 import { useCoupleStore } from "@/stores/coupleStore";
+import { useRoomStore } from "@/stores/roomStore";
 
 const SOCKET_URL = getSocketBaseUrl();
+
+// A reconnect gets a fresh server socket, so re-enter an active game room.
+function rejoinActiveRoom(socket: Socket) {
+  const room = useRoomStore.getState().room;
+  if (room?.status === "IN_PROGRESS") {
+    socket.emit("room:join", { roomId: room.id });
+  }
+}
 
 interface SocketState {
   socket: Socket | null;
@@ -35,6 +44,10 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     socket.on("connect", () => {
       set({ connected: true });
       socket.emit("authenticate", { token });
+    });
+
+    socket.on("authenticated", (res: { ok?: boolean } | undefined) => {
+      if (res?.ok) rejoinActiveRoom(socket);
     });
 
     socket.on("disconnect", () => {
