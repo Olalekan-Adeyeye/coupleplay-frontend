@@ -1,5 +1,6 @@
 import { GAME_IMAGES, getGame } from "@/data/games";
 import { isGameImplemented } from "@/features/games/registry";
+import { usePalette } from "@/hooks/usePalette";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 import { useCoupleStore } from "@/stores/coupleStore";
@@ -7,12 +8,12 @@ import { useRoomStore } from "@/stores/roomStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function GameDetailScreen() {
+  const palette = usePalette();
   const { gameType } = useLocalSearchParams<{ gameType: string }>();
   const game = getGame(gameType);
   const token = useAuthStore((s) => s.token);
@@ -26,13 +27,12 @@ export default function GameDetailScreen() {
   const hasPartner = couple?.userBId != null;
 
   const refreshActiveRoom = useCallback(async () => {
-    const coupleId = couple?.id;
-    if (!token || !coupleId) {
+    if (!token) {
       setActiveRoom(null);
       return;
     }
     try {
-      const room = await api.rooms.getActive(coupleId, token);
+      const room = await api.rooms.getActive(token, gameType);
       if (!room) {
         setActiveRoom(null);
         return;
@@ -43,7 +43,7 @@ export default function GameDetailScreen() {
       setActiveRoom(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, couple]);
+  }, [token, gameType]);
 
   useFocusEffect(
     useCallback(() => {
@@ -65,7 +65,7 @@ export default function GameDetailScreen() {
     setLoading(true);
     setError(null);
     try {
-      const active = await api.rooms.getActive(couple.id, token!);
+      const active = await api.rooms.getActive(token!, game.id);
       if (active) {
         await api.rooms.join(active.id, token!);
         setRoom(active);
@@ -99,7 +99,6 @@ export default function GameDetailScreen() {
 
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
       <SafeAreaView edges={["top"]} className="flex-1">
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -117,7 +116,7 @@ export default function GameDetailScreen() {
                 <MaterialCommunityIcons
                   name="chevron-left"
                   size={24}
-                  color="#F4F1FA"
+                  color={palette.ink}
                 />
               </Pressable>
               <Pressable
@@ -132,7 +131,7 @@ export default function GameDetailScreen() {
                 <MaterialCommunityIcons
                   name={bookmarked ? "bookmark" : "bookmark-outline"}
                   size={21}
-                  color={bookmarked ? "#946BFF" : "#B3A8C9"}
+                  color={bookmarked ? palette.primary : "#B3A8C9"}
                 />
               </Pressable>
             </View>
@@ -140,7 +139,6 @@ export default function GameDetailScreen() {
             <View className="mt-5 items-center">
               <View
                 className="h-[168px] w-[168px] items-center justify-center overflow-hidden rounded-2xl"
-                style={{ backgroundColor: game.accent }}
               >
                 {heroImage ? (
                   <Image
@@ -161,13 +159,15 @@ export default function GameDetailScreen() {
                 style={{ backgroundColor: game.tagColor + "1F" }}
               >
                 <Text
-                  className="font-ui-bold text-[11px] tracking-[1px]"
+                  className="font-ui-bold text-label tracking-[1px]"
                   style={{ color: game.tagColor }}
                 >
-                  {game.popular ? `POPULAR · ${game.tag.toUpperCase()}` : game.tag.toUpperCase()}
+                  {game.popular
+                    ? `POPULAR · ${game.tag.toUpperCase()}`
+                    : game.tag.toUpperCase()}
                 </Text>
               </View>
-              <Text className="mt-2.5 text-center font-display-bold text-[30px] leading-[36px] text-ink">
+              <Text className="mt-2.5 text-center font-display-bold text-display leading-[36px] text-ink">
                 {game.name}
               </Text>
               <Text className="mt-2 max-w-[330px] text-center font-ui-medium text-[14.5px] leading-[21px] text-ink-secondary">
@@ -179,7 +179,10 @@ export default function GameDetailScreen() {
               {[
                 { icon: "account-group" as const, label: game.players },
                 { icon: "clock-outline" as const, label: game.duration },
-                { icon: "flag-outline" as const, label: `${game.rounds} Rounds` },
+                {
+                  icon: "flag-outline" as const,
+                  label: `${game.rounds} Rounds`,
+                },
               ].map((m) => (
                 <View
                   key={m.icon}
@@ -188,7 +191,7 @@ export default function GameDetailScreen() {
                   <MaterialCommunityIcons
                     name={m.icon}
                     size={15}
-                    color="#946BFF"
+                    color={palette.primary}
                   />
                   <Text className="font-ui-semibold text-[12.5px] text-ink">
                     {m.label}
@@ -198,7 +201,7 @@ export default function GameDetailScreen() {
             </View>
 
             <View className="mt-7 gap-2.5">
-              <Text className="font-display-bold text-[19px] text-ink">
+              <Text className="font-display-bold text-title-sm text-ink">
                 How to play
               </Text>
               {game.steps.map((step, i) => (
@@ -206,7 +209,7 @@ export default function GameDetailScreen() {
                   key={i}
                   className="flex-row items-center gap-3.5 rounded-2xl border border-hairline bg-surface px-4 py-3.5"
                 >
-                  <Text className="font-display-bold text-[13px] text-ink-tertiary">
+                  <Text className="font-display-bold text-body-sm text-ink-tertiary">
                     0{i + 1}
                   </Text>
                   <View
@@ -236,20 +239,20 @@ export default function GameDetailScreen() {
                 <MaterialCommunityIcons
                   name="information-outline"
                   size={18}
-                  color="#946BFF"
+                  color={palette.primary}
                 />
-                <Text className="flex-1 font-ui-semibold text-[13px] text-ink">
+                <Text className="flex-1 font-ui-semibold text-body-sm">
                   Your partner already opened a table — hop in!
                 </Text>
               </View>
             )}
             {!hasPartner && (
-              <Text className="text-center font-ui-medium text-[13px] text-ink-secondary">
+              <Text className="text-center font-ui-medium text-body-sm text-ink-secondary">
                 Link your partner first — every game needs two players.
               </Text>
             )}
             {error && (
-              <Text className="text-center font-ui-medium text-[13px] text-error-bright">
+              <Text className="text-center font-ui-medium text-body-sm text-error-bright">
                 {error}
               </Text>
             )}

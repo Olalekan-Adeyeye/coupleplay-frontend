@@ -1,12 +1,15 @@
 import { AuthButton } from "@/components/auth/auth-button";
 import { AuthInput } from "@/components/auth/auth-input";
-import { AuthError, AuthScreen, AuthSwitch } from "@/components/auth/auth-screen";
+import {
+  AuthError,
+  AuthScreen,
+  AuthSwitch,
+} from "@/components/auth/auth-screen";
 import { PeepPicker } from "@/components/peeps/PeepPicker";
 import type { PeepId } from "@/components/peeps/peeps";
 import { useSocketStore } from "@/hooks/useSocket";
 import { useAuthStore } from "@/stores/authStore";
 import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import { Text, View } from "react-native";
 
@@ -66,8 +69,7 @@ export default function SignupPage() {
   };
 
   return (
-    <View className="flex-1">
-      <StatusBar style="light" />
+    <View className="flex-1 bg-paper">
       <AuthScreen
         eyebrow={step === 1 ? "CREATE ACCOUNT" : "CHOOSE YOUR PEEP"}
         title={step === 1 ? "Set up your account" : "Which one is you?"}
@@ -172,9 +174,9 @@ export default function SignupPage() {
         )}
         <AuthError message={error} />
         {step === 2 && (
-          <Text className="font-ui-medium text-[12px] leading-[17px] text-ink-tertiary">
-            Five male Peeps, five female Peeps — your pick is your look on
-            every table, lobby and scoreboard.
+          <Text className="font-ui-medium text-caption leading-[17px] text-ink-tertiary">
+            Five male Peeps, five female Peeps — your pick is your look on every
+            table, lobby and scoreboard.
           </Text>
         )}
       </AuthScreen>

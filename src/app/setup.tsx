@@ -7,7 +7,6 @@ import { useAuthStore } from "@/stores/authStore";
 import { useCoupleStore } from "@/stores/coupleStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -36,16 +35,14 @@ export default function SetupScreen() {
   // Realtime: partner just linked — auto-transition to "team" screen
   useEffect(() => {
     if (!socket) return;
-    const onLinked = (couple: any) => {
-      if (couple?.userAId === user?.id || couple?.userBId === user?.id) {
-        fetchCouple(token!).catch(() => {});
-      }
+    const onLinked = () => {
+      if (token) fetchCouple(token).catch(() => {});
     };
     socket.on("couple:linked", onLinked);
     return () => {
       socket.off("couple:linked", onLinked);
     };
-  }, [socket, token, user?.id, fetchCouple]);
+  }, [socket, token, fetchCouple]);
 
   const connected = couple?.userBId != null;
 
@@ -73,8 +70,7 @@ export default function SetupScreen() {
       couple?.userAId === user?.id ? couple?.userB : couple?.userA;
     return (
       <View className="flex-1 bg-paper">
-        <StatusBar style="light" />
-        <SafeAreaView edges={["top", "bottom"]} className="flex-1">
+      <SafeAreaView edges={["top", "bottom"]} className="flex-1">
           <View className="flex-1 items-center justify-center px-7">
             <PeepPair
               mine={user?.avatar}
@@ -85,11 +81,11 @@ export default function SetupScreen() {
               theirName={partner?.name ?? undefined}
               size={84}
             />
-            <Text className="mt-6 text-center font-display-bold text-[28px] leading-[34px] text-ink">
+            <Text className="mt-6 text-center font-display-bold text-display leading-[34px] text-ink">
               You&apos;re officially a{"\n"}
               <Text className="text-primary">team!</Text>
             </Text>
-            <Text className="mt-2 text-center font-ui-medium text-[15px] leading-[22px] text-ink-secondary">
+            <Text className="mt-2 text-center font-ui-medium text-body-lg leading-[22px] text-ink-secondary">
               Start playing, competing and making{"\n"}memories together.
             </Text>
             <View className="mt-8 w-full gap-2.5">
@@ -108,7 +104,6 @@ export default function SetupScreen() {
 
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <ScrollView
           contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingBottom: 24 }}
@@ -123,13 +118,13 @@ export default function SetupScreen() {
               myName={user?.name ?? undefined}
               size={76}
             />
-            <Text className="mt-5 font-ui-bold text-[11px] tracking-[1.5px] text-primary">
+            <Text className="mt-5 font-ui-bold text-label tracking-[1.5px] text-primary">
               LINK YOUR PARTNER
             </Text>
-            <Text className="mt-2 text-center font-display-bold text-[30px] leading-[36px] text-ink">
+            <Text className="mt-2 text-center font-display-bold text-display leading-[36px] text-ink">
               One code links{"\n"}your story
             </Text>
-            <Text className="mt-2 text-center font-ui-medium text-[15px] leading-[22px] text-ink-secondary">
+            <Text className="mt-2 text-center font-ui-medium text-body-lg leading-[22px] text-ink-secondary">
               Share a code or enter theirs — it takes seconds.
             </Text>
           </View>
@@ -158,7 +153,7 @@ export default function SetupScreen() {
 
           {tab === "invite" ? (
             <View className="mt-4 items-center gap-3 rounded-2xl border border-hairline bg-surface p-5">
-              <Text className="font-ui-bold text-[11px] tracking-[1.5px] text-ink-tertiary">
+              <Text className="font-ui-bold text-label tracking-[1.5px] text-ink-tertiary">
                 YOUR INVITE CODE
               </Text>
               <Text className="font-display-bold text-[36px] tracking-[5px] text-primary">
@@ -176,7 +171,7 @@ export default function SetupScreen() {
                     size={17}
                     color="#FFFFFF"
                   />
-                  <Text className="font-ui-bold text-[14px] text-white">
+                  <Text className="font-ui-bold text-body text-white">
                     Share
                   </Text>
                 </Pressable>
@@ -191,7 +186,7 @@ export default function SetupScreen() {
                     size={17}
                     color="#946BFF"
                   />
-                  <Text className="font-ui-bold text-[14px] text-primary">
+                  <Text className="font-ui-bold text-body text-primary">
                     {invite.copied ? "Copied!" : "Copy"}
                   </Text>
                 </Pressable>
@@ -214,13 +209,13 @@ export default function SetupScreen() {
                 }}
                 autoCapitalize="characters"
                 autoCorrect={false}
-                maxLength={8}
-                placeholder="e.g. 7K4P9X2Q"
+                maxLength={10}
+                placeholder="e.g. 7K4P9X2QAB"
                 returnKeyType="done"
                 onSubmitEditing={handleJoin}
               />
               {joinError && (
-                <Text className="font-ui-medium text-[13px] text-error-bright">
+                <Text className="font-ui-medium text-body-sm text-error-bright">
                   {joinError}
                 </Text>
               )}
@@ -238,7 +233,7 @@ export default function SetupScreen() {
             onPress={handleFinish}
             className="mt-4 items-center py-2 active:opacity-70"
           >
-            <Text className="font-ui-semibold text-[14px] text-ink-secondary">
+            <Text className="font-ui-semibold text-body text-ink-secondary">
               I&apos;ll do this later
             </Text>
           </Pressable>

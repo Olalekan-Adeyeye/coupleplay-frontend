@@ -1,5 +1,6 @@
 import { Image } from "expo-image";
 import { Pressable, Text, View } from "react-native";
+import { usePalette } from "@/hooks/usePalette";
 import { peepsOfGender, type PeepGender, type PeepId } from "./peeps";
 
 type PeepPickerProps = {
@@ -20,14 +21,16 @@ function Section({
   cellSize: number;
 }) {
   const presets = peepsOfGender(gender);
+  const palette = usePalette();
+
   return (
     <View>
       <Text
+        className="font-ui-bold"
         style={{
           fontSize: 11,
           letterSpacing: 1.2,
-          fontWeight: "700",
-          color: "#B3A8C9",
+          color: palette.inkTertiary,
           marginBottom: 10,
         }}
       >
@@ -55,9 +58,9 @@ function Section({
                   width: cellSize,
                   height: cellSize,
                   borderRadius: cellSize / 2,
-                  backgroundColor: selected ? "#EFEAFF" : "#1B1826",
+                  backgroundColor: selected ? palette.primarySoft : palette.chipSoft,
                   borderWidth: selected ? 2 : 1,
-                  borderColor: selected ? "#946BFF" : "#2B2539",
+                  borderColor: selected ? palette.primary : palette.chip,
                   overflow: "hidden",
                   alignItems: "center",
                   justifyContent: "flex-end",
@@ -73,7 +76,7 @@ function Section({
                 style={{
                   fontSize: 11,
                   fontWeight: selected ? "700" : "500",
-                  color: selected ? "#946BFF" : "#B3A8C9",
+                  color: selected ? palette.primary : palette.inkSecondary,
                 }}
               >
                 {p.label}

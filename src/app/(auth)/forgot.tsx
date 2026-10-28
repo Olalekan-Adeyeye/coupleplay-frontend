@@ -4,7 +4,6 @@ import { AuthError, AuthScreen, AuthSwitch } from "@/components/auth/auth-screen
 import { PeepScene } from "@/components/peeps/PeepScene";
 import { api } from "@/lib/api";
 import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import { Text, View } from "react-native";
 
@@ -35,8 +34,7 @@ export default function ForgotPage() {
   };
 
   return (
-    <View className="flex-1">
-      <StatusBar style="light" />
+    <View className="flex-1 bg-paper">
       <AuthScreen
         eyebrow="RESET PASSWORD"
         title={sent ? "Check your inbox" : "Forgot your password?"}

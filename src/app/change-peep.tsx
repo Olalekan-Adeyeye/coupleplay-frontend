@@ -1,15 +1,16 @@
 import { PeepPicker } from "@/components/peeps/PeepPicker";
 import type { PeepId } from "@/components/peeps/peeps";
+import { usePalette } from "@/hooks/usePalette";
 import { useAuthStore } from "@/stores/authStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /** Update your Peep. Persists via PATCH /users/me. */
 export default function ChangePeepScreen() {
+  const palette = usePalette();
   const user = useAuthStore((s) => s.user);
   const updateAvatar = useAuthStore((s) => s.updateAvatar);
   const [peep, setPeep] = useState<PeepId | null>(
@@ -18,6 +19,13 @@ export default function ChangePeepScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (savedTimer.current) clearTimeout(savedTimer.current);
+    };
+  }, []);
 
   const handleSave = async () => {
     if (!peep) {
@@ -29,7 +37,8 @@ export default function ChangePeepScreen() {
     try {
       await updateAvatar(peep);
       setSaved(true);
-      setTimeout(() => router.back(), 600);
+      if (savedTimer.current) clearTimeout(savedTimer.current);
+      savedTimer.current = setTimeout(() => router.back(), 600);
     } catch (e: any) {
       setError(e.message ?? "Could not save your Peep. Try again.");
     } finally {
@@ -39,7 +48,6 @@ export default function ChangePeepScreen() {
 
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <View className="flex-row items-center px-5 pt-2">
           <Pressable
@@ -52,7 +60,7 @@ export default function ChangePeepScreen() {
             <MaterialCommunityIcons
               name="chevron-left"
               size={24}
-              color="#F4F1FA"
+              color={palette.ink}
             />
           </Pressable>
         </View>
@@ -61,13 +69,13 @@ export default function ChangePeepScreen() {
           contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24 }}
           showsVerticalScrollIndicator={false}
         >
-          <Text className="mt-6 font-ui-bold text-[11px] tracking-[1.5px] text-primary">
+          <Text className="mt-6 font-ui-bold text-label tracking-[1.5px] text-primary">
             YOUR LOOK
           </Text>
-          <Text className="mt-2 font-display-bold text-[30px] leading-[36px] text-ink">
+          <Text className="mt-2 font-display-bold text-display leading-[36px] text-ink">
             Change your Peep
           </Text>
-          <Text className="mt-2 font-ui-medium text-[15px] leading-[22px] text-ink-secondary">
+          <Text className="mt-2 font-ui-medium text-body-lg leading-[22px] text-ink-secondary">
             This is how you show up on every table, lobby and leaderboard.
           </Text>
           <View className="mt-7">
@@ -82,7 +90,7 @@ export default function ChangePeepScreen() {
             />
           </View>
           {error && (
-            <Text className="mt-4 font-ui-medium text-[13px] text-error-bright">
+            <Text className="mt-4 font-ui-medium text-body-sm text-error-bright">
               {error}
             </Text>
           )}
@@ -95,7 +103,7 @@ export default function ChangePeepScreen() {
             className="items-center rounded-2xl bg-primary py-4 active:opacity-85"
             style={{ opacity: saving || !peep ? 0.6 : 1 }}
           >
-            <Text className="font-ui-bold text-[15px] text-white">
+            <Text className="font-ui-bold text-body-lg text-white">
               {saving ? "Saving…" : saved ? "Saved!" : "SAVE PEEP"}
             </Text>
           </Pressable>

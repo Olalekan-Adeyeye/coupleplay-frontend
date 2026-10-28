@@ -1,10 +1,14 @@
 import { PeepScene } from "@/components/peeps/PeepScene";
+import {
+  ActivityList,
+  ActivitySkeletonRow,
+} from "@/components/activity/activity-row";
 import { PageHeader, SectionTitle, TabScreen } from "@/components/tab-screen";
 import { HeaderButton } from "@/components/ui/header-button";
-import { ActivityItem } from "@/types/stats";
+import { usePalette } from "@/hooks/usePalette";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useEffect } from "react";
+import { useFocusEffect, router } from "expo-router";
+import { useCallback, useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useAuthStore } from "@/stores/authStore";
 import { useStatsStore } from "@/stores/statsStore";
@@ -30,80 +34,11 @@ function HeroStat({
       >
         <MaterialCommunityIcons name={icon as any} size={22} color={color} />
       </View>
-      <Text className="font-display-bold text-[22px] text-ink">{value}</Text>
-      <Text className="font-ui-medium text-[12px] text-ink-secondary">
+      <Text className="font-display-bold text-title-lg text-ink">{value}</Text>
+      <Text className="font-ui-medium text-caption text-ink-secondary">
         {label}
       </Text>
     </View>
-  );
-}
-
-function SkeletonRow() {
-  return (
-    <View className="flex-row items-center gap-3.5 rounded-2xl border border-hairline bg-surface px-4 py-3.5">
-      <View className="h-11 w-11 rounded-xl bg-paper" />
-      <View className="flex-1 gap-2">
-        <View className="h-3.5 w-2/3 rounded-full bg-paper" />
-        <View className="h-3 w-1/3 rounded-full bg-paper" />
-      </View>
-      <View className="h-3.5 w-12 rounded-full bg-paper" />
-    </View>
-  );
-}
-
-function ActivityRow({ item }: { item: ActivityItem }) {
-  return (
-    <Pressable
-      onPress={() =>
-        router.push(
-          {
-            pathname: "/activity/recap",
-            params: {
-              id: item.id,
-              title: item.title,
-              xp: item.xp,
-              time: item.time,
-              gameType: item.gameType,
-              icon: item.icon,
-              color: item.color,
-              bg: item.bg,
-            },
-          } as any,
-        )
-      }
-      accessibilityLabel={`${item.title}. View recap.`}
-      className="flex-row items-center gap-3.5 rounded-2xl border border-hairline bg-surface px-4 py-3.5 active:opacity-85"
-      style={({ pressed }) => ({
-        transform: [{ scale: pressed ? 0.98 : 1 }],
-      })}
-    >
-      <View
-        className="h-11 w-11 items-center justify-center rounded-xl"
-        style={{ backgroundColor: item.bg }}
-      >
-        <MaterialCommunityIcons
-          name={item.icon as any}
-          size={20}
-          color={item.color}
-        />
-      </View>
-      <View className="flex-1">
-        <Text className="font-ui-semibold text-[14.5px] text-ink">
-          {item.title}
-        </Text>
-        <Text className="mt-0.5 font-ui-medium text-[12px] text-ink-tertiary">
-          {item.time}
-        </Text>
-      </View>
-      <Text className="font-display-bold text-[14px] text-primary">
-        {item.xp}
-      </Text>
-      <MaterialCommunityIcons
-        name="chevron-right"
-        size={18}
-        color="#A79DBE"
-      />
-    </Pressable>
   );
 }
 
@@ -114,13 +49,31 @@ const CAREER: {
   color: string;
   suffix?: string;
 }[] = [
-  { key: "totalGames", label: "Played", icon: "gamepad-variant", color: "#946BFF" },
+  {
+    key: "totalGames",
+    label: "Played",
+    icon: "gamepad-variant",
+    color: "#946BFF",
+  },
   { key: "wins", label: "Won", icon: "trophy-outline", color: "#22C55E" },
-  { key: "losses", label: "Lost", icon: "close-circle-outline", color: "#EF4444" },
+  {
+    key: "losses",
+    label: "Lost",
+    icon: "close-circle-outline",
+    color: "#EF4444",
+  },
   { key: "draws", label: "Draws", icon: "handshake", color: "#F59E0B" },
-  { key: "winRate", label: "Win rate", icon: "chart-line", color: "#8C78FF", suffix: "%" },
-  { key: "streak", label: "Best streak", icon: "fire", color: "#F59E0B" },
+  {
+    key: "winRate",
+    label: "Win rate",
+    icon: "chart-line",
+    color: "#8C78FF",
+    suffix: "%",
+  },
+  { key: "streak", label: "Day streak", icon: "fire", color: "#F59E0B" },
 ];
+
+const PREVIEW_ITEM_COUNT = 6;
 
 export default function ActivityScreen() {
   const token = useAuthStore((s) => s.token);
@@ -129,13 +82,34 @@ export default function ActivityScreen() {
   const isLoadingActivity = useStatsStore((s) => s.isLoadingActivity);
   const fetchOverview = useStatsStore((s) => s.fetchOverview);
   const fetchActivity = useStatsStore((s) => s.fetchActivity);
+  const palette = usePalette();
 
-  useEffect(() => {
-    if (token) {
-      fetchOverview(token).catch(() => {});
-      fetchActivity(token).catch(() => {});
+  const previewGroups = useMemo(() => {
+    let remaining = PREVIEW_ITEM_COUNT;
+    const sliced: typeof activity = [];
+    for (const group of activity) {
+      if (remaining <= 0) break;
+      const items = group.items.slice(0, remaining);
+      sliced.push({ day: group.day, items });
+      remaining -= items.length;
     }
-  }, [token, fetchOverview, fetchActivity]);
+    return sliced;
+  }, [activity]);
+  const previewCount = previewGroups.reduce(
+    (sum, g) => sum + g.items.length,
+    0,
+  );
+  const totalItems = activity.reduce((sum, g) => sum + g.items.length, 0);
+  const hasMore = totalItems > previewCount;
+
+  useFocusEffect(
+    useCallback(() => {
+      if (token) {
+        fetchOverview(token).catch(() => {});
+        fetchActivity(token).catch(() => {});
+      }
+    }, [token, fetchOverview, fetchActivity]),
+  );
 
   return (
     <TabScreen>
@@ -157,7 +131,7 @@ export default function ActivityScreen() {
       />
 
       <View className="rounded-2xl border border-hairline bg-surface px-4 py-5">
-        <Text className="mb-3 px-1 font-ui-bold text-[11px] tracking-[1.5px] text-ink-tertiary">
+        <Text className="mb-3 px-1 font-ui-bold text-label tracking-[1.5px] text-ink-tertiary">
           THIS WEEK
         </Text>
         <View className="flex-row items-center">
@@ -165,63 +139,85 @@ export default function ActivityScreen() {
             value={overview.streak}
             label="Day streak"
             icon="fire"
-            tint="#F59E0B18"
-            color="#F59E0B"
+            tint={`${palette.amber}18`}
+            color={palette.amber}
           />
           <View className="h-16 w-px bg-hairline" />
           <HeroStat
             value={overview.totalGames}
             label="Games played"
             icon="gamepad-variant"
-            tint="#946BFF18"
-            color="#946BFF"
+            tint={`${palette.primary}18`}
+            color={palette.primary}
           />
           <View className="h-16 w-px bg-hairline" />
           <HeroStat
             value={overview.xp}
             label="XP earned"
             icon="lightning-bolt"
-            tint="#FF5C8A18"
-            color="#FF5C8A"
+            tint={`${palette.primary}18`}
+            color={palette.primary}
           />
         </View>
       </View>
 
       {isLoadingActivity ? (
         <View className="gap-2.5">
-          <SkeletonRow />
-          <SkeletonRow />
-          <SkeletonRow />
+          <ActivitySkeletonRow />
+          <ActivitySkeletonRow />
+          <ActivitySkeletonRow />
         </View>
       ) : activity.length === 0 ? (
         <View className="items-center rounded-2xl border border-hairline bg-surface px-6 py-8">
           <PeepScene layout="single" size={72} />
-          <Text className="mt-3 font-display-bold text-[17px] text-ink">
+          <Text className="mt-3 font-display-bold text-title-xs text-ink">
             No battles yet
           </Text>
-          <Text className="mt-1 text-center font-ui-medium text-[13px] leading-[18px] text-ink-secondary">
+          <Text className="mt-1 text-center font-ui-medium text-body-sm leading-[18px] text-ink-secondary">
             Your match history will live here once you start playing.
           </Text>
           <Pressable
             onPress={() => router.push("/(tabs)/games")}
             className="mt-4 rounded-xl bg-primary px-6 py-3 active:opacity-85"
           >
-            <Text className="font-ui-bold text-[14px] text-white">
+            <Text className="font-ui-bold text-body text-white">
               Start a game
             </Text>
           </Pressable>
         </View>
       ) : (
-        activity.map((group, groupIndex) => (
-          <View className="gap-2.5" key={`${group.day}-${groupIndex}`}>
-            <Text className="font-ui-bold text-[11px] tracking-[1.5px] text-ink-tertiary">
-              {group.day.toUpperCase()}
-            </Text>
-            {group.items.map((item) => (
-              <ActivityRow key={item.id} item={item} />
-            ))}
-          </View>
-        ))
+        <View className="gap-2.5">
+          <ActivityList groups={previewGroups} />
+          {hasMore && (
+            <Pressable
+              onPress={() => router.push("/activity/all")}
+              accessibilityLabel="Show all activity"
+              className="flex-row items-center gap-3.5 rounded-2xl border border-hairline bg-surface px-4 py-3.5 active:opacity-85"
+            >
+              <View
+                className="h-11 w-11 items-center justify-center rounded-xl"
+                style={{ backgroundColor: `${palette.primary}18` }}
+              >
+                <MaterialCommunityIcons
+                  name="history"
+                  size={20}
+                  color={palette.primary}
+                />
+              </View>
+              <Text className="flex-1 font-ui-semibold text-body text-ink">
+                Show all activity
+              </Text>
+              <Text className="font-ui-medium text-caption text-ink-tertiary">
+                {overview.totalGames > 0 ? overview.totalGames : totalItems}
+              </Text>
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={18}
+                color={palette.inkTertiary}
+              />
+            </Pressable>
+          )}
+        </View>
       )}
 
       <View className="gap-3">
@@ -233,20 +229,23 @@ export default function ActivityScreen() {
               className="w-[33.33%] items-center gap-1.5 py-4"
               style={
                 i < CAREER.length - 3
-                  ? { borderBottomWidth: 1, borderBottomColor: "#2B2539" }
+                  ? {
+                      borderBottomWidth: 0.5,
+                      borderBottomColor: palette.hairline,
+                    }
                   : undefined
               }
             >
               <MaterialCommunityIcons
                 name={c.icon as any}
                 size={24}
-                color={c.color}
+                color={c.key === "totalGames" ? palette.primary : c.color}
               />
-              <Text className="font-display-bold text-[17px] text-ink">
+              <Text className="font-display-bold text-title-xs text-ink">
                 {overview[c.key]}
                 {c.suffix ?? ""}
               </Text>
-              <Text className="font-ui-medium text-[11px] text-ink-tertiary">
+              <Text className="font-ui-medium text-label text-ink-tertiary">
                 {c.label}
               </Text>
             </View>

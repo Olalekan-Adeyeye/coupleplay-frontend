@@ -1,37 +1,28 @@
 import { useEffect, useRef, useState } from "react";
-import { View, ScrollView, Pressable, Text, Alert } from "react-native";
-import { StatusBar } from "expo-status-bar";
+import { View, ScrollView, Pressable, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Avatar } from "@/components/ui/avatar";
+import { ReactionBar } from "@/components/games/ReactionBar";
+import { LeaveGameButton } from "@/components/games/LeaveGameButton";
+import { InterstitialOverlay } from "@/components/games/InterstitialOverlay";
 import { usePartnerName } from "@/hooks/usePartnerName";
+import { useGameAbandoned } from "@/hooks/useGameAbandoned";
+import { useGameReactions } from "@/hooks/useGameReactions";
 import { useAuthStore } from "@/stores/authStore";
 import { useSocketStore } from "@/hooks/useSocket";
-
-const CARD_SHADOW = {
-  shadowColor: "#4A3B6B",
-  shadowOffset: { width: 0, height: 3 },
-  shadowOpacity: 0.08,
-  shadowRadius: 8,
-  elevation: 2,
-} as const;
-
-const BUTTON_SHADOW = {
-  shadowColor: "#946BFF",
-  shadowOffset: { width: 0, height: 5 },
-  shadowOpacity: 0.25,
-  shadowRadius: 10,
-  elevation: 4,
-} as const;
-
-const REACTIONS = ["❤️", "😂", "😭", "😈", "🔥"];
+import { useRoomStore } from "@/stores/roomStore";
+import { ConfirmModal, InfoModal } from "@/components/ui/ConfirmModal";
+import { useConfirmModal } from "@/hooks/useConfirmModal";
+import { CARD_SHADOW, BUTTON_SHADOW } from "@/lib/shadows";
+import { usePalette } from "@/hooks/usePalette";
 
 interface Question {
   id: string;
   question: string;
   options: { text: string; emoji: string }[];
-  correctIndex: number;
+  correctIndex?: number;
 }
 
 interface SpeedBattleState {
@@ -57,23 +48,31 @@ interface SpeedBattleState {
 }
 
 export default function SpeedBattlePlayScreen() {
+  const palette = usePalette();
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
   const user = useAuthStore((s) => s.user);
   const socket = useSocketStore((s) => s.socket);
   const partnerName = usePartnerName();
 
   const [state, setState] = useState<SpeedBattleState | null>(null);
+  const [revealState, setRevealState] = useState<SpeedBattleState | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(15);
-  const [incomingReaction, setIncomingReaction] = useState<string | null>(null);
+  const { incomingReaction, rejectMsg, sendReaction } = useGameReactions(socket, roomId, user?.id);
   const [interstitial, setInterstitial] = useState<string | null>(null);
-  const [rejectMsg, setRejectMsg] = useState<string | null>(null);
   const lastRound = useRef<number | null>(null);
+  const roundEndTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const leftRef = useRef(false);
+  const navigation = useNavigation();
+  const leaveConfirm = useConfirmModal();
+  const pendingActionRef = useRef<any>(null);
 
-  const question = state?.questions[state?.currentQuestionIndex ?? 0] ?? null;
-  const myAnswer = state?.answers[user?.id ?? ""] ?? null;
-  const partnerAnswer = state?.answers[
-    Object.keys(state?.answers ?? {}).find((k) => k !== user?.id) ?? ""
+  const displayState = revealState ?? state;
+  const question =
+    displayState?.questions[displayState?.currentQuestionIndex ?? 0] ?? null;
+  const myAnswer = displayState?.answers[user?.id ?? ""] ?? null;
+  const partnerAnswer = displayState?.answers[
+    Object.keys(displayState?.answers ?? {}).find((k) => k !== user?.id) ?? ""
   ] ?? null;
 
   // Socket listeners
@@ -87,12 +86,14 @@ export default function SpeedBattlePlayScreen() {
       if (lastRound.current !== s.roundNumber) {
         lastRound.current = s.roundNumber;
         setSelected(null);
+        setRevealState(null);
       }
     };
     const onRoundEnd = (d: any) => {
       if (d.roomId !== roomId) return;
       const won = d.winnerId === user?.id;
       const draw = d.winnerId == null;
+      setRevealState((d.reveal ?? null) as SpeedBattleState | null);
       setInterstitial(
         draw
           ? "No one scored!"
@@ -100,39 +101,32 @@ export default function SpeedBattlePlayScreen() {
             ? "You scored!"
             : `${partnerName} scored!`,
       );
-      setTimeout(() => setInterstitial(null), 1800);
+      if (roundEndTimer.current) clearTimeout(roundEndTimer.current);
+      roundEndTimer.current = setTimeout(() => {
+        setInterstitial(null);
+        setRevealState(null);
+      }, 1800);
     };
     const onFinished = (d: any) => {
       if (d.roomId !== roomId) return;
+      leftRef.current = true;
       const results = d.results;
       router.replace(
-        `/games/SPEED_BATTLE/results?winnerId=${results.winnerId ?? ""}&scores=${JSON.stringify(results.scores)}&totalRounds=${results.totalRounds}&roundsWon=${encodeURIComponent(JSON.stringify(results.roundsWon ?? {}))}&roomId=${roomId}` as any,
+        `/games/SPEED_BATTLE/results?winnerId=${results.winnerId ?? ""}&scores=${encodeURIComponent(JSON.stringify(results.scores))}&totalRounds=${results.totalRounds}&roundsWon=${encodeURIComponent(JSON.stringify(results.roundsWon ?? {}))}&roomId=${roomId}` as any,
       );
-    };
-    const onReaction = (d: any) => {
-      if (d.userId !== user?.id) {
-        setIncomingReaction(d.reaction);
-        setTimeout(() => setIncomingReaction(null), 1800);
-      }
-    };
-    const onReject = (d: any) => {
-      setRejectMsg(d.reason ?? "Move rejected");
-      setTimeout(() => setRejectMsg(null), 2000);
     };
     socket.on("game:state", onState);
     socket.on("game:round_end", onRoundEnd);
     socket.on("game:finished", onFinished);
-    socket.on("player:reaction", onReaction);
-    socket.on("game:reject", onReject);
     socket.emit("game:sync", { roomId });
     return () => {
       socket.off("game:state", onState);
       socket.off("game:round_end", onRoundEnd);
       socket.off("game:finished", onFinished);
-      socket.off("player:reaction", onReaction);
-      socket.off("game:reject", onReject);
     };
   }, [socket, roomId, user?.id, partnerName]);
+
+  const abandoned = useGameAbandoned(socket, roomId, partnerName);
 
   // Timer countdown. Timeout emits ONCE per question (guarded ref) —
   // never a stream of emits while the clock sits at zero.
@@ -174,50 +168,67 @@ export default function SpeedBattlePlayScreen() {
     });
   };
 
-  const handleReaction = (r: string) => {
-    socket?.emit("player:reaction", { roomId, reaction: r });
+  const doLeave = (action?: any) => {
+    leftRef.current = true;
+    socket?.emit("room:leave", { roomId });
+    useRoomStore.getState().setRoom(null);
+    if (action) {
+      navigation.dispatch(action);
+    } else {
+      router.replace("/(tabs)/games");
+    }
   };
-
-  // Partner left
-  useEffect(() => {
-    if (!socket) return;
-    const onAbandoned = (d: any) => {
-      if (d.roomId !== roomId) return;
-      Alert.alert(
-        `${partnerName} left the game`,
-        "The room was closed. Back to games?",
-        [{ text: "OK", onPress: () => router.replace("/(tabs)/games") }],
-      );
-    };
-    socket.on("game:abandoned", onAbandoned);
-    return () => {
-      socket.off("game:abandoned", onAbandoned);
-    };
-  }, [socket, roomId, partnerName]);
 
   const handleLeave = () => {
-    Alert.alert("Leave game?", "The game room will be closed for both of you.", [
-      { text: "Stay", style: "cancel" },
-      {
-        text: "Leave",
-        style: "destructive",
-        onPress: () => {
-          socket?.emit("room:leave", { roomId });
-          router.replace("/(tabs)/games");
-        },
-      },
-    ]);
+    leaveConfirm.confirm({
+      title: "Leave game?",
+      message: "The game room will be closed for both of you.",
+      confirmLabel: "Leave",
+      variant: "danger",
+      onConfirm: () => doLeave(),
+    });
   };
+
+  // Intercept Android back button / iOS swipe-back
+  useEffect(() => {
+    const unsub = navigation.addListener("beforeRemove" as any, (e: any) => {
+      if (leftRef.current) return;
+      // Only intercept back gestures/button (POP), let programmatic navigations through
+      if (e.data.action.type !== "POP") return;
+      e.preventDefault();
+      pendingActionRef.current = e.data.action;
+      leaveConfirm.confirm({
+        title: "Leave game?",
+        message: "The game room will be closed for both of you.",
+        confirmLabel: "Leave",
+        variant: "danger",
+        onConfirm: () => doLeave(pendingActionRef.current),
+      });
+    });
+    return () => unsub();
+  }, [navigation, roomId]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (roundEndTimer.current) clearTimeout(roundEndTimer.current);
+      if (!leftRef.current && roomId) {
+        socket?.emit("room:leave", { roomId });
+        useRoomStore.getState().setRoom(null);
+      }
+    };
+  }, [roomId, socket]);
 
   const myScore = state?.scores[user?.id ?? ""] ?? 0;
   const partnerScore = state
     ? (Object.entries(state.scores).find(([id]) => id !== user?.id)?.[1] ?? 0)
     : 0;
-  const showReveal = myAnswer != null && (partnerAnswer != null || secondsLeft <= 0);
+  // The server reveals the ended round via game:round_end — unrevealed
+  // question keys are hidden until then, so reveal only from revealState.
+  const showReveal = revealState != null;
 
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <View className="w-full max-w-[460px] flex-1 self-center px-[22px] pt-[14px] pb-[24px]">
           {/* Header */}
@@ -227,7 +238,7 @@ export default function SpeedBattlePlayScreen() {
               className="flex-row items-center gap-2 rounded-full bg-surface px-4 py-2"
               style={CARD_SHADOW}
             >
-              <Text className="font-ui-bold text-[13px] text-ink">
+              <Text className="font-ui-bold text-body-sm text-ink">
                 Round {state?.roundNumber ?? 1} of {state?.totalRounds ?? 5}
               </Text>
             </View>
@@ -238,7 +249,7 @@ export default function SpeedBattlePlayScreen() {
               }}
             >
               <Text
-                className="font-ui-bold text-[13px]"
+                className="font-ui-bold text-body-sm"
                 style={{ color: secondsLeft <= 5 ? "#E53E6B" : "#D97706" }}
               >
                 00:{String(Math.max(secondsLeft, 0)).padStart(2, "0")}
@@ -255,12 +266,12 @@ export default function SpeedBattlePlayScreen() {
               <Avatar avatar={user?.avatar} name={user?.name} size={40} />
               <View className="flex-1">
                 <Text
-                  className="font-display-bold text-[13px] text-ink"
+                  className="font-display-bold text-body-sm text-ink"
                   numberOfLines={1}
                 >
                   You
                 </Text>
-                <Text className="font-ui-medium text-[11px] text-ink-tertiary">
+                <Text className="font-ui-medium text-label text-ink-tertiary">
                   {myScore} pts
                 </Text>
               </View>
@@ -272,7 +283,7 @@ export default function SpeedBattlePlayScreen() {
                   }}
                 >
                   <Text
-                    className="font-ui-bold text-[11px]"
+                    className="font-ui-bold text-label"
                     style={{ color: myAnswer.correct ? "#16A34A" : "#DC2626" }}
                   >
                     {myAnswer.correct ? "✓" : "✗"}
@@ -281,7 +292,7 @@ export default function SpeedBattlePlayScreen() {
               )}
             </View>
 
-            <Text className="font-display-bold text-[13px] text-ink-tertiary">
+            <Text className="font-display-bold text-body-sm text-ink-tertiary">
               VS
             </Text>
 
@@ -292,12 +303,12 @@ export default function SpeedBattlePlayScreen() {
               <Avatar name={partnerName} size={40} />
               <View className="flex-1">
                 <Text
-                  className="font-display-bold text-[13px] text-ink"
+                  className="font-display-bold text-body-sm text-ink"
                   numberOfLines={1}
                 >
                   {partnerName}
                 </Text>
-                <Text className="font-ui-medium text-[11px] text-ink-tertiary">
+                <Text className="font-ui-medium text-label text-ink-tertiary">
                   {partnerScore} pts
                 </Text>
               </View>
@@ -305,18 +316,24 @@ export default function SpeedBattlePlayScreen() {
                 <View
                   className="rounded-full px-2 py-0.5"
                   style={{
-                    backgroundColor: partnerAnswer.correct
-                      ? "#DCFCE7"
-                      : "#FEE2E2",
+                    backgroundColor: revealState
+                      ? partnerAnswer.correct
+                        ? "#DCFCE7"
+                        : "#FEE2E2"
+                      : palette.primarySoft,
                   }}
                 >
                   <Text
-                    className="font-ui-bold text-[11px]"
+                    className="font-ui-bold text-label"
                     style={{
-                      color: partnerAnswer.correct ? "#16A34A" : "#DC2626",
+                      color: revealState
+                        ? partnerAnswer.correct
+                          ? "#16A34A"
+                          : "#DC2626"
+                        : palette.primary,
                     }}
                   >
-                    {partnerAnswer.correct ? "✓" : "✗"}
+                    {revealState ? (partnerAnswer.correct ? "✓" : "✗") : "…"}
                   </Text>
                 </View>
               )}
@@ -340,7 +357,7 @@ export default function SpeedBattlePlayScreen() {
                   color="#F59E0B"
                 />
               </View>
-              <Text className="text-center font-display-bold text-[19px] leading-[27px] text-ink">
+              <Text className="text-center font-display-bold text-title-sm leading-[27px] text-ink">
                 {question?.question ?? "Loading..."}
               </Text>
             </View>
@@ -387,9 +404,9 @@ export default function SpeedBattlePlayScreen() {
                   disabled={!!myAnswer || secondsLeft <= 0}
                   className={`flex-row items-center gap-3 rounded-2xl border-[1.5px] px-4 py-3.5 ${bg} ${border} active:opacity-80`}
                 >
-                  <Text className="text-[20px]">{opt.emoji}</Text>
+                  <Text className="text-title-sm">{opt.emoji}</Text>
                   <Text
-                    className={`flex-1 font-ui-semibold text-[15px] ${textColor}`}
+                    className={`flex-1 font-ui-semibold text-body-lg ${textColor}`}
                   >
                     {opt.text}
                   </Text>
@@ -428,10 +445,10 @@ export default function SpeedBattlePlayScreen() {
                     color="#F59E0B"
                   />
                 </View>
-                <Text className="font-display-bold text-[18px] text-ink">
+                <Text className="font-display-bold text-title-xs text-ink">
                   Answer locked in!
                 </Text>
-                <Text className="text-center font-ui-medium text-[13px] text-ink-secondary">
+                <Text className="text-center font-ui-medium text-body-sm text-ink-secondary">
                   Waiting for {partnerName}...
                 </Text>
               </View>
@@ -456,7 +473,7 @@ export default function SpeedBattlePlayScreen() {
                     color={myAnswer?.correct ? "#16A34A" : "#F87171"}
                   />
                 </View>
-                <Text className="font-display-bold text-[18px] text-ink">
+                <Text className="font-display-bold text-title-xs text-ink">
                   {myAnswer?.correct
                     ? state?.firstCorrectId === user?.id
                       ? "First to answer! +3 pts"
@@ -469,74 +486,25 @@ export default function SpeedBattlePlayScreen() {
 
           {/* Reactions + leave */}
           <View className="flex-row items-center justify-center gap-3 pb-2 pt-2">
-            {incomingReaction && (
-              <View className="absolute -top-12 rounded-full bg-accent-soft px-4 py-2">
-                <Text className="text-[20px]">{incomingReaction}</Text>
-              </View>
-            )}
-            {rejectMsg && (
-              <View className="absolute -top-12 rounded-full bg-red-500/20 px-4 py-2">
-                <Text className="font-ui-semibold text-[13px] text-red-400">{rejectMsg}</Text>
-              </View>
-            )}
-            {REACTIONS.map((r) => (
-              <Pressable
-                key={r}
-                onPress={() => handleReaction(r)}
-                hitSlop={8}
-                className="h-11 w-11 items-center justify-center rounded-full active:opacity-70"
-              >
-                <Text className="text-[22px]">{r}</Text>
-              </Pressable>
-            ))}
+            <ReactionBar
+              incomingReaction={incomingReaction}
+              rejectMsg={rejectMsg}
+              onReaction={(r) => sendReaction(roomId!, r)}
+            />
           </View>
-          <Pressable
-            onPress={handleLeave}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel="Leave game"
-            className="items-center py-1 active:opacity-70"
-          >
-            <Text className="font-ui-semibold text-[14px] text-red-500">
-              Leave Game
-            </Text>
-          </Pressable>
+          <LeaveGameButton onPress={handleLeave} />
         </View>
       </SafeAreaView>
 
       {/* Interstitial overlay */}
       {interstitial && (
-        <View className="absolute inset-0 z-10 items-center justify-center bg-paper/90">
-          <View
-            className="items-center gap-3 rounded-3xl bg-surface px-10 py-8"
-            style={CARD_SHADOW}
-          >
-            <View
-              className="h-16 w-16 items-center justify-center rounded-full"
-              style={{
-                backgroundColor: interstitial.includes("scored")
-                  ? "#F59E0B1F"
-                  : "#946BFF1F",
-              }}
-            >
-              <MaterialCommunityIcons
-                name={
-                  interstitial.includes("scored")
-                    ? "lightning-bolt"
-                    : "handshake"
-                }
-                size={30}
-                color={
-                  interstitial.includes("scored") ? "#F59E0B" : "#946BFF"
-                }
-              />
-            </View>
-            <Text className="font-display-bold text-[20px] text-ink">
-              {interstitial}
-            </Text>
-          </View>
-        </View>
+        <InterstitialOverlay
+          message={interstitial}
+          peep={user?.avatar}
+        />
       )}
+      <ConfirmModal {...leaveConfirm.props} onCancel={leaveConfirm.cancel} />
+      <InfoModal {...abandoned} />
     </View>
   );
 }

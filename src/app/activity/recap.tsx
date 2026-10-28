@@ -3,12 +3,13 @@ import { isGameImplemented } from "@/features/games/registry";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { usePalette } from "@/hooks/usePalette";
 
 /** Match recap from a timeline row. Params-driven — no extra fetch. */
 export default function RecapScreen() {
+  const palette = usePalette();
   const params = useLocalSearchParams<{
     id: string;
     title: string;
@@ -23,6 +24,10 @@ export default function RecapScreen() {
   const game = getGame(params.gameType);
   const art = game?.heroImage ? GAME_IMAGES[game.heroImage] : undefined;
   const implemented = game ? isGameImplemented(game.id) : false;
+  const iconName =
+    params.icon && params.icon in MaterialCommunityIcons.glyphMap
+      ? params.icon
+      : "gamepad-variant";
 
   const handleRematch = () => {
     if (!game) return;
@@ -32,7 +37,6 @@ export default function RecapScreen() {
 
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <View className="w-full max-w-[460px] flex-1 self-center px-[22px] pt-[10px] pb-6">
           <View className="flex-row items-center">
@@ -46,7 +50,7 @@ export default function RecapScreen() {
               <MaterialCommunityIcons
                 name="chevron-left"
                 size={24}
-                color="#F4F1FA"
+                color={palette.ink}
               />
             </Pressable>
           </View>
@@ -54,7 +58,7 @@ export default function RecapScreen() {
           <View className="mt-6 items-center">
             <View
               className="h-[120px] w-[120px] items-center justify-center overflow-hidden rounded-2xl"
-              style={{ backgroundColor: game?.accent ?? "#EFEAFF" }}
+              style={{ backgroundColor: game?.accent ?? palette.primarySoft }}
             >
               {art ? (
                 <Image
@@ -64,16 +68,16 @@ export default function RecapScreen() {
                 />
               ) : (
                 <MaterialCommunityIcons
-                  name={(params.icon ?? "gamepad-variant") as any}
+                  name={iconName as any}
                   size={52}
-                  color={params.color ?? "#946BFF"}
+                  color={params.color ?? palette.primary}
                 />
               )}
             </View>
-            <Text className="mt-4 text-center font-display-bold text-[24px] leading-[30px] text-ink">
+            <Text className="mt-4 text-center font-display-bold text-title-lg leading-[30px] text-ink">
               {params.title ?? "Match recap"}
             </Text>
-            <Text className="mt-1 font-ui-medium text-[13px] text-ink-tertiary">
+            <Text className="mt-1 font-ui-medium text-body-sm text-ink-tertiary">
               {params.time ?? ""}
             </Text>
           </View>
@@ -86,11 +90,11 @@ export default function RecapScreen() {
                   size={19}
                   color="#F59E0B"
                 />
-                <Text className="font-ui-semibold text-[14px] text-ink">
+                <Text className="font-ui-semibold text-body text-ink">
                   XP earned
                 </Text>
               </View>
-              <Text className="font-display-bold text-[16px] text-primary">
+              <Text className="font-display-bold text-title-xs text-primary">
                 {params.xp ?? "—"}
               </Text>
             </View>
@@ -100,13 +104,13 @@ export default function RecapScreen() {
                   <MaterialCommunityIcons
                     name="gamepad-variant"
                     size={19}
-                    color="#946BFF"
+                    color={palette.primary}
                   />
-                  <Text className="font-ui-semibold text-[14px] text-ink">
+                  <Text className="font-ui-semibold text-body text-ink">
                     Game
                   </Text>
                 </View>
-                <Text className="font-ui-semibold text-[14px] text-ink-secondary">
+                <Text className="font-ui-semibold text-body text-ink-secondary">
                   {game.name}
                 </Text>
               </View>
@@ -125,7 +129,7 @@ export default function RecapScreen() {
                 size={19}
                 color="#FFFFFF"
               />
-              <Text className="font-ui-bold text-[15px] text-white">
+              <Text className="font-ui-bold text-body-lg text-white">
                 {implemented ? "Rematch" : "View game"}
               </Text>
             </Pressable>
@@ -133,7 +137,7 @@ export default function RecapScreen() {
               onPress={() => router.replace("/(tabs)/activity")}
               className="items-center py-2 active:opacity-70"
             >
-              <Text className="font-ui-semibold text-[14px] text-ink-secondary">
+              <Text className="font-ui-semibold text-body text-ink-secondary">
                 Back to Activity
               </Text>
             </Pressable>

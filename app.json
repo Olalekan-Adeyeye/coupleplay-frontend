@@ -26,6 +26,7 @@
     },
     "plugins": [
       "expo-router",
+      "./plugins/with-android-abi-splits",
       [
         "expo-splash-screen",
         {
@@ -33,7 +34,9 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 140
         }
-      ]
+      ],
+      "expo-image",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

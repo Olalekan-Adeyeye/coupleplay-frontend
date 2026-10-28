@@ -1,41 +1,76 @@
 import "../../global.css";
 
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { OfflineBanner } from "@/components/OfflineBanner";
 import { SplashOverlay } from "@/components/splash/splash-overlay";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { usePalette } from "@/hooks/usePalette";
 import { useSocketStore } from "@/hooks/useSocket";
 import { useAuthStore } from "@/stores/authStore";
+import { setUnauthorizedHandler } from "@/lib/api";
 import {
-  NunitoSans_400Regular,
-  NunitoSans_500Medium,
-  NunitoSans_600SemiBold,
-  NunitoSans_600SemiBold_Italic,
-  NunitoSans_700Bold,
-  NunitoSans_700Bold_Italic,
-  NunitoSans_800ExtraBold,
-} from "@expo-google-fonts/nunito-sans";
+  Urbanist_400Regular,
+  Urbanist_500Medium,
+  Urbanist_600SemiBold,
+  Urbanist_600SemiBold_Italic,
+  Urbanist_700Bold,
+  Urbanist_700Bold_Italic,
+  Urbanist_800ExtraBold,
+} from "@expo-google-fonts/urbanist";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useCallback, useEffect, useState } from "react";
-import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { api } from "@/lib/api";
+import { handleForceLogout } from "@/lib/forceLogout";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const connect = useSocketStore((s) => s.connect);
+  const disconnect = useSocketStore((s) => s.disconnect);
   const [splashDone, setSplashDone] = useState(false);
+  const [rehydrated, setRehydrated] = useState(false);
   const [fontsLoaded, fontError] = useFonts({
-    NunitoSans_400Regular,
-    NunitoSans_500Medium,
-    NunitoSans_600SemiBold,
-    NunitoSans_700Bold,
-    NunitoSans_800ExtraBold,
-    NunitoSans_700Bold_Italic,
-    NunitoSans_600SemiBold_Italic,
+    Urbanist_400Regular,
+    Urbanist_500Medium,
+    Urbanist_600SemiBold,
+    Urbanist_700Bold,
+    Urbanist_800ExtraBold,
+    Urbanist_700Bold_Italic,
+    Urbanist_600SemiBold_Italic,
   });
 
   const fontsReady = fontsLoaded || !!fontError;
+
+  useEffect(() => {
+    setUnauthorizedHandler(handleForceLogout);
+
+    let cancelled = false;
+    void (async () => {
+      await useAuthStore.getState().hydrateToken();
+      if (cancelled) return;
+      const unsub = useAuthStore.persist.onFinishHydration(() => {
+        setRehydrated(true);
+      });
+      useAuthStore.persist.rehydrate();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!rehydrated) return;
+    const { token, isAuthenticated } = useAuthStore.getState();
+    if (isAuthenticated && token) {
+      api.auth.getProfile(token).catch(() => handleForceLogout());
+    } else if (isAuthenticated && !token) {
+      handleForceLogout();
+    }
+  }, [rehydrated]);
 
   useEffect(() => {
     if (!fontsReady) return;
@@ -50,28 +85,47 @@ export default function RootLayout() {
   useEffect(() => {
     if (isAuthenticated && token) {
       connect(token);
+    } else {
+      disconnect();
     }
-  }, [isAuthenticated, token, connect]);
+  }, [isAuthenticated, token, connect, disconnect]);
 
   const handleSplashFinish = useCallback(() => {
     SplashScreen.hideAsync();
     setSplashDone(true);
   }, []);
 
-  if (!fontsReady) return null;
+  const paper = usePalette().paper;
+
+  if (!fontsReady || !rehydrated) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#100E17" }}>
-      <View style={{ flex: 1, backgroundColor: "#100E17" }}>
-        <Stack screenOptions={{ headerShown: false }}>
-          {isAuthenticated ? (
-            <Stack.Screen name="(tabs)" />
-          ) : (
-            <Stack.Screen name="(auth)" />
-          )}
-        </Stack>
-        {!splashDone && <SplashOverlay onFinish={handleSplashFinish} />}
-      </View>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: paper }}>
+      <ErrorBoundary>
+        <ThemeProvider>
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: paper } }}>
+            <Stack.Screen name="index" />
+            {isAuthenticated ? (
+              <Stack.Screen name="(tabs)" />
+            ) : (
+              <Stack.Screen name="(auth)" />
+            )}
+            <Stack.Screen name="activity/recap" />
+            <Stack.Screen name="activity/all" />
+            <Stack.Screen name="change-peep" />
+            <Stack.Screen name="games/[gameType]" />
+            <Stack.Screen name="games/[gameType]/play" />
+            <Stack.Screen name="games/[gameType]/results" />
+            <Stack.Screen name="games/[gameType]/waiting" />
+            <Stack.Screen name="games/soon" />
+            <Stack.Screen name="join/[code]" />
+            <Stack.Screen name="settings" />
+            <Stack.Screen name="setup" />
+          </Stack>
+          <OfflineBanner />
+          {!splashDone && <SplashOverlay onFinish={handleSplashFinish} />}
+        </ThemeProvider>
+      </ErrorBoundary>
     </GestureHandlerRootView>
   );
 }

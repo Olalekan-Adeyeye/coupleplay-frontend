@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { View } from "react-native";
+import { usePalette } from "@/hooks/usePalette";
 import { PeepAvatar } from "./PeepAvatar";
 import { PEEP_PRESETS, type PeepId } from "./peeps";
 
@@ -9,6 +10,7 @@ type PeepSceneProps = {
   peeps?: (string | PeepId | null)[];
   seeds?: (string | null)[];
   size?: number;
+  badge?: string;
 };
 
 /**
@@ -20,7 +22,9 @@ export function PeepScene({
   peeps = [],
   seeds = [],
   size = 96,
+  badge = "sword-cross",
 }: PeepSceneProps) {
+  const palette = usePalette();
   const fallback = PEEP_PRESETS.map((p) => p.id);
   const a = peeps[0] ?? fallback[0];
   const b = peeps[1] ?? fallback[6];
@@ -48,26 +52,26 @@ export function PeepScene({
             width: 40,
             height: 40,
             borderRadius: 20,
-            backgroundColor: "#F4F1FA",
+            backgroundColor: palette.ink,
             marginHorizontal: -10,
             zIndex: 10,
             alignItems: "center",
             justifyContent: "center",
             borderWidth: 2,
-            borderColor: "#FFFFFF",
+            borderColor: palette.paper,
           }}
         >
           <MaterialCommunityIcons
-            name="sword-cross"
+            name={badge as any}
             size={18}
-            color="#100E17"
+            color={palette.paper}
           />
         </View>
         <PeepAvatar
           peep={b}
           seed={seeds[1]}
           size={size}
-          ring="#FFFFFF"
+          ring={palette.paper}
           mirror
         />
       </View>

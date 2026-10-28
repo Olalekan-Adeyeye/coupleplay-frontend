@@ -6,6 +6,8 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
+import { usePalette } from "@/hooks/usePalette";
+import { useRNResolvedTheme } from "@/hooks/usePaletteResolver";
 
 type AuthButtonProps = {
   title: string;
@@ -38,6 +40,8 @@ export function AuthButton({
   showArrow,
 }: AuthButtonProps) {
   const pressed = useSharedValue(0);
+  const palette = usePalette();
+  const isLight = useRNResolvedTheme() === "light";
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: 1 - pressed.value * 0.02 }],
@@ -51,47 +55,21 @@ export function AuthButton({
   // Brand mapping — primary everywhere the eye should land
   const bg = (() => {
     if (backgroundColor) return backgroundColor;
-    if (isPrimary) return "#946BFF";
+    if (isPrimary) return palette.primary;
     if (isWhite) return "#FFFFFF";
-    if (isOutline) return "rgba(148,107,255,0.09)";
+    if (isOutline) return isLight ? "rgba(124,84,232,0.06)" : "rgba(148,107,255,0.09)";
     return "transparent";
   })();
 
   const fg = (() => {
     if (textColor) return textColor;
     if (isPrimary) return "#FFFFFF";
-    if (isWhite) return "#100E17";
-    if (isOutline) return "#F4F1FA";
-    return "#F4F1FA";
+    return palette.ink;
   })();
 
   const borderColor = (() => {
-    if (isOutline) return "rgba(148,107,255,0.32)";
-    if (isWhite) return "transparent";
+    if (isOutline) return isLight ? `${palette.primary}73` : `${palette.primary}52`;
     return "transparent";
-  })();
-
-  const shadow = (() => {
-    if (backgroundColor) return undefined;
-    if (isPrimary) {
-      return {
-        shadowColor: "#946BFF",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.32,
-        shadowRadius: 20,
-        elevation: 8,
-      } as const;
-    }
-    if (isWhite) {
-      return {
-        shadowColor: "#000000",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.16,
-        shadowRadius: 20,
-        elevation: 8,
-      } as const;
-    }
-    return undefined;
   })();
 
   return (
@@ -119,20 +97,22 @@ export function AuthButton({
             justifyContent: "center",
             paddingHorizontal: 24,
           },
-          shadow,
         ]}
       >
         {loading ? (
           <ActivityIndicator color={fg} size="small" />
         ) : (
-          <View className="flex-row items-center justify-center" style={{ gap: 10 }}>
+          <View
+            className="flex-row items-center justify-center"
+            style={{ gap: 10 }}
+          >
             {icon && (
               <MaterialCommunityIcons name={icon} size={18} color={fg} />
             )}
             <Text
               style={{
                 color: fg,
-                fontFamily: "NunitoSans_700Bold",
+                fontFamily: "Urbanist_700Bold",
                 fontSize: 14.5,
                 letterSpacing: isPrimary || isWhite ? 0.7 : 0.6,
                 fontWeight: "700",
@@ -158,7 +138,11 @@ export function AuthButton({
                   marginLeft: 2,
                 }}
               >
-                <MaterialCommunityIcons name="chevron-right" size={14} color={fg} />
+                <MaterialCommunityIcons
+                  name="chevron-right"
+                  size={14}
+                  color={fg}
+                />
               </View>
             )}
           </View>

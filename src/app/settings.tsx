@@ -1,16 +1,17 @@
 import { PeepAvatar } from "@/components/peeps/PeepAvatar";
 import { CoupleAvatars } from "@/components/ui/couple-avatars";
+import { ConfirmModal, InfoModal } from "@/components/ui/ConfirmModal";
+import { useConfirmModal } from "@/hooks/useConfirmModal";
 import { useInviteAction } from "@/hooks/useInviteAction";
 import { useSocketStore } from "@/hooks/useSocket";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 import { useCoupleStore } from "@/stores/coupleStore";
+import { useThemeStore, type ThemePreference } from "@/stores/themeStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useEffect, useState, type ReactNode } from "react";
 import {
-  Alert,
   Pressable,
   ScrollView,
   Text,
@@ -18,10 +19,12 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { usePalette } from "@/hooks/usePalette";
+import { formatDate } from "@/lib/format";
 
 function SectionLabel({ children }: { children: string }) {
   return (
-    <Text className="font-ui-bold text-[11px] tracking-[1.5px] text-ink-tertiary">
+    <Text className="font-ui-bold text-label tracking-[1.5px] text-ink-tertiary">
       {children}
     </Text>
   );
@@ -46,6 +49,7 @@ function Row({
   danger?: boolean;
   right?: ReactNode;
 }) {
+  const palette = usePalette();
   return (
     <Pressable
       onPress={onPress}
@@ -64,8 +68,7 @@ function Row({
       </View>
       <View className="flex-1">
         <Text
-          className="font-ui-semibold text-[14.5px]"
-          style={{ color: danger ? "#F87171" : "#F4F1FA" }}
+          className={`font-ui-semibold text-[14.5px] ${danger ? "text-error-bright" : "text-ink"}`}
         >
           {title}
         </Text>
@@ -79,7 +82,7 @@ function Row({
         <MaterialCommunityIcons
           name="chevron-right"
           size={19}
-          color="#A79DBE"
+          color={palette.inkTertiary}
         />
       ))}
     </Pressable>
@@ -87,6 +90,7 @@ function Row({
 }
 
 export default function SettingsScreen() {
+  const palette = usePalette();
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
   const couple = useCoupleStore((s) => s.couple);
@@ -99,6 +103,11 @@ export default function SettingsScreen() {
   const [joinInput, setJoinInput] = useState("");
   const [joinError, setJoinError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const themePreference = useThemeStore((s) => s.preference);
+  const setThemePreference = useThemeStore((s) => s.setPreference);
+  const unlinkConfirm = useConfirmModal();
+  const deleteConfirm = useConfirmModal();
+  const errorModal = useConfirmModal();
 
   useEffect(() => {
     if (token) fetchCouple(token).catch(() => {});
@@ -119,16 +128,14 @@ export default function SettingsScreen() {
   // Realtime link: partner just linked — update couple immediately
   useEffect(() => {
     if (!socket) return;
-    const onLinked = (couple: any) => {
-      if (couple?.userAId === user?.id || couple?.userBId === user?.id) {
-        fetchCouple(token!).catch(() => {});
-      }
+    const onLinked = () => {
+      if (token) fetchCouple(token).catch(() => {});
     };
     socket.on("couple:linked", onLinked);
     return () => {
       socket.off("couple:linked", onLinked);
     };
-  }, [socket, token, user?.id, fetchCouple]);
+  }, [socket, token, fetchCouple]);
 
   const hasPartner = couple?.userBId != null;
   const isUserA = couple?.userAId === user?.id;
@@ -154,69 +161,63 @@ export default function SettingsScreen() {
   };
 
   const handleUnlink = () => {
-    Alert.alert(
-      "Unlink partner?",
-      "You'll keep your account and stats, but your shared story ends here.",
-      [
-        { text: "Keep story", style: "cancel" },
-        {
-          text: "Unlink",
-          style: "destructive",
-          onPress: async () => {
-            setBusy(true);
-            try {
-              await unlink(token!);
-              // Notify partner in realtime
-              socket?.emit("couples:unlink");
-            } catch (e: any) {
-              Alert.alert("Error", e.message);
-            } finally {
-              setBusy(false);
-            }
-          },
-        },
-      ],
-    );
+    unlinkConfirm.confirm({
+      title: "Unlink partner?",
+      message: "You'll keep your account and stats, but your shared story ends here.",
+      confirmLabel: "Unlink",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await unlink(token!);
+          socket?.emit("couples:unlink");
+        } catch (e: any) {
+          errorModal.confirm({
+            title: "Error",
+            message: e.message,
+            confirmLabel: "OK",
+            variant: "error",
+            onConfirm: () => {},
+          });
+        }
+      },
+    });
   };
 
   const handleLogout = () => {
     disconnect();
     useAuthStore.getState().logout();
-    router.replace("/(auth)");
+    router.replace("/(auth)/login");
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      "Delete account?",
-      "This permanently removes your account and stats. There’s no undo.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            setBusy(true);
-            try {
-              // Notify partner in realtime BEFORE disconnecting
-              socket?.emit("couples:unlink");
-              await new Promise((r) => setTimeout(r, 300));
-              await api.users.deleteAccount(token!);
-              disconnect();
-              useAuthStore.getState().logout();
-              router.replace("/(auth)");
-            } catch (e: any) {
-              Alert.alert("Error", e.message);
-              setBusy(false);
-            }
-          },
-        },
-      ],
-    );
+    deleteConfirm.confirm({
+      title: "Delete account?",
+      message: "This permanently removes your account and stats. There's no undo.",
+      confirmLabel: "Delete",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          socket?.emit("couples:unlink");
+          await new Promise((r) => setTimeout(r, 300));
+          await api.users.deleteAccount(token!);
+          disconnect();
+          useAuthStore.getState().logout();
+          router.replace("/(auth)");
+        } catch (e: any) {
+          errorModal.confirm({
+            title: "Error",
+            message: e.message,
+            confirmLabel: "OK",
+            variant: "error",
+            onConfirm: () => {},
+          });
+        }
+      },
+    });
   };
 
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -234,10 +235,10 @@ export default function SettingsScreen() {
                 <MaterialCommunityIcons
                   name="chevron-left"
                   size={26}
-                  color="#F4F1FA"
+                  color={palette.ink}
                 />
               </Pressable>
-              <Text className="font-display-bold text-[22px] text-ink">
+              <Text className="font-display-bold text-title-lg text-ink">
                 Settings
               </Text>
               <View className="h-11 w-11" />
@@ -253,7 +254,7 @@ export default function SettingsScreen() {
                   size={52}
                 />
                 <View className="flex-1">
-                  <Text className="font-display-bold text-[16px] text-ink">
+                  <Text className="font-display-bold text-title-xs text-ink">
                     {user?.name ?? "Player"}
                   </Text>
                   <Text className="font-ui-medium text-[12.5px] text-ink-secondary">
@@ -263,8 +264,8 @@ export default function SettingsScreen() {
               </View>
               <Row
                 icon="account-edit-outline"
-                iconTint="#EFEAFF"
-                iconColor="#946BFF"
+                iconTint={palette.primarySoft}
+                iconColor={palette.primary}
                 title="Change your Peep"
                 subtitle="Your avatar everywhere"
                 onPress={() => router.push("/change-peep" as any)}
@@ -285,14 +286,14 @@ export default function SettingsScreen() {
                       myName={user?.name ?? undefined}
                       theirName={partner?.name ?? undefined}
                     />
-                    <Text className="mt-3 font-ui-semibold text-[14px] text-ink">
+                    <Text className="mt-3 font-ui-semibold text-body text-ink">
                       {user?.name?.split(" ")[0]} &{" "}
                       {partner?.name?.split(" ")[0]}
                     </Text>
                     <Text className="mt-0.5 font-ui-medium text-[12.5px] text-ink-secondary">
                       Together since{" "}
                       {couple?.createdAt
-                        ? new Date(couple.createdAt).toLocaleDateString()
+                        ? formatDate(couple.createdAt)
                         : "—"}
                     </Text>
                   </View>
@@ -315,7 +316,7 @@ export default function SettingsScreen() {
                         className="flex-1 rounded-lg py-2.5 active:opacity-80"
                         style={{
                           backgroundColor:
-                            tab === t ? "#946BFF" : "transparent",
+                            tab === t ? palette.primary : "transparent",
                         }}
                       >
                         <Text
@@ -332,7 +333,7 @@ export default function SettingsScreen() {
 
                   {tab === "invite" ? (
                     <View className="items-center gap-3 rounded-2xl border border-hairline bg-surface p-5">
-                      <Text className="font-ui-bold text-[11px] tracking-[1.5px] text-ink-tertiary">
+                      <Text className="font-ui-bold text-label tracking-[1.5px] text-ink-tertiary">
                         YOUR INVITE CODE
                       </Text>
                       <Text className="font-display-bold text-[34px] tracking-[4px] text-primary">
@@ -350,7 +351,7 @@ export default function SettingsScreen() {
                             size={17}
                             color="#FFFFFF"
                           />
-                          <Text className="font-ui-bold text-[14px] text-white">
+                          <Text className="font-ui-bold text-body text-white">
                             Share
                           </Text>
                         </Pressable>
@@ -363,9 +364,9 @@ export default function SettingsScreen() {
                           <MaterialCommunityIcons
                             name="content-copy"
                             size={17}
-                            color="#946BFF"
+                            color={palette.primary}
                           />
-                          <Text className="font-ui-bold text-[14px] text-primary">
+                          <Text className="font-ui-bold text-body text-primary">
                             {invite.copied ? "Copied!" : "Copy"}
                           </Text>
                         </Pressable>
@@ -388,8 +389,8 @@ export default function SettingsScreen() {
                         placeholderTextColor="#A79DBE"
                         autoCapitalize="characters"
                         autoCorrect={false}
-                        maxLength={8}
-                        className="w-full rounded-xl border border-hairline bg-paper px-4 py-3.5 text-center font-ui-bold text-[17px] tracking-[3px] text-ink"
+                        maxLength={10}
+                        className="w-full rounded-xl border border-hairline bg-paper px-4 py-3.5 text-center font-ui-bold text-title-xs tracking-[3px] text-ink"
                       />
                       {joinError && (
                         <Text className="text-center font-ui-medium text-[12.5px] text-error-bright">
@@ -416,11 +417,50 @@ export default function SettingsScreen() {
             </View>
 
             <View className="gap-2.5">
+              <SectionLabel>APPEARANCE</SectionLabel>
+              {(["system", "dark", "light"] as const).map((t) => (
+                <Pressable
+                  key={t}
+                  onPress={() => setThemePreference(t)}
+                  className="flex-row items-center gap-3 rounded-2xl border border-hairline bg-surface px-4 py-3.5 active:opacity-80"
+                >
+                  <MaterialCommunityIcons
+                    name={
+                      t === "system"
+                        ? "cellphone"
+                        : t === "dark"
+                          ? "moon-waning-crescent"
+                          : "white-balance-sunny"
+                    }
+                    size={20}
+                    color={themePreference === t ? palette.primary : palette.inkSecondary}
+                  />
+                  <Text
+                    className="flex-1 font-ui-semibold text-[14.5px] capitalize"
+                    style={{ color: themePreference === t ? palette.ink : palette.inkSecondary }}
+                  >
+                    {t === "system" ? "System default" : t === "dark" ? "Dark" : "Light"}
+                  </Text>
+                  <View
+                    className="h-5 w-5 items-center justify-center rounded-full border-2"
+                    style={{
+                      borderColor: themePreference === t ? palette.primary : palette.inkTertiary,
+                    }}
+                  >
+                    {themePreference === t && (
+                      <View className="h-2.5 w-2.5 rounded-full bg-primary" />
+                    )}
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+
+            <View className="gap-2.5">
               <SectionLabel>ACCOUNT</SectionLabel>
               <Row
                 icon="logout"
-                iconTint="#F4F1EC"
-                iconColor="#F4F1FA"
+                iconTint="#FDEAEE"
+                iconColor="#DC2626"
                 title="Log out"
                 onPress={handleLogout}
               />
@@ -437,6 +477,9 @@ export default function SettingsScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
+      <ConfirmModal {...unlinkConfirm.props} onCancel={unlinkConfirm.cancel} />
+      <ConfirmModal {...deleteConfirm.props} onCancel={deleteConfirm.cancel} />
+      <ConfirmModal {...errorModal.props} onCancel={errorModal.cancel} />
     </View>
   );
 }

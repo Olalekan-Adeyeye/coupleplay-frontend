@@ -1,3 +1,57 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --color-paper: 240 20% 9%;
+  --color-surface: 240 18% 12%;
+  --color-surface-soft: 240 16% 15%;
+  --color-hairline: 252 14% 19%;
+  --color-surface-border: 252 14% 19%;
+  --color-ink: 252 30% 96%;
+  --color-ink-secondary: 252 18% 75%;
+  --color-ink-tertiary: 252 13% 53%;
+  --color-primary: 252 66% 69%;
+  --color-primary-soft: 252 100% 95%;
+  --color-accent: 330 100% 71%;
+  --color-accent-soft: 330 100% 95%;
+  --color-error-soft: 350 80% 95%;
+  --color-error-bright: 0 91% 71%;
+  --color-success: 142 71% 45%;
+}
+
+.dark {
+  --color-paper: 240 20% 9%;
+  --color-surface: 240 18% 12%;
+  --color-surface-soft: 240 16% 15%;
+  --color-hairline: 252 14% 19%;
+  --color-surface-border: 252 14% 19%;
+  --color-ink: 252 30% 96%;
+  --color-ink-secondary: 252 18% 75%;
+  --color-ink-tertiary: 252 13% 53%;
+  --color-primary: 252 66% 69%;
+  --color-primary-soft: 252 100% 95%;
+  --color-accent: 330 100% 71%;
+  --color-accent-soft: 330 100% 95%;
+  --color-error-soft: 350 80% 95%;
+  --color-error-bright: 0 91% 71%;
+  --color-success: 142 71% 45%;
+}
+
+.light {
+  --color-paper: 250 20% 99%;
+  --color-surface: 250 15% 97%;
+  --color-surface-soft: 250 12% 95%;
+  --color-hairline: 250 10% 90%;
+  --color-surface-border: 250 10% 90%;
+  --color-ink: 252 20% 12%;
+  --color-ink-secondary: 252 12% 35%;
+  --color-ink-tertiary: 252 10% 55%;
+  --color-primary: 252 66% 58%;
+  --color-primary-soft: 252 100% 96%;
+  --color-accent: 330 100% 65%;
+  --color-accent-soft: 330 100% 96%;
+  --color-error-soft: 350 80% 96%;
+  --color-error-bright: 0 84% 60%;
+  --color-success: 142 71% 40%;
+}

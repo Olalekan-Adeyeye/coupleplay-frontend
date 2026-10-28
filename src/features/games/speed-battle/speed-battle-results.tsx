@@ -1,32 +1,23 @@
-import { View, Text, Pressable, Alert } from "react-native";
-import { StatusBar } from "expo-status-bar";
+import { View, Text, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Avatar } from "@/components/ui/avatar";
+import { StatRow } from "@/components/games/StatRow";
+import { ResultsScoreCard } from "@/components/games/ResultsScoreCard";
 import { usePartnerName } from "@/hooks/usePartnerName";
+import { usePartner } from "@/hooks/usePartner";
+import { PeepScene } from "@/components/peeps/PeepScene";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 import { useCoupleStore } from "@/stores/coupleStore";
 import { useRoomStore } from "@/stores/roomStore";
 import { useSocketStore } from "@/hooks/useSocket";
+import { useGameAbandoned } from "@/hooks/useGameAbandoned";
+import { InfoModal } from "@/components/ui/ConfirmModal";
+import { CARD_SHADOW, BUTTON_SHADOW } from "@/lib/shadows";
+import { parseJsonParam } from "@/lib/params";
 import { useEffect, useState } from "react";
-
-const CARD_SHADOW = {
-  shadowColor: "#4A3B6B",
-  shadowOffset: { width: 0, height: 3 },
-  shadowOpacity: 0.08,
-  shadowRadius: 8,
-  elevation: 2,
-} as const;
-
-const BUTTON_SHADOW = {
-  shadowColor: "#946BFF",
-  shadowOffset: { width: 0, height: 5 },
-  shadowOpacity: 0.25,
-  shadowRadius: 10,
-  elevation: 4,
-} as const;
 
 export default function SpeedBattleResultsScreen() {
   const { winnerId, scores, totalRounds, roundsWon, roomId } =
@@ -43,22 +34,18 @@ export default function SpeedBattleResultsScreen() {
   const setRoom = useRoomStore((s) => s.setRoom);
   const socket = useSocketStore((s) => s.socket);
   const partnerName = usePartnerName();
+  const partner = usePartner();
   const [rematching, setRematching] = useState(false);
   const [rematchError, setRematchError] = useState<string | null>(null);
 
-  const parsed: Record<string, number> = scores ? JSON.parse(scores) : {};
+  const parsed = parseJsonParam<Record<string, number>>(scores) ?? {};
   const myScore = parsed[user?.id ?? ""] ?? 0;
   const partnerScore =
     Object.entries(parsed).find(([id]) => id !== user?.id)?.[1] ?? 0;
   const rounds = Number(totalRounds ?? 5);
 
   // Real per-player rounds won when the server reported them.
-  let won: Record<string, number> | null = null;
-  try {
-    won = roundsWon ? JSON.parse(roundsWon) : null;
-  } catch {
-    won = null;
-  }
+  const won = parseJsonParam<Record<string, number>>(roundsWon);
   const myRoundsWon = won ? (won[user?.id ?? ""] ?? 0) : null;
   const partnerRoundsWon = won
     ? (Object.entries(won).find(([id]) => id !== user?.id)?.[1] ?? 0)
@@ -69,6 +56,7 @@ export default function SpeedBattleResultsScreen() {
 
   const handleLeave = () => {
     if (roomId) socket?.emit("room:leave", { roomId });
+    useRoomStore.getState().setRoom(null);
     router.replace("/(tabs)/games");
   };
 
@@ -77,6 +65,8 @@ export default function SpeedBattleResultsScreen() {
     setRematchError(null);
     setRematching(true);
     try {
+      if (roomId) socket?.emit("room:leave", { roomId });
+      useRoomStore.getState().setRoom(null);
       const room = await api.rooms.create(
         { coupleId: couple.id, gameType: "SPEED_BATTLE", totalRounds: rounds },
         token,
@@ -89,45 +79,28 @@ export default function SpeedBattleResultsScreen() {
     }
   };
 
-  // Partner left
-  useEffect(() => {
-    if (!socket) return;
-    const onAbandoned = (d: any) => {
-      if (d.roomId !== roomId) return;
-      Alert.alert(
-        `${partnerName} left`,
-        "The game room was closed. Back to games?",
-        [{ text: "OK", onPress: () => router.replace("/(tabs)/games") }],
-      );
-    };
-    socket.on("game:abandoned", onAbandoned);
-    return () => {
-      socket.off("game:abandoned", onAbandoned);
-    };
-  }, [socket, roomId, partnerName]);
+  const abandoned = useGameAbandoned(socket, roomId, partnerName);
 
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <View className="w-full max-w-[460px] flex-1 self-center px-[22px] pt-[14px] pb-[24px]">
           {/* Trophy */}
-          <View className="mt-6 items-center gap-3">
-            <View className="h-24 w-24 items-center justify-center rounded-full bg-amber-100">
-              <MaterialCommunityIcons
-                name={isDraw ? "handshake" : iWon ? "trophy" : "lightning-bolt"}
-                size={46}
-                color={isDraw ? "#946BFF" : iWon ? "#B45309" : "#F59E0B"}
-              />
-            </View>
-            <Text className="font-display-bold text-[28px] text-ink">
+          <View className="mt-6 items-center gap-4">
+            <PeepScene
+              layout="versus"
+              peeps={[user?.avatar, partner?.avatar]}
+              size={72}
+              badge={isDraw ? "handshake" : "trophy"}
+            />
+            <Text className="font-display-bold text-display text-ink">
               {isDraw
                 ? "It's a draw!"
                 : iWon
                   ? "You won!"
                   : `${partnerName} won!`}
             </Text>
-            <Text className="font-ui-medium text-[14px] text-ink-secondary">
+            <Text className="font-ui-medium text-body text-ink-secondary">
               {isDraw
                 ? "Neck and neck!"
                 : iWon
@@ -137,43 +110,13 @@ export default function SpeedBattleResultsScreen() {
           </View>
 
           {/* Score card */}
-          <View className="mt-6 flex-row items-center justify-center gap-3">
-            <View
-              className="flex-1 items-center gap-2 rounded-3xl bg-surface px-3 py-6"
-              style={CARD_SHADOW}
-            >
-              <Avatar avatar={user?.avatar} name={user?.name} size={56} />
-              <Text
-                className="font-display-bold text-[14px] text-ink"
-                numberOfLines={1}
-              >
-                You
-              </Text>
-              <Text className="font-display-bold text-[32px] text-primary">
-                {myScore}
-              </Text>
-            </View>
-
-            <Text className="font-display-bold text-[16px] text-ink-tertiary">
-              VS
-            </Text>
-
-            <View
-              className="flex-1 items-center gap-2 rounded-3xl bg-surface px-3 py-6"
-              style={CARD_SHADOW}
-            >
-              <Avatar name={partnerName} size={56} />
-              <Text
-                className="font-display-bold text-[14px] text-ink"
-                numberOfLines={1}
-              >
-                {partnerName}
-              </Text>
-              <Text className="font-display-bold text-[32px] text-accent">
-                {partnerScore}
-              </Text>
-            </View>
-          </View>
+          <ResultsScoreCard
+            myName={user?.name ?? "You"}
+            myAvatar={user?.avatar}
+            myScore={myScore}
+            partnerName={partnerName}
+            partnerScore={partnerScore}
+          />
 
           {/* Stats — real values only */}
           <View
@@ -212,12 +155,12 @@ export default function SpeedBattleResultsScreen() {
               style={[BUTTON_SHADOW, { opacity: rematching ? 0.6 : 1 }]}
             >
               <MaterialCommunityIcons name="restart" size={20} color="#FFFFFF" />
-              <Text className="font-ui-bold text-[15px] text-white">
+              <Text className="font-ui-bold text-body-lg text-white">
                 {rematching ? "Setting up…" : "Rematch"}
               </Text>
             </Pressable>
             {rematchError && (
-              <Text className="text-center font-ui-medium text-[13px] text-error-bright">
+              <Text className="text-center font-ui-medium text-body-sm text-error-bright">
                 {rematchError}
               </Text>
             )}
@@ -225,37 +168,14 @@ export default function SpeedBattleResultsScreen() {
               onPress={handleLeave}
               className="flex-row items-center justify-center gap-2 rounded-full border border-hairline bg-surface py-4 active:opacity-85"
             >
-              <Text className="font-ui-bold text-[15px] text-ink-secondary">
+              <Text className="font-ui-bold text-body-lg text-ink-secondary">
                 Back to Games
               </Text>
             </Pressable>
           </View>
         </View>
       </SafeAreaView>
-    </View>
-  );
-}
-
-function StatRow({
-  label,
-  mine,
-  theirs,
-}: {
-  label: string;
-  mine: string;
-  theirs: string;
-}) {
-  return (
-    <View className="flex-row items-center py-2.5">
-      <Text className="w-14 font-display-bold text-[17px] text-primary">
-        {mine}
-      </Text>
-      <Text className="flex-1 text-center font-ui-medium text-[14px] text-ink">
-        {label}
-      </Text>
-      <Text className="w-14 text-right font-display-bold text-[17px] text-accent">
-        {theirs}
-      </Text>
+      <InfoModal {...abandoned} />
     </View>
   );
 }

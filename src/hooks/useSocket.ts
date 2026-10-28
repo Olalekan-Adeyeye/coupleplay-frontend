@@ -1,7 +1,7 @@
-import { io, Socket } from 'socket.io-client';
-import { create } from 'zustand';
-import { getSocketBaseUrl } from '@/lib/env';
-import { useCoupleStore } from '@/stores/coupleStore';
+import { io, Socket } from "socket.io-client";
+import { create } from "zustand";
+import { getSocketBaseUrl } from "@/lib/env";
+import { useCoupleStore } from "@/stores/coupleStore";
 
 const SOCKET_URL = getSocketBaseUrl();
 
@@ -21,33 +21,33 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
   connect: (token: string) => {
     const existing = get().socket;
-    if (existing?.connected) return;
-
     if (existing) {
+      if (existing.connected && get().authToken === token) return;
       existing.removeAllListeners();
       existing.disconnect();
     }
 
     const socket = io(SOCKET_URL, {
-      transports: ['websocket'],
+      transports: ["websocket"],
       autoConnect: true,
     });
 
-    socket.on('connect', () => {
+    socket.on("connect", () => {
       set({ connected: true });
-      socket.emit('authenticate', { token });
+      socket.emit("authenticate", { token });
     });
 
-    socket.on('disconnect', () => {
+    socket.on("disconnect", () => {
       set({ connected: false });
     });
 
-    socket.on('couple:unlinked', () => {
-      useCoupleStore.getState().setCouple(null as any);
+    // Server only sends ids — refresh the actual couple from the API.
+    socket.on("couple:unlinked", () => {
+      void useCoupleStore.getState().fetchCouple(token).catch(() => {});
     });
 
-    socket.on('couple:linked', (couple) => {
-      useCoupleStore.getState().setCouple(couple);
+    socket.on("couple:linked", () => {
+      void useCoupleStore.getState().fetchCouple(token).catch(() => {});
     });
 
     set({ socket, authToken: token });
@@ -56,8 +56,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
   disconnect: () => {
     const { socket } = get();
     if (socket) {
-      socket.off('couple:unlinked');
-      socket.off('couple:linked');
+      socket.removeAllListeners();
       socket.disconnect();
       set({ socket: null, connected: false, authToken: null });
     }

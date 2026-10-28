@@ -2,11 +2,13 @@ import { PageHeader, TabScreen } from "@/components/tab-screen";
 import { HeaderButton } from "@/components/ui/header-button";
 import { GAMES, GAME_IMAGES } from "@/data/games";
 import { isGameImplemented } from "@/features/games/registry";
+import { usePalette } from "@/hooks/usePalette";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
+import { ScrollView } from "react-native-gesture-handler";
 
 const FILTERS = [
   { id: "all", label: "All", icon: "apps" as const },
@@ -20,6 +22,7 @@ export default function GamesScreen() {
   const [filter, setFilter] = useState("all");
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState("");
+  const palette = usePalette();
 
   const games = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -53,21 +56,21 @@ export default function GamesScreen() {
 
       {searching && (
         <View className="flex-row items-center gap-2 rounded-xl border border-hairline bg-surface px-4">
-          <MaterialCommunityIcons name="magnify" size={18} color="#A79DBE" />
+          <MaterialCommunityIcons name="magnify" size={18} color={palette.inkTertiary} />
           <TextInput
             value={query}
             onChangeText={setQuery}
             placeholder="Search games or vibes…"
-            placeholderTextColor="#A79DBE"
+            placeholderTextColor={palette.inkTertiary}
             autoFocus
-            className="flex-1 py-3 font-ui text-[15px] text-ink"
+            className="flex-1 py-3 font-ui text-body-lg text-ink"
           />
           {query.length > 0 && (
             <Pressable onPress={() => setQuery("")} hitSlop={8}>
               <MaterialCommunityIcons
                 name="close-circle"
                 size={18}
-                color="#A79DBE"
+                color={palette.inkTertiary}
               />
             </Pressable>
           )}
@@ -75,7 +78,11 @@ export default function GamesScreen() {
       )}
 
       <View>
-        <View className="flex-row gap-2">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1, gap: 4 }}
+        >
           {FILTERS.map((f) => {
             const active = filter === f.id;
             return (
@@ -86,39 +93,39 @@ export default function GamesScreen() {
                 accessibilityState={{ selected: active }}
                 className="flex-row items-center gap-1.5 rounded-full px-4 py-2.5 active:opacity-80"
                 style={{
-                  backgroundColor: active ? "#946BFF" : "#1B1826",
+                  backgroundColor: active ? palette.primary : palette.chipSoft,
                   borderWidth: 1,
-                  borderColor: active ? "#946BFF" : "#2B2539",
+                  borderColor: active ? palette.primary : palette.chip,
                 }}
               >
                 <MaterialCommunityIcons
                   name={f.icon}
                   size={14}
-                  color={active ? "#FFFFFF" : "#B3A8C9"}
+                  color={active ? "#FFFFFF" : palette.inkSecondary}
                 />
                 <Text
-                  className="font-ui-semibold text-[13px]"
-                  style={{ color: active ? "#FFFFFF" : "#B3A8C9" }}
+                  className="font-ui-semibold text-body-sm"
+                  style={{ color: active ? "#FFFFFF" : palette.inkSecondary }}
                 >
                   {f.label}
                 </Text>
               </Pressable>
             );
           })}
-        </View>
+        </ScrollView>
       </View>
 
       {games.length === 0 && (
         <View className="items-center rounded-2xl border border-hairline bg-surface px-6 py-10">
-          <MaterialCommunityIcons
-            name="gamepad-variant-outline"
-            size={36}
-            color="#A79DBE"
-          />
-          <Text className="mt-3 font-display-bold text-[16px] text-ink">
+              <MaterialCommunityIcons
+                name="gamepad-variant-outline"
+                size={36}
+                color={palette.inkTertiary}
+              />
+          <Text className="mt-3 font-display-bold text-title-xs text-ink">
             Nothing matches
           </Text>
-          <Text className="mt-1 font-ui-medium text-[13px] text-ink-secondary">
+          <Text className="mt-1 font-ui-medium text-body-sm text-ink-secondary">
             Try a different search or filter.
           </Text>
         </View>
@@ -134,7 +141,7 @@ export default function GamesScreen() {
 
       {soon.length > 0 && (
         <View className="gap-2.5">
-          <Text className="font-ui-bold text-[11px] tracking-[1.5px] text-ink-tertiary">
+          <Text className="font-ui-bold text-label tracking-[1.5px] text-ink-tertiary">
             COMING SOON
           </Text>
           {soon.map((g) => (
@@ -150,6 +157,7 @@ function GameRow({ gameId }: { gameId: string }) {
   const g = GAMES.find((x) => x.id === gameId)!;
   const implemented = isGameImplemented(g.id);
   const art = GAME_IMAGES[g.icon];
+  const palette = usePalette();
 
   return (
     <Pressable
@@ -186,7 +194,7 @@ function GameRow({ gameId }: { gameId: string }) {
 
         <View className="flex-1 gap-1">
           <View className="flex-row items-center gap-2">
-            <Text className="font-display-bold text-[16px] text-ink">
+            <Text className="font-display-bold text-title-xs text-ink">
               {g.name}
             </Text>
             {implemented ? (
@@ -195,7 +203,7 @@ function GameRow({ gameId }: { gameId: string }) {
                 style={{ backgroundColor: g.tagColor + "18" }}
               >
                 <Text
-                  className="font-ui-bold text-[10px]"
+                  className="font-ui-bold text-micro"
                   style={{ color: g.tagColor }}
                 >
                   {g.tag}
@@ -203,7 +211,7 @@ function GameRow({ gameId }: { gameId: string }) {
               </View>
             ) : (
               <View className="rounded-full bg-paper px-2 py-[3px]">
-                <Text className="font-ui-bold text-[10px] tracking-[0.8px] text-ink-tertiary">
+                <Text className="font-ui-bold text-micro tracking-[0.8px] text-ink-tertiary">
                   SOON
                 </Text>
               </View>
@@ -220,9 +228,9 @@ function GameRow({ gameId }: { gameId: string }) {
               <MaterialCommunityIcons
                 name="account-group"
                 size={12}
-                color="#A79DBE"
+                color={palette.inkTertiary}
               />
-              <Text className="font-ui-medium text-[11px] text-ink-tertiary">
+              <Text className="font-ui-medium text-label text-ink-tertiary">
                 {g.players}
               </Text>
             </View>
@@ -230,9 +238,9 @@ function GameRow({ gameId }: { gameId: string }) {
               <MaterialCommunityIcons
                 name="clock-outline"
                 size={12}
-                color="#A79DBE"
+                color={palette.inkTertiary}
               />
-              <Text className="font-ui-medium text-[11px] text-ink-tertiary">
+              <Text className="font-ui-medium text-label text-ink-tertiary">
                 {g.duration}
               </Text>
             </View>
@@ -243,7 +251,7 @@ function GameRow({ gameId }: { gameId: string }) {
           <MaterialCommunityIcons
             name={implemented ? "chevron-right" : "bell-outline"}
             size={17}
-            color="#B3A8C9"
+            color={palette.inkSecondary}
           />
         </View>
       </View>

@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import type { ReactNode } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -12,7 +11,6 @@ const TAB_BAR_CLEARANCE = 108;
 export function TabScreen({ children }: { children: ReactNode }) {
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
       <SafeAreaView edges={["top"]} className="flex-1">
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -42,10 +40,10 @@ export function PageHeader({
   return (
     <View className="flex-row items-center justify-between">
       <View className="flex-1">
-        <Text className="font-display-bold text-[24px] leading-[30px] text-ink">
+        <Text className="font-display-bold text-title-lg leading-[30px] text-ink">
           {title}
         </Text>
-        <Text className="mt-0.5 font-ui-medium text-[14px] text-ink-secondary">
+        <Text className="mt-0.5 font-ui-medium text-body text-ink-secondary">
           {subtitle}
         </Text>
       </View>
@@ -63,7 +61,7 @@ export function SectionTitle({
 }) {
   return (
     <View className="flex-row items-center justify-between">
-      <Text className="font-display-bold text-[19px] text-ink">{title}</Text>
+      <Text className="font-display-bold text-title-sm text-ink">{title}</Text>
       {action}
     </View>
   );

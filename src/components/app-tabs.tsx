@@ -1,4 +1,5 @@
 import { useActiveRoom } from "@/hooks/useActiveRoom";
+import { usePalette } from "@/hooks/usePalette";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import {
   TabList,
@@ -21,28 +22,28 @@ const TABS: {
 }[] = [
   {
     name: "index",
-    href: "/",
+    href: "/(tabs)",
     label: "Home",
     icon: "home-outline",
     activeIcon: "home",
   },
   {
     name: "games",
-    href: "/games",
+    href: "/(tabs)/games",
     label: "Games",
     icon: "gamepad-variant-outline",
     activeIcon: "gamepad-variant",
   },
   {
     name: "activity",
-    href: "/activity",
+    href: "/(tabs)/activity",
     label: "Activity",
     icon: "chart-line",
     activeIcon: "chart-line",
   },
   {
     name: "us",
-    href: "/us",
+    href: "/(tabs)/us",
     label: "Us",
     icon: "heart-outline",
     activeIcon: "heart",
@@ -88,6 +89,7 @@ function DockButton({
   isFocused,
   style,
   onPress,
+  ref: _slotRef,
   ...props
 }: TabTriggerSlotProps & {
   name: string;
@@ -96,6 +98,9 @@ function DockButton({
   activeIcon: keyof typeof MaterialCommunityIcons.glyphMap;
   badged?: boolean;
 }) {
+  const palette = usePalette();
+  const inactiveColor = palette.inkTertiary;
+
   return (
     <Pressable
       {...props}
@@ -105,7 +110,7 @@ function DockButton({
       }}
       accessibilityRole="tab"
       accessibilityState={{ selected: isFocused }}
-      accessibilityLabel={label}
+      accessibilityLabel={badged && !isFocused ? `${label}, live game room` : label}
       className="flex-1 active:opacity-75"
       style={(state) => [
         typeof style === "function" ? style(state) : style,
@@ -122,13 +127,12 @@ function DockButton({
             style={{
               width: 52,
               height: 30,
-              // backgroundColor: isFocused ? "#EFEAFF" : "transparent",x
             }}
           >
             <MaterialCommunityIcons
               name={isFocused ? activeIcon : icon}
               size={23}
-              color={isFocused ? "#946BFF" : "#A79DBE"}
+              color={isFocused ? palette.primary : inactiveColor}
             />
             {badged && !isFocused && (
               <View
@@ -140,10 +144,10 @@ function DockButton({
           <Text
             className={
               isFocused
-                ? "font-ui-bold text-[11px]"
-                : "font-ui-medium text-[11px]"
+                ? "font-ui-bold text-label"
+                : "font-ui-medium text-label"
             }
-            style={{ color: isFocused ? "#946BFF" : "#A79DBE" }}
+            style={{ color: isFocused ? palette.primary : inactiveColor }}
           >
             {label}
           </Text>

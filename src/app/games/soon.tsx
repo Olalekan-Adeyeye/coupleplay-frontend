@@ -1,10 +1,10 @@
 import { GAME_IMAGES, getGame } from "@/data/games";
 import { useInviteAction } from "@/hooks/useInviteAction";
+import { usePalette } from "@/hooks/usePalette";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -25,6 +25,7 @@ async function readNotified(): Promise<string[]> {
  * game — art, rules preview, notify-me bell and invite CTA instead.
  */
 export default function SoonScreen() {
+  const palette = usePalette();
   const { gameType } = useLocalSearchParams<{ gameType: string }>();
   const game = getGame(gameType);
   const invite = useInviteAction();
@@ -49,14 +50,14 @@ export default function SoonScreen() {
   if (!game) {
     return (
       <View className="flex-1 items-center justify-center bg-paper px-8">
-        <Text className="font-display-bold text-[20px] text-ink">
+        <Text className="font-display-bold text-title-sm text-ink">
           Unknown game
         </Text>
         <Pressable
           onPress={() => router.replace("/(tabs)/games")}
           className="mt-4 rounded-xl bg-primary px-6 py-3.5 active:opacity-85"
         >
-          <Text className="font-ui-bold text-[14px] text-white">
+          <Text className="font-ui-bold text-body text-white">
             Back to Games
           </Text>
         </Pressable>
@@ -68,7 +69,6 @@ export default function SoonScreen() {
 
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <View className="w-full max-w-[460px] flex-1 self-center px-[22px] pt-[10px] pb-6">
           <View className="flex-row items-center">
@@ -90,7 +90,7 @@ export default function SoonScreen() {
           <View className="flex-1 items-center justify-center">
             <View
               className="h-[160px] w-[160px] items-center justify-center overflow-hidden rounded-2xl"
-              style={{ backgroundColor: game.accent }}
+              // style={{ backgroundColor: game.accent }}
             >
               {art ? (
                 <Image
@@ -111,13 +111,13 @@ export default function SoonScreen() {
               style={{ backgroundColor: game.tagColor + "18" }}
             >
               <Text
-                className="font-ui-bold text-[11px] tracking-[1px]"
+                className="font-ui-bold text-label tracking-[1px]"
                 style={{ color: game.tagColor }}
               >
                 {game.tag.toUpperCase()} · COMING SOON
               </Text>
             </View>
-            <Text className="mt-3 font-display-bold text-[28px] text-ink">
+            <Text className="mt-3 font-display-bold text-display text-ink">
               {game.name}
             </Text>
             <Text className="mt-2 max-w-[320px] text-center font-ui-medium text-[14.5px] leading-[21px] text-ink-secondary">
@@ -134,16 +134,16 @@ export default function SoonScreen() {
               accessibilityRole="switch"
               accessibilityState={{ checked: notified }}
               className="flex-row items-center justify-center gap-2 rounded-2xl py-4 active:opacity-85"
-              style={{ backgroundColor: notified ? "#EFEAFF" : "#946BFF" }}
+              style={{ backgroundColor: notified ? `${palette.primary}1F` : palette.primary }}
             >
               <MaterialCommunityIcons
                 name={notified ? "bell-check" : "bell-outline"}
                 size={19}
-                color={notified ? "#946BFF" : "#FFFFFF"}
+                color={notified ? palette.primary : "#FFFFFF"}
               />
               <Text
-                className="font-ui-bold text-[15px]"
-                style={{ color: notified ? "#946BFF" : "#FFFFFF" }}
+                className="font-ui-bold text-body-lg"
+                style={{ color: notified ? palette.primary : "#FFFFFF" }}
               >
                 {notified ? "We'll ping you at launch" : "Notify me at launch"}
               </Text>
@@ -157,9 +157,9 @@ export default function SoonScreen() {
               <MaterialCommunityIcons
                 name="share-variant"
                 size={18}
-                color="#946BFF"
+                color={palette.primary}
               />
-              <Text className="font-ui-bold text-[15px] text-primary">
+              <Text className="font-ui-bold text-body-lg text-primary">
                 Invite player 2 meanwhile
               </Text>
             </Pressable>

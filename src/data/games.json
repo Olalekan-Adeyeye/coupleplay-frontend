@@ -44,35 +44,36 @@
     ]
   },
   {
-    "id": "DRAW_GUESS",
-    "name": "Draw & Guess",
-    "tag": "Creative",
-    "tagColor": "#FF69B4",
-    "desc": "Your art vs. their guessing. Good luck.",
+    "id": "NUMBER_HUNT",
+    "name": "Number Hunt",
+    "tag": "Sharp",
+    "tagColor": "#8B5CF6",
+    "desc": "Spot the numbers. Beat the clock. Outsmart your partner.",
     "players": "2 Players",
     "duration": "~5 min",
     "rounds": 5,
-    "accent": "#FFE4F1",
-    "icon": "draw_guess",
-    "iconName": "brush",
-    "emoji": "🎨",
-    "heroImage": "draw_guess",
-    "objective": "Guess right to earn points!",
+    "accent": "#EDE9FE",
+    "icon": "number_hunt",
+    "iconName": "hexagon",
+    "emoji": "🔢",
+    "heroImage": "number_hunt",
+    "objective": "Hunt targets or race to tap first!",
+    "popular": true,
     "steps": [
       {
-        "icon": "brush",
-        "iconColor": "#FF69B4",
-        "title": "Draw the secret word."
+        "icon": "hexagon",
+        "iconColor": "#8B5CF6",
+        "title": "A honeycomb grid of 100 numbers appears."
       },
       {
-        "icon": "eye",
-        "iconColor": "#946BFF",
-        "title": "Your partner guesses in real time."
+        "icon": "crosshairs",
+        "iconColor": "#F59E0B",
+        "title": "Hunt: pick targets for your partner. Race: tap the called number first."
       },
       {
         "icon": "trophy",
         "iconColor": "#F59E0B",
-        "title": "Fastest correct guesses win!"
+        "title": "Most points across 5 rounds wins!"
       }
     ],
     "stats": {
@@ -81,7 +82,8 @@
       "winRate": 0
     },
     "modes": [
-      "competitive"
+      "competitive",
+      "brain"
     ]
   },
   {
@@ -125,90 +127,6 @@
       "quick",
       "competitive",
       "brain"
-    ]
-  },
-  {
-    "id": "MEMORY_MATCH",
-    "name": "Memory Match",
-    "tag": "Co-op",
-    "tagColor": "#22C55E",
-    "desc": "Flip cards and find pairs together.",
-    "players": "2 Players",
-    "duration": "~5 min",
-    "rounds": 5,
-    "accent": "#E8F8EF",
-    "icon": "memory_match",
-    "iconName": "cards-outline",
-    "emoji": "🧩",
-    "heroImage": "memory_match",
-    "objective": "Match all the pairs together!",
-    "steps": [
-      {
-        "icon": "cards",
-        "iconColor": "#22C55E",
-        "title": "Take turns flipping two cards."
-      },
-      {
-        "icon": "brain",
-        "iconColor": "#946BFF",
-        "title": "Remember where the pairs hide."
-      },
-      {
-        "icon": "trophy",
-        "iconColor": "#F59E0B",
-        "title": "Clear the board together!"
-      }
-    ],
-    "stats": {
-      "gamesPlayed": 0,
-      "perfectMatches": 0,
-      "winRate": 0
-    },
-    "modes": [
-      "coop",
-      "brain"
-    ]
-  },
-  {
-    "id": "WOULD_YOU_RATHER",
-    "name": "Would You Rather",
-    "tag": "Spicy",
-    "tagColor": "#FF69B4",
-    "desc": "Tough choices. No wrong answers. Only consequences.",
-    "players": "2 Players",
-    "duration": "~5 min",
-    "rounds": 5,
-    "accent": "#FFF1E4",
-    "icon": "would_you_rather",
-    "iconName": "help-circle-outline",
-    "emoji": "💬",
-    "heroImage": "would_you_rather",
-    "objective": "Agree on the same answer to score!",
-    "steps": [
-      {
-        "icon": "help-circle",
-        "iconColor": "#F59E0B",
-        "title": "A brutal either-or drops in."
-      },
-      {
-        "icon": "heart",
-        "iconColor": "#FF69B4",
-        "title": "Pick the same one to match."
-      },
-      {
-        "icon": "trophy",
-        "iconColor": "#F59E0B",
-        "title": "Most matches wins the game!"
-      }
-    ],
-    "stats": {
-      "gamesPlayed": 0,
-      "perfectMatches": 0,
-      "winRate": 0
-    },
-    "modes": [
-      "coop",
-      "competitive"
     ]
   }
 ]

@@ -33,5 +33,5 @@ export interface Achievement {
   unlocked: boolean;
   unlockedAt: string | null;
   progress: number;
-  category: 'milestone' | 'game' | 'special';
+  category: 'milestone' | 'special';
 }

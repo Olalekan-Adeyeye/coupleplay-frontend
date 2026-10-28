@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { ApiError } from '../lib/api';
 import { avatarGender } from '../components/peeps/peeps';
 import { api } from '../lib/api';
 
@@ -44,8 +45,14 @@ export const useCoupleStore = create<CoupleState>((set) => ({
     try {
       const couple = await api.couples.getMyCouple(token);
       set({ couple: withGenders(couple), isLoading: false });
-    } catch {
-      set({ couple: null, isLoading: false });
+    } catch (e: any) {
+      // 404 means no couple yet — that's expected
+      if (e instanceof ApiError && e.status === 404) {
+        set({ couple: null, isLoading: false });
+      } else {
+        set({ isLoading: false });
+        throw e;
+      }
     }
   },
 

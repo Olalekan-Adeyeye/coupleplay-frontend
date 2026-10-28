@@ -1,15 +1,20 @@
 import { getGame, GAME_IMAGES } from "@/data/games";
 import { usePartnerName } from "@/hooks/usePartnerName";
 import { useSocketStore } from "@/hooks/useSocket";
+import { useGameAbandoned } from "@/hooks/useGameAbandoned";
+import { useConfirmModal } from "@/hooks/useConfirmModal";
 import { useAuthStore } from "@/stores/authStore";
 import { api } from "@/lib/api";
 import { PeepAvatar } from "@/components/peeps/PeepAvatar";
+import { ConfirmModal, InfoModal } from "@/components/ui/ConfirmModal";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { router, useLocalSearchParams } from "expo-router";
-import { StatusBar } from "expo-status-bar";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Alert, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+import { useRoomStore } from "@/stores/roomStore";
+import { useCoupleStore } from "@/stores/coupleStore";
+import { CARD_SHADOW, BUTTON_SHADOW } from "@/lib/shadows";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -18,22 +23,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const CARD_SHADOW = {
-  shadowColor: "#4A3B6B",
-  shadowOffset: { width: 0, height: 3 },
-  shadowOpacity: 0.08,
-  shadowRadius: 8,
-  elevation: 2,
-} as const;
-
-const BUTTON_SHADOW = {
-  shadowColor: "#946BFF",
-  shadowOffset: { width: 0, height: 5 },
-  shadowOpacity: 0.25,
-  shadowRadius: 10,
-  elevation: 4,
-} as const;
+import { usePalette } from "@/hooks/usePalette";
 
 type Phase = "creating" | "waiting" | "joined" | "ready";
 
@@ -83,19 +73,25 @@ function LobbyAvatar({
   peep,
   seed,
   name,
+  mirror,
 }: {
   peep?: string | null;
   seed?: string | null;
   name?: string;
+  mirror?: boolean;
 }) {
   return (
-    <View className="h-[88px] w-[88px] items-center justify-center">
+    <View
+      className="h-[88px] w-[88px] items-center justify-center"
+      style={mirror ? { transform: [{ scaleX: -1 }] } : undefined}
+    >
       <PeepAvatar peep={peep} seed={seed} name={name} size={88} ring="#FFFFFF" />
     </View>
   );
 }
 
 export default function WaitingRoomScreen() {
+  const palette = usePalette();
   const { gameType, roomId } = useLocalSearchParams<{
     gameType: string;
     roomId: string;
@@ -104,23 +100,44 @@ export default function WaitingRoomScreen() {
   const token = useAuthStore((s) => s.token);
   const socket = useSocketStore((s) => s.socket);
   const partnerName = usePartnerName();
+  const couple = useCoupleStore((s) => s.couple);
+  const partnerPeep = couple?.userAId === user?.id
+    ? couple?.userB?.avatar
+    : couple?.userA?.avatar;
   const game = getGame(gameType);
 
   const [phase, setPhase] = useState<Phase>("creating");
   const [iAmReady, setIAmReady] = useState(false);
   const [partnerReady, setPartnerReady] = useState(false);
   const startedRef = useRef(false);
+  const leftRef = useRef(false);
+  const readyConfirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const navigation = useNavigation();
 
   const myFirstName = user?.name?.split(" ")[0] ?? "You";
 
   // Join the room, then move from "creating" into "waiting".
   useEffect(() => {
     if (!socket || !roomId) return;
+    const onReject = (d: any) => {
+      roomErrorModal.confirm({
+        title: "Room unavailable",
+        message: d?.reason ?? "This game room could not be joined.",
+        confirmLabel: "Back",
+        variant: "error",
+        onConfirm: () => doLeave(),
+      });
+    };
+    socket.on("game:reject", onReject);
     socket.emit("room:join", { roomId });
     const t = setTimeout(() => {
       setPhase((p) => (p === "creating" ? "waiting" : p));
     }, 1600);
-    return () => clearTimeout(t);
+    return () => {
+      socket.off("game:reject", onReject);
+      clearTimeout(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, roomId]);
 
   // Fallback: poll room state via HTTP to catch partner presence
@@ -136,9 +153,10 @@ export default function WaitingRoomScreen() {
           (p: any) => p.userId !== user?.id,
         );
         if (partnerInRoom) {
-          // Don't read ready from DB — only detect presence.
-          // Readiness is tracked via socket player:status events.
           setPhase("joined");
+          // joinRoom resets ready flags per session, so DB ready is current
+          const partner = room.players?.find((p: any) => p.userId !== user?.id);
+          if (partner?.ready) setPartnerReady(true);
         }
       } catch {}
     };
@@ -159,7 +177,16 @@ export default function WaitingRoomScreen() {
       setPhase("joined");
     };
     const onStatus = (d: any) => {
-      if (d.userId !== user?.id && d.ready) setPartnerReady(true);
+      if (d.userId === user?.id) {
+        // Server confirmation of our own ready state
+        if (readyConfirmTimer.current) {
+          clearTimeout(readyConfirmTimer.current);
+          readyConfirmTimer.current = null;
+        }
+        setIAmReady(!!d.ready);
+        return;
+      }
+      if (d.ready) setPartnerReady(true);
     };
     socket.on("room:player_joined", onJoined);
     socket.on("player:status", onStatus);
@@ -169,27 +196,10 @@ export default function WaitingRoomScreen() {
     };
   }, [socket, user?.id]);
 
-  // Partner explicitly left → room is destroyed. Alert and exit.
-  useEffect(() => {
-    if (!socket) return;
-    const onAbandoned = (d: any) => {
-      if (d.roomId !== roomId) return;
-      Alert.alert(
-        `${partnerName} left`,
-        "The game room was closed. Back to games?",
-        [
-          {
-            text: "OK",
-            onPress: () => router.replace("/(tabs)/games"),
-          },
-        ],
-      );
-    };
-    socket.on("game:abandoned", onAbandoned);
-    return () => {
-      socket.off("game:abandoned", onAbandoned);
-    };
-  }, [socket, roomId, partnerName, user?.id]);
+  const abandoned = useGameAbandoned(socket, roomId, partnerName, { clearRoom: true });
+  const leaveConfirm = useConfirmModal();
+  const roomErrorModal = useConfirmModal();
+  const pendingActionRef = useRef<any>(null);
 
   // Server started the game -> auto-navigate both players into play.
   useEffect(() => {
@@ -209,32 +219,64 @@ export default function WaitingRoomScreen() {
     if (iAmReady) return;
     socket?.emit("player:ready", { roomId });
     setIAmReady(true);
+    if (readyConfirmTimer.current) clearTimeout(readyConfirmTimer.current);
+    readyConfirmTimer.current = setTimeout(() => setIAmReady(false), 4000);
+  };
+
+  const doLeave = (action?: any) => {
+    leftRef.current = true;
+    socket?.emit("room:leave", { roomId });
+    useRoomStore.getState().setRoom(null);
+    if (action) {
+      navigation.dispatch(action);
+    } else {
+      router.replace("/(tabs)/games");
+    }
   };
 
   const handleLeave = () => {
-    Alert.alert(
-      "Leave game?",
-      "The game room will be closed for both of you.",
-      [
-        { text: "Stay", style: "cancel" },
-        {
-          text: "Leave",
-          style: "destructive",
-          onPress: () => {
-            socket?.emit("room:leave", { roomId });
-            router.replace("/(tabs)/games");
-          },
-        },
-      ],
-    );
+    leaveConfirm.confirm({
+      title: "Leave game?",
+      message: "The game room will be closed for both of you.",
+      confirmLabel: "Leave",
+      variant: "danger",
+      onConfirm: () => doLeave(),
+    });
   };
+
+  // Intercept Android back button
+  useEffect(() => {
+    const unsub = navigation.addListener("beforeRemove" as any, (e: any) => {
+      if (leftRef.current || startedRef.current) return;
+      e.preventDefault();
+      pendingActionRef.current = e.data.action;
+      leaveConfirm.confirm({
+        title: "Leave game?",
+        message: "The game room will be closed for both of you.",
+        confirmLabel: "Leave",
+        variant: "danger",
+        onConfirm: () => doLeave(pendingActionRef.current),
+      });
+    });
+    return () => unsub();
+  }, [navigation, socket, roomId]);
+
+  // Cleanup on unmount — but NOT when navigating to play screen after game:start
+  useEffect(() => {
+    return () => {
+      if (readyConfirmTimer.current) clearTimeout(readyConfirmTimer.current);
+      if (!leftRef.current && !startedRef.current && roomId) {
+        socket?.emit("room:leave", { roomId });
+        useRoomStore.getState().setRoom(null);
+      }
+    };
+  }, [roomId, socket]);
 
   const rounds = game?.rounds ?? 5;
   const duration = game?.duration ?? "~5 min";
 
   return (
     <View className="flex-1 bg-paper">
-      <StatusBar style="light" />
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <View className="w-full max-w-[460px] flex-1 self-center px-[22px] pt-[14px] pb-[24px]">
 
@@ -250,7 +292,7 @@ export default function WaitingRoomScreen() {
                 />
                 <LobbyAvatar peep={user?.avatar} seed={user?.id} name={myFirstName} />
                 <PulsingHeart />
-                <LobbyAvatar seed={partnerName} name={partnerName} />
+                <LobbyAvatar peep={partnerPeep} seed={partnerName} name={partnerName} mirror />
                 <MaterialCommunityIcons
                   name="star-four-points"
                   size={14}
@@ -259,13 +301,13 @@ export default function WaitingRoomScreen() {
                 />
               </View>
               <View className="items-center">
-                <Text className="font-display-bold text-[24px] text-ink">
+                <Text className="font-display-bold text-title-lg text-ink">
                   Getting everything
                 </Text>
-                <Text className="font-display-bold text-[24px] text-primary">
+                <Text className="font-display-bold text-title-lg text-primary">
                   ready...
                 </Text>
-                <Text className="mt-3 text-center font-ui-medium text-[14px] leading-[20px] text-ink-secondary">
+                <Text className="mt-3 text-center font-ui-medium text-body leading-[20px] text-ink-secondary">
                   Setting up your game room
                 </Text>
               </View>
@@ -273,7 +315,7 @@ export default function WaitingRoomScreen() {
                 onPress={handleLeave}
                 className="items-center py-1 active:opacity-70"
               >
-                <Text className="font-ui-semibold text-[14px] text-red-500">
+                <Text className="font-ui-semibold text-body text-error-bright">
                   Leave Game
                 </Text>
               </Pressable>
@@ -288,9 +330,9 @@ export default function WaitingRoomScreen() {
                 <LobbyAvatar peep={user?.avatar} seed={user?.id} name={myFirstName} />
                 <PulsingHeart />
                 <View>
-                  <LobbyAvatar seed={partnerName} name={partnerName} />
+                  <LobbyAvatar peep={partnerPeep} seed={partnerName} name={partnerName} mirror />
                   <View className="absolute right-1 top-1 h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-ink-tertiary/40">
-                    <Text className="text-[11px] text-white">?</Text>
+                    <Text className="text-label text-white">?</Text>
                   </View>
                 </View>
                 <MaterialCommunityIcons
@@ -308,7 +350,7 @@ export default function WaitingRoomScreen() {
               </View>
 
               <View className="items-center gap-1.5">
-                <Text className="font-display-bold text-[24px] text-ink">
+                <Text className="font-display-bold text-title-lg text-ink">
                   Waiting for{" "}
                   <Text className="text-primary">{partnerName}...</Text>
                 </Text>
@@ -321,10 +363,10 @@ export default function WaitingRoomScreen() {
                   <MaterialCommunityIcons
                     name="wifi"
                     size={18}
-                    color="#946BFF"
+                    color={palette.primary}
                   />
                 </View>
-                <Text className="flex-1 font-ui-medium text-[13px] leading-[18px] text-ink-secondary">
+                <Text className="flex-1 font-ui-medium text-body-sm leading-[18px] text-ink-secondary">
                   Make sure you both have a good connection!
                 </Text>
               </View>
@@ -332,7 +374,7 @@ export default function WaitingRoomScreen() {
                 onPress={handleLeave}
                 className="items-center py-1 active:opacity-70"
               >
-                <Text className="font-ui-semibold text-[14px] text-red-500">
+                <Text className="font-ui-semibold text-body text-error-bright">
                   Leave Game
                 </Text>
               </Pressable>
@@ -352,7 +394,7 @@ export default function WaitingRoomScreen() {
                 <LobbyAvatar peep={user?.avatar} seed={user?.id} name={myFirstName} />
                 <PulsingHeart />
                 <View>
-                  <LobbyAvatar seed={partnerName} name={partnerName} />
+                  <LobbyAvatar peep={partnerPeep} seed={partnerName} name={partnerName} mirror />
                   <View className="absolute -right-0.5 -bottom-0.5 h-5 w-5 rounded-full border-2 border-white bg-success" />
                 </View>
                 <MaterialCommunityIcons
@@ -363,10 +405,10 @@ export default function WaitingRoomScreen() {
                 />
               </View>
               <View className="items-center gap-1.5">
-                <Text className="font-display-bold text-[24px] text-ink">
+                <Text className="font-display-bold text-title-lg text-ink">
                   <Text className="text-primary">{partnerName}</Text> is here!
                 </Text>
-                <Text className="font-ui-medium text-[14px] text-ink-secondary">
+                <Text className="font-ui-medium text-body text-ink-secondary">
                   Looks like someone&apos;s ready to play.
                 </Text>
               </View>
@@ -375,7 +417,7 @@ export default function WaitingRoomScreen() {
                 className="w-full flex-row items-center justify-center gap-2 rounded-full bg-primary py-4 active:opacity-85"
                 style={BUTTON_SHADOW}
               >
-                <Text className="font-ui-bold text-[15px] text-white">
+                <Text className="font-ui-bold text-body-lg text-white">
                   Continue
                 </Text>
                 <MaterialCommunityIcons
@@ -388,7 +430,7 @@ export default function WaitingRoomScreen() {
                 onPress={handleLeave}
                 className="items-center py-1 active:opacity-70"
               >
-                <Text className="font-ui-semibold text-[14px] text-red-500">
+                <Text className="font-ui-semibold text-body text-error-bright">
                   Leave Game
                 </Text>
               </Pressable>
@@ -411,21 +453,21 @@ export default function WaitingRoomScreen() {
                     <MaterialCommunityIcons
                       name="gamepad-variant"
                       size={34}
-                      color="#946BFF"
+                      color={palette.primary}
                     />
                   </View>
                 )}
-                <Text className="font-display-bold text-[24px] text-ink">
+                <Text className="font-display-bold text-title-lg text-ink">
                   {game?.name ?? "Game"}
                 </Text>
                 <View className="flex-row gap-2.5">
                   <View className="rounded-full bg-surface px-3.5 py-1.5 border border-hairline">
-                    <Text className="font-ui-semibold text-[12px] text-ink">
+                    <Text className="font-ui-semibold text-caption text-ink">
                       {rounds} Rounds
                     </Text>
                   </View>
                   <View className="rounded-full bg-surface px-3.5 py-1.5 border border-hairline">
-                    <Text className="font-ui-semibold text-[12px] text-ink">
+                    <Text className="font-ui-semibold text-caption text-ink">
                       {duration}
                     </Text>
                   </View>
@@ -436,7 +478,7 @@ export default function WaitingRoomScreen() {
               <View className="flex-row items-center justify-center gap-3">
                 <View className="flex-1 items-center gap-2 rounded-3xl bg-surface px-3 py-5 border border-hairline">
                   <Text
-                    className="font-display-bold text-[14px] text-ink"
+                    className="font-display-bold text-body text-ink"
                     numberOfLines={1}
                   >
                     {myFirstName}
@@ -456,7 +498,7 @@ export default function WaitingRoomScreen() {
                       />
                     )}
                     <Text
-                      className="font-ui-bold text-[12px]"
+                      className="font-ui-bold text-caption"
                       style={{ color: iAmReady ? "#22C55E" : "#B3A8C9" }}
                     >
                       {iAmReady ? "Ready" : "Not ready"}
@@ -468,13 +510,13 @@ export default function WaitingRoomScreen() {
 
                 <View className="flex-1 items-center gap-2 rounded-3xl bg-surface px-3 py-5 border border-hairline">
                   <Text
-                    className="font-display-bold text-[14px] text-ink"
+                    className="font-display-bold text-body text-ink"
                     numberOfLines={1}
                   >
                     {partnerName}
                   </Text>
                   <View>
-                    <LobbyAvatar seed={partnerName} name={partnerName} />
+                    <LobbyAvatar peep={partnerPeep} seed={partnerName} name={partnerName} mirror />
                     <View className="absolute -right-0.5 -bottom-0.5 h-5 w-5 rounded-full border-2 border-white bg-success" />
                   </View>
 
@@ -492,7 +534,7 @@ export default function WaitingRoomScreen() {
                       />
                     )}
                     <Text
-                      className="font-ui-bold text-[12px]"
+                      className="font-ui-bold text-caption"
                       style={{ color: partnerReady ? "#22C55E" : "#B3A8C9" }}
                     >
                       {partnerReady ? "Ready" : "Not ready"}
@@ -511,11 +553,11 @@ export default function WaitingRoomScreen() {
                       size={16}
                       color="#F59E0B"
                     />
-                    <Text className="font-display-bold text-[14px] text-ink">
+                    <Text className="font-display-bold text-body text-ink">
                       {game?.objective ?? "First to 10 points wins!"}
                     </Text>
                   </View>
-                  <Text className="font-ui-medium text-[13px] text-ink-secondary">
+                  <Text className="font-ui-medium text-body-sm text-ink-secondary">
                     Both players need to be ready to start the game.
                   </Text>
                 </View>
@@ -530,7 +572,7 @@ export default function WaitingRoomScreen() {
                     size={18}
                     color="#FFFFFF"
                   />
-                  <Text className="font-ui-bold text-[15px] text-white">
+                  <Text className="font-ui-bold text-body-lg text-white">
                     {iAmReady
                       ? `Waiting for ${partnerName}...`
                       : "I'm Ready!"}
@@ -540,7 +582,7 @@ export default function WaitingRoomScreen() {
                   onPress={handleLeave}
                   className="items-center py-1 active:opacity-70"
                 >
-                  <Text className="font-ui-semibold text-[14px] text-red-500">
+                  <Text className="font-ui-semibold text-body text-error-bright">
                     Leave Game
                   </Text>
                 </Pressable>
@@ -549,6 +591,9 @@ export default function WaitingRoomScreen() {
           )}
         </View>
       </SafeAreaView>
+      <ConfirmModal {...leaveConfirm.props} onCancel={leaveConfirm.cancel} />
+      <ConfirmModal {...roomErrorModal.props} onCancel={roomErrorModal.cancel} />
+      <InfoModal {...abandoned} />
     </View>
   );
 }
