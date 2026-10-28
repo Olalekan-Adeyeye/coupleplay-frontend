@@ -14,8 +14,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useSocketStore } from "@/hooks/useSocket";
 import { useRoomStore } from "@/stores/roomStore";
 import { ConfirmModal, InfoModal } from "@/components/ui/ConfirmModal";
-import { useConfirmModal } from "@/hooks/useConfirmModal";
-import { CARD_SHADOW, BUTTON_SHADOW } from "@/lib/shadows";
+import { useConfirmModal } from "@/hooks/useConfirmModal";
 import { usePalette } from "@/hooks/usePalette";
 
 interface Question {
@@ -235,8 +234,7 @@ export default function SpeedBattlePlayScreen() {
           <View className="flex-row items-center justify-between">
             <View className="h-11 w-11" />
             <View
-              className="flex-row items-center gap-2 rounded-full bg-surface px-4 py-2"
-              style={CARD_SHADOW}
+              className="flex-row items-center gap-2 rounded-full bg-surface px-4 py-2 border border-hairline"
             >
               <Text className="font-ui-bold text-body-sm text-ink">
                 Round {state?.roundNumber ?? 1} of {state?.totalRounds ?? 5}
@@ -260,8 +258,7 @@ export default function SpeedBattlePlayScreen() {
           {/* Players + score */}
           <View className="mt-4 flex-row items-center justify-center gap-3">
             <View
-              className="flex-1 flex-row items-center gap-2.5 rounded-2xl bg-surface px-4 py-3"
-              style={CARD_SHADOW}
+              className="flex-1 flex-row items-center gap-2.5 rounded-2xl bg-surface px-4 py-3 border border-hairline"
             >
               <Avatar avatar={user?.avatar} name={user?.name} size={40} />
               <View className="flex-1">
@@ -297,8 +294,7 @@ export default function SpeedBattlePlayScreen() {
             </Text>
 
             <View
-              className="flex-1 flex-row items-center gap-2.5 rounded-2xl bg-surface px-4 py-3"
-              style={CARD_SHADOW}
+              className="flex-1 flex-row items-center gap-2.5 rounded-2xl bg-surface px-4 py-3 border border-hairline"
             >
               <Avatar name={partnerName} size={40} />
               <View className="flex-1">
@@ -347,8 +343,7 @@ export default function SpeedBattlePlayScreen() {
           >
             {/* Question card */}
             <View
-              className="items-center gap-3 rounded-3xl bg-surface px-6 py-6"
-              style={CARD_SHADOW}
+              className="items-center gap-3 rounded-3xl bg-surface px-6 py-6 border border-hairline"
             >
               <View className="h-11 w-11 items-center justify-center rounded-xl bg-[#F59E0B1F]">
                 <MaterialCommunityIcons
@@ -435,8 +430,7 @@ export default function SpeedBattlePlayScreen() {
             {/* Waiting / result card */}
             {myAnswer && !showReveal && (
               <View
-                className="items-center gap-3 rounded-3xl bg-surface px-6 py-6"
-                style={CARD_SHADOW}
+                className="items-center gap-3 rounded-3xl bg-surface px-6 py-6 border border-hairline"
               >
                 <View className="h-14 w-14 items-center justify-center rounded-full bg-[#F59E0B1F]">
                   <MaterialCommunityIcons
@@ -456,8 +450,7 @@ export default function SpeedBattlePlayScreen() {
 
             {showReveal && (
               <View
-                className="items-center gap-3 rounded-3xl bg-surface px-6 py-6"
-                style={CARD_SHADOW}
+                className="items-center gap-3 rounded-3xl bg-surface px-6 py-6 border border-hairline"
               >
                 <View
                   className="h-14 w-14 items-center justify-center rounded-full"

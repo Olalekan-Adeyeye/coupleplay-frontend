@@ -13,7 +13,7 @@ export function StatRow({
   mine,
   theirs,
   myColor = "text-primary",
-  theirColor = "text-accent",
+  theirColor = "text-rose",
 }: StatRowProps) {
   return (
     <View className="flex-row items-center py-2.5">

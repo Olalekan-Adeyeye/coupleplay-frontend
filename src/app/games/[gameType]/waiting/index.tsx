@@ -14,7 +14,6 @@ import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useRoomStore } from "@/stores/roomStore";
 import { useCoupleStore } from "@/stores/coupleStore";
-import { CARD_SHADOW, BUTTON_SHADOW } from "@/lib/shadows";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -415,7 +414,6 @@ export default function WaitingRoomScreen() {
               <Pressable
                 onPress={() => setPhase("ready")}
                 className="w-full flex-row items-center justify-center gap-2 rounded-full bg-primary py-4 active:opacity-85"
-                style={BUTTON_SHADOW}
               >
                 <Text className="font-ui-bold text-body-lg text-white">
                   Continue
@@ -487,19 +485,23 @@ export default function WaitingRoomScreen() {
                   <View
                     className="flex-row items-center gap-1.5 rounded-full px-3 py-1"
                     style={{
-                      backgroundColor: iAmReady ? "#22C55E26" : "#252132",
+                      backgroundColor: iAmReady
+                        ? `${palette.emerald}26`
+                        : palette.chipSoft,
                     }}
                   >
                     {iAmReady && (
                       <MaterialCommunityIcons
                         name="check"
                         size={13}
-                        color="#22C55E"
+                        color={palette.emerald}
                       />
                     )}
                     <Text
                       className="font-ui-bold text-caption"
-                      style={{ color: iAmReady ? "#22C55E" : "#B3A8C9" }}
+                      style={{
+                        color: iAmReady ? palette.emerald : palette.inkTertiary,
+                      }}
                     >
                       {iAmReady ? "Ready" : "Not ready"}
                     </Text>
@@ -523,19 +525,25 @@ export default function WaitingRoomScreen() {
                   <View
                     className="flex-row items-center gap-1.5 rounded-full px-3 py-1"
                     style={{
-                      backgroundColor: partnerReady ? "#22C55E26" : "#252132",
+                      backgroundColor: partnerReady
+                        ? `${palette.emerald}26`
+                        : palette.chipSoft,
                     }}
                   >
                     {partnerReady && (
                       <MaterialCommunityIcons
                         name="check"
                         size={13}
-                        color="#22C55E"
+                        color={palette.emerald}
                       />
                     )}
                     <Text
                       className="font-ui-bold text-caption"
-                      style={{ color: partnerReady ? "#22C55E" : "#B3A8C9" }}
+                      style={{
+                        color: partnerReady
+                          ? palette.emerald
+                          : palette.inkTertiary,
+                      }}
                     >
                       {partnerReady ? "Ready" : "Not ready"}
                     </Text>
@@ -565,7 +573,7 @@ export default function WaitingRoomScreen() {
                   onPress={handleReady}
                   disabled={iAmReady}
                   className="flex-row items-center justify-center gap-2 rounded-full bg-primary py-4 active:opacity-85"
-                  style={[BUTTON_SHADOW, { opacity: iAmReady ? 0.6 : 1 }]}
+                  style={{ opacity: iAmReady ? 0.6 : 1 }}
                 >
                   <MaterialCommunityIcons
                     name={iAmReady ? "heart-outline" : "heart"}

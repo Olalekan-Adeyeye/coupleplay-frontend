@@ -11,7 +11,6 @@ import { useCoupleStore } from "@/stores/coupleStore";
 import { useRoomStore } from "@/stores/roomStore";
 import { InfoModal } from "@/components/ui/ConfirmModal";
 import { useGameAbandoned } from "@/hooks/useGameAbandoned";
-import { CARD_SHADOW, BUTTON_SHADOW } from "@/lib/shadows";
 import { usePalette } from "@/hooks/usePalette";
 import { parseJsonParam } from "@/lib/params";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -91,8 +90,7 @@ export default function TicTacToeResultsScreen() {
               hitSlop={10}
               accessibilityRole="button"
               accessibilityLabel="Back to games"
-              className="h-11 w-11 items-center justify-center rounded-full bg-surface active:opacity-80"
-              style={CARD_SHADOW}
+              className="h-11 w-11 items-center justify-center rounded-full border border-hairline bg-surface active:opacity-80"
             >
               <MaterialCommunityIcons
                 name="chevron-left"
@@ -142,7 +140,7 @@ export default function TicTacToeResultsScreen() {
 
           {/* Stats */}
           {(myRoundsWon != null || partnerRoundsWon != null) && (
-            <View className="mt-4 gap-0 rounded-3xl bg-surface px-5 py-4" style={CARD_SHADOW}>
+            <View className="mt-4 gap-0 rounded-2xl border border-hairline bg-surface px-5 py-4">
               <StatRow
                 label="Points"
                 mine={String(myScore)}
@@ -179,7 +177,7 @@ export default function TicTacToeResultsScreen() {
               onPress={handleRematch}
               disabled={rematching}
               className="flex-row items-center justify-center gap-2 rounded-full bg-primary py-4 active:opacity-85"
-              style={[BUTTON_SHADOW, { opacity: rematching ? 0.6 : 1 }]}
+              style={{ opacity: rematching ? 0.6 : 1 }}
             >
               <MaterialCommunityIcons name="restart" size={20} color="#FFFFFF" />
               <Text className="font-ui-bold text-body-lg text-white">

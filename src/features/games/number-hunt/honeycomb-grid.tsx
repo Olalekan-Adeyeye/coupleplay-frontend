@@ -66,9 +66,9 @@ export function HoneycombGrid({
         };
       default:
         return {
-          bg: "#1E1B2E",
-          border: "#2D2945",
-          text: "#A79DBE",
+          bg: palette.surface,
+          border: palette.hairline,
+          text: palette.inkTertiary,
         };
     }
   };
