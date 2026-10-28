@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+defaults:
+  run:
+    working-directory: frontend
+
 jobs:
   build:
     name: Build Android APK
@@ -20,50 +24,56 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
-      - name: Install Expo CLI
-        run: npm install -g eas-cli
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle cache
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Build APK with EAS
-        id: eas-build
+      - name: Generate Android project
+        run: npx expo prebuild --platform android
+
+      - name: Configure release signing
         env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          RELEASE_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEYSTORE_ALIAS: ${{ secrets.RELEASE_KEYSTORE_ALIAS }}
+          RELEASE_KEYSTORE_KEY_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_KEY_PASSWORD }}
         run: |
-          echo "Starting EAS build..."
-          BUILD_JSON=$(eas build \
-            --platform android \
-            --profile preview \
-            --non-interactive \
-            --json)
-
-          echo "$BUILD_JSON"
-
-          APK_URL=$(echo "$BUILD_JSON" | jq -r '.[0].artifacts.applicationArchiveUrl')
-
-          if [ -z "$APK_URL" ] || [ "$APK_URL" = "null" ]; then
-            echo "::error::Failed to get APK URL from EAS build"
+          if [ -z "$RELEASE_KEYSTORE" ] || [ -z "$RELEASE_KEYSTORE_ALIAS" ]; then
+            echo "::error::Missing RELEASE_KEYSTORE / RELEASE_KEYSTORE_ALIAS secrets"
             exit 1
           fi
+          echo "$RELEASE_KEYSTORE" | base64 -d > android/app/release.keystore
+          printf 'storeFile=release.keystore\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+            "$RELEASE_KEYSTORE_PASSWORD" \
+            "$RELEASE_KEYSTORE_ALIAS" \
+            "$RELEASE_KEYSTORE_KEY_PASSWORD" \
+            > android/keystore.properties
 
-          echo "apk_url=$APK_URL" >> "$GITHUB_OUTPUT"
-
-      - name: Download APK
-        run: |
-          curl -L -o coupleplay.apk "${{ steps.eas-build.outputs.apk_url }}"
+      - name: Build APKs
+        run: ./gradlew :app:assembleRelease
+        working-directory: frontend/android
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: coupleplay-apk
-          path: coupleplay.apk
+          path: frontend/android/app/build/outputs/apk/release/*.apk
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: coupleplay.apk
+          files: frontend/android/app/build/outputs/apk/release/*.apk
           generate_release_notes: true
           draft: false
           prerelease: false
