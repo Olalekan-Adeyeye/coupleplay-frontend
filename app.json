@@ -26,6 +26,7 @@
     },
     "plugins": [
       "expo-router",
+      "./plugins/with-android-abi-splits",
       [
         "expo-splash-screen",
         {

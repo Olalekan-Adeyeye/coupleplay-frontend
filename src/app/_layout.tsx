@@ -1,11 +1,13 @@
 import "../../global.css";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { OfflineBanner } from "@/components/OfflineBanner";
 import { SplashOverlay } from "@/components/splash/splash-overlay";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { usePaperColor } from "@/hooks/useResolvedTheme";
 import { useSocketStore } from "@/hooks/useSocket";
 import { useAuthStore } from "@/stores/authStore";
+import { setUnauthorizedHandler } from "@/lib/api";
 import {
   Urbanist_400Regular,
   Urbanist_500Medium,
@@ -21,12 +23,14 @@ import * as SplashScreen from "expo-splash-screen";
 import { useCallback, useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { api } from "@/lib/api";
+import { handleForceLogout } from "@/lib/forceLogout";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const connect = useSocketStore((s) => s.connect);
+  const disconnect = useSocketStore((s) => s.disconnect);
   const [splashDone, setSplashDone] = useState(false);
   const [rehydrated, setRehydrated] = useState(false);
   const [fontsLoaded, fontError] = useFonts({
@@ -42,20 +46,29 @@ export default function RootLayout() {
   const fontsReady = fontsLoaded || !!fontError;
 
   useEffect(() => {
-    const unsub = useAuthStore.persist.onFinishHydration(() => {
-      setRehydrated(true);
-    });
-    useAuthStore.persist.rehydrate();
-    return unsub;
+    setUnauthorizedHandler(handleForceLogout);
+
+    let cancelled = false;
+    void (async () => {
+      await useAuthStore.getState().hydrateToken();
+      if (cancelled) return;
+      const unsub = useAuthStore.persist.onFinishHydration(() => {
+        setRehydrated(true);
+      });
+      useAuthStore.persist.rehydrate();
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
     if (!rehydrated) return;
     const { token, isAuthenticated } = useAuthStore.getState();
     if (isAuthenticated && token) {
-      api.auth.getProfile(token).catch(() => {
-        useAuthStore.getState().logout();
-      });
+      api.auth.getProfile(token).catch(() => handleForceLogout());
+    } else if (isAuthenticated && !token) {
+      handleForceLogout();
     }
   }, [rehydrated]);
 
@@ -72,8 +85,10 @@ export default function RootLayout() {
   useEffect(() => {
     if (isAuthenticated && token) {
       connect(token);
+    } else {
+      disconnect();
     }
-  }, [isAuthenticated, token, connect]);
+  }, [isAuthenticated, token, connect, disconnect]);
 
   const handleSplashFinish = useCallback(() => {
     SplashScreen.hideAsync();
@@ -95,6 +110,7 @@ export default function RootLayout() {
               <Stack.Screen name="(auth)" />
             )}
           </Stack>
+          <OfflineBanner />
           {!splashDone && <SplashOverlay onFinish={handleSplashFinish} />}
         </ThemeProvider>
       </ErrorBoundary>

@@ -22,7 +22,7 @@ function resolveDevHost(): string | null {
 // treat those values as unset and fall back to the LAN host.
 function isLoopback(url: string | undefined): boolean {
   if (!url) return true;
-  return /^https?:\/\/(localhost|127\.0\.0\.1)([:/]|$)/i.test(url);
+  return /^http:\/\/(localhost|127\.0\.0\.1)([:/]|$)/i.test(url);
 }
 
 function effectiveBase(configured: string | undefined): string | null {
@@ -32,22 +32,28 @@ function effectiveBase(configured: string | undefined): string | null {
   return null;
 }
 
+function devFallbackBase(): string {
+  const devHost = resolveDevHost();
+  if (devHost) return `http://${devHost}:3000`;
+  return 'http://localhost:3000';
+}
+
 export function getApiBaseUrl(): string {
   const configured = effectiveBase(process.env.EXPO_PUBLIC_API_URL);
   if (configured) return configured;
 
-  const devHost = resolveDevHost();
-  if (devHost) return `http://${devHost}:3000`;
-
-  return 'http://localhost:3000';
+  if (!__DEV__) {
+    throw new Error('EXPO_PUBLIC_API_URL is not configured for this production build.');
+  }
+  return devFallbackBase();
 }
 
 export function getSocketBaseUrl(): string {
   const configured = effectiveBase(process.env.EXPO_PUBLIC_SOCKET_URL);
   if (configured) return configured;
 
-  const devHost = resolveDevHost();
-  if (devHost) return `http://${devHost}:3000/game`;
-
-  return 'http://localhost:3000/game';
+  if (!__DEV__) {
+    throw new Error('EXPO_PUBLIC_SOCKET_URL is not configured for this production build.');
+  }
+  return `${devFallbackBase()}/game`;
 }
