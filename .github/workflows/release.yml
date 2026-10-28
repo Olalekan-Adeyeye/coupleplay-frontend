@@ -70,7 +70,7 @@ jobs:
           KEYSTORE="$PWD/android/app/release.keystore"
           OUT="$PWD/android/app/build/outputs/apk/release"
           for APK in "$OUT"/*.apk; do
-            if ! "$BUILD_TOOLS/apksigner" verify --quiet "$APK"; then
+            if ! "$BUILD_TOOLS/apksigner" verify "$APK" >/dev/null 2>&1; then
               "$BUILD_TOOLS/apksigner" sign \
                 --ks "$KEYSTORE" \
                 --ks-key-alias "$RELEASE_KEYSTORE_ALIAS" \
@@ -79,6 +79,8 @@ jobs:
                 "$APK"
             fi
             "$BUILD_TOOLS/apksigner" verify --print-certs "$APK" | head -2
+            SIGNED="${APK/-unsigned/}"
+            [ "$APK" != "$SIGNED" ] && mv "$APK" "$SIGNED"
           done
 
       - name: Upload APK artifact
